@@ -528,3 +528,62 @@ pub fn screen_colors() -> Option<[[u8; 3]; 2]> {
         out
     }
 }
+
+/// Path of the Windows wallpaper shown on the monitor a window is on
+/// (per-monitor wallpapers included). None for a solid colour.
+pub fn wallpaper_for(raw: isize) -> Option<String> {
+    use windows::Win32::System::Com::{CoCreateInstance, CoInitializeEx, CoTaskMemFree, CLSCTX_ALL, COINIT_APARTMENTTHREADED};
+    use windows::Win32::UI::Shell::{DesktopWallpaper, IDesktopWallpaper};
+    unsafe {
+        let mon = MonitorFromWindow(hwnd(raw), MONITOR_DEFAULTTONEAREST);
+        let mut mi = MONITORINFO { cbSize: std::mem::size_of::<MONITORINFO>() as u32, ..Default::default() };
+        let _ = GetMonitorInfoW(mon, &mut mi);
+        let r = mi.rcMonitor;
+
+        let _ = CoInitializeEx(None, COINIT_APARTMENTTHREADED);
+        if let Ok(dw) = CoCreateInstance::<_, IDesktopWallpaper>(&DesktopWallpaper, None, CLSCTX_ALL) {
+            let n = dw.GetMonitorDevicePathCount().unwrap_or(0);
+            let mut first: Option<String> = None;
+            for i in 0..n {
+                let Ok(id) = dw.GetMonitorDevicePathAt(i) else { continue };
+                let same = dw
+                    .GetMonitorRECT(PCWSTR(id.0))
+                    .map(|x| x.left == r.left && x.top == r.top && x.right == r.right && x.bottom == r.bottom)
+                    .unwrap_or(false);
+                let path = dw.GetWallpaper(PCWSTR(id.0)).ok().map(|p| {
+                    let s = p.to_string().unwrap_or_default();
+                    CoTaskMemFree(Some(p.0 as *const _));
+                    s
+                });
+                CoTaskMemFree(Some(id.0 as *const _));
+                if let Some(p) = path.filter(|p| !p.is_empty()) {
+                    if same {
+                        return Some(p);
+                    }
+                    first.get_or_insert(p);
+                }
+            }
+            if first.is_some() {
+                return first;
+            }
+        }
+
+        // Fallback: the single wallpaper of the whole desktop.
+        let mut buf = [0u16; 520];
+        if SystemParametersInfoW(
+            SPI_GETDESKWALLPAPER,
+            buf.len() as u32,
+            Some(buf.as_mut_ptr() as *mut _),
+            SYSTEM_PARAMETERS_INFO_UPDATE_FLAGS(0),
+        )
+        .is_ok()
+        {
+            let n = buf.iter().position(|c| *c == 0).unwrap_or(buf.len());
+            let s = String::from_utf16_lossy(&buf[..n]);
+            if !s.is_empty() {
+                return Some(s);
+            }
+        }
+        None
+    }
+}

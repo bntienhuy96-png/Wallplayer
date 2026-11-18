@@ -1,10 +1,9 @@
 //! Companion windows for the other monitors.
 //!
-//! The main skin lives on one monitor. Every other monitor gets a light
-//! "mirror" window (`ui/mirror.html`) that shows the music video of the song
-//! that is playing (muted, kept in sync), or the blurred album cover with the
-//! album colours. The main UI broadcasts its state with the `mirror-state`
-//! event; mirrors never play sound.
+//! The main skin lives on one monitor. Every other monitor gets a "mirror"
+//! window: the same `ui/index.html` in display-only mode (no controls, never
+//! plays sound). It reads the same saved settings, and the main window
+//! broadcasts what plays with the `mirror-state` event.
 
 use tauri::{AppHandle, Manager, WebviewUrl, WebviewWindowBuilder};
 
@@ -48,7 +47,8 @@ pub fn sync(app: &AppHandle) {
             let label = label_for(&m.id);
             let win = match app.get_webview_window(&label) {
                 Some(w) => w,
-                None => match WebviewWindowBuilder::new(&app, &label, WebviewUrl::App("mirror.html".into()))
+                None => match WebviewWindowBuilder::new(&app, &label, WebviewUrl::App("index.html".into()))
+                    .initialization_script("window.__WP_MIRROR__ = true;")
                     .title("Wallplayer")
                     .decorations(false)
                     .resizable(false)

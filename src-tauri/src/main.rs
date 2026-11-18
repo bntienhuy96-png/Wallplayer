@@ -140,6 +140,39 @@ async fn set_mute(on: bool) -> Result<(), String> {
     tauri::async_runtime::spawn_blocking(move || volume::mute(on)).await.map_err(|e| e.to_string())?
 }
 
+#[derive(Serialize)]
+struct Wallpaper {
+    path: String,
+    /// data: URL, only when the path differs from `known`
+    data: Option<String>,
+}
+
+/// The Windows wallpaper of the monitor the calling window is on.
+#[tauri::command]
+async fn desktop_wallpaper(window: tauri::WebviewWindow, known: Option<String>) -> Result<Option<Wallpaper>, String> {
+    let raw = window.hwnd().map(|h| h.0 as isize).map_err(|e| e.to_string())?;
+    tauri::async_runtime::spawn_blocking(move || {
+        let Some(path) = desktop::wallpaper_for(raw) else { return Ok(None) };
+        if known.as_deref() == Some(path.as_str()) {
+            return Ok(Some(Wallpaper { path, data: None }));
+        }
+        let bytes = std::fs::read(&path).map_err(|e| e.to_string())?;
+        let ext = path.rsplit('.').next().unwrap_or("").to_ascii_lowercase();
+        let mime = match ext.as_str() {
+            "png" => "image/png",
+            "bmp" | "dib" => "image/bmp",
+            "gif" => "image/gif",
+            "webp" => "image/webp",
+            _ => "image/jpeg",
+        };
+        use base64::Engine;
+        let b64 = base64::engine::general_purpose::STANDARD.encode(bytes);
+        Ok(Some(Wallpaper { path, data: Some(format!("data:{mime};base64,{b64}")) }))
+    })
+    .await
+    .map_err(|e| e.to_string())?
+}
+
 #[tauri::command]
 async fn screen_colors() -> Result<Vec<[u8; 3]>, String> {
     tauri::async_runtime::spawn_blocking(|| desktop::screen_colors().map(|c| c.to_vec()).ok_or_else(|| "capture failed".to_string()))
@@ -361,6 +394,7 @@ fn main() {
             open_external,
             reveal_taskbar,
             screen_colors,
+            desktop_wallpaper,
             yt_captions,
             get_volume,
             set_volume,
