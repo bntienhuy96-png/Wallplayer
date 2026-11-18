@@ -8,12 +8,9 @@
 
 use tauri::{AppHandle, Manager, WebviewUrl, WebviewWindowBuilder};
 
+use crate::accounts::{BROWSER_ARGS, UA as USER_AGENT};
 use crate::{desktop, AppState};
 
-// Must match the main window in tauri.conf.json: every webview in the app
-// shares one WebView2 environment, and it refuses a second set of arguments.
-const USER_AGENT: &str = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36";
-const BROWSER_ARGS: &str = "--disable-features=msWebOOUI,msPdfOOUI,msSmartScreenProtection,UserAgentClientHint --autoplay-policy=no-user-gesture-required";
 
 fn label_for(monitor_id: &str) -> String {
     let clean: String = monitor_id.chars().filter(|c| c.is_ascii_alphanumeric()).collect();
