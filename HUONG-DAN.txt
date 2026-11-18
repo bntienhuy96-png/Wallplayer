@@ -72,7 +72,10 @@ APPEARANCE (nút ⫶)
 - Clock: bật/tắt; 7 kiểu Tall, Outline, Thin, Rounded, Serif, Bold, Mono;
   vị trí Top / Top left / Top right / Bottom left / Bottom right.
 - Lyrics: Style Player (karaoke) hoặc YouTube captions (phụ đề nền đen);
-  Effect Stack / Line / Bounce / Typewriter / Glow; vị trí Center / Left / Right / Bottom
+  Effect Stack / Line / Bounce / Typewriter / Glow
+  và kiểu CapCut: Pop (từng chữ nảy lên), Karaoke fill (tô màu chạy theo chữ), Shake (giật rồi lắng),
+  Jiggle (rung liên tục), Glitch (tách màu RGB giật), Wave (chữ lượn sóng), Zoom (cả dòng phóng to vào),
+  Slide (chữ trượt vào từ hai bên); vị trí Center / Left / Right / Bottom
   (Left/Right/Bottom hiện cả ở giao diện thường); 5 font, 3 cỡ chữ, chữ thường / Hoa đầu / IN HOA.
 - Video quality (YouTube): Auto, 360p, 480p, 720p, 1080p, 1440p, 4K cho video nhạc làm nền và clip YouTube.
   YouTube chọn mức gần nhất mà video thật sự có (nhiều video không có 4K).

@@ -363,8 +363,8 @@ img{display:block}
 #app.lypos-bottom #lyrics2 .ln{top:auto;bottom:0}
 #app.lypos-left #lyrics2 .tr2,#app.lypos-right #lyrics2 .tr2{margin-left:0}
 /* lyric effects */
-#app.lfx-line #lyrics2 .ln,#app.lfx-bounce #lyrics2 .ln,#app.lfx-glow #lyrics2 .ln,#app.lfx-type #lyrics2 .ln{font-size:calc(var(--lys) * .7);line-height:1.12}
-#app.lfx-line #lyrics2 .w2,#app.lfx-bounce #lyrics2 .w2,#app.lfx-glow #lyrics2 .w2{display:inline-block;max-height:none;overflow:visible;margin:0 .13em;filter:none}
+#app.lfx-line #lyrics2 .ln,#app.lfx-bounce #lyrics2 .ln,#app.lfx-glow #lyrics2 .ln,#app.lfx-type #lyrics2 .ln,#app.lfx-pop #lyrics2 .ln,#app.lfx-karaoke #lyrics2 .ln,#app.lfx-shake #lyrics2 .ln,#app.lfx-jiggle #lyrics2 .ln,#app.lfx-glitch #lyrics2 .ln,#app.lfx-wave #lyrics2 .ln,#app.lfx-zoom #lyrics2 .ln,#app.lfx-slide #lyrics2 .ln{font-size:calc(var(--lys) * .7);line-height:1.12}
+#app.lfx-line #lyrics2 .w2,#app.lfx-bounce #lyrics2 .w2,#app.lfx-glow #lyrics2 .w2,#app.lfx-pop #lyrics2 .w2,#app.lfx-karaoke #lyrics2 .w2,#app.lfx-shake #lyrics2 .w2,#app.lfx-jiggle #lyrics2 .w2,#app.lfx-glitch #lyrics2 .w2,#app.lfx-wave #lyrics2 .w2,#app.lfx-zoom #lyrics2 .w2,#app.lfx-slide #lyrics2 .w2{display:inline-block;max-height:none;overflow:visible;margin:0 .13em;filter:none}
 #app.lfx-line #lyrics2 .w2{opacity:.3;transform:none;transition:opacity .25s,color .25s}
 #app.lfx-line #lyrics2 .w2.sung,#app.lfx-line #lyrics2 .w2.cur{opacity:1}
 #app.lfx-line #lyrics2 .w2.cur{color:rgba(var(--lyhl, var(--accent)),var(--lyA, 1))}
@@ -376,6 +376,36 @@ img{display:block}
 #app.lfx-glow #lyrics2 .w2{opacity:.55;transform:none;transition:opacity .3s,text-shadow .1s}
 #app.lfx-glow #lyrics2 .w2.sung{opacity:.95}
 #app.lfx-glow #lyrics2 .w2.cur{opacity:1;text-shadow:0 0 calc(.6rem + var(--beat, 0) * 2.4rem) rgba(var(--lyhl, var(--accent)),.95),0 0 calc(.2rem + var(--beat, 0) * .8rem) rgba(var(--lyhl, var(--accent)),.9)}
+
+/* CapCut-style caption effects */
+#app.lfx-pop #lyrics2 .w2{opacity:0;transform:scale(.4);transition:opacity .12s,transform .28s cubic-bezier(.34,2,.64,1),color .15s}
+#app.lfx-pop #lyrics2 .w2.sung{opacity:1;transform:none}
+#app.lfx-pop #lyrics2 .w2.cur{opacity:1;transform:scale(1.22) translateY(-.04em);color:rgba(var(--lyhl, var(--accent)),var(--lyA, 1))}
+#app.lfx-karaoke #lyrics2 .w2{opacity:1;transform:none;color:transparent;background:linear-gradient(90deg,rgba(var(--lyhl, var(--accent)),1) calc(var(--f, 0) * 100%),rgba(255,255,255,.38) calc(var(--f, 0) * 100%));-webkit-background-clip:text;background-clip:text}
+#app.lfx-shake #lyrics2 .w2{opacity:.35;transform:none;transition:opacity .15s}
+#app.lfx-shake #lyrics2 .w2.sung{opacity:1}
+#app.lfx-shake #lyrics2 .w2.cur{opacity:1;color:rgba(var(--lyhl, var(--accent)),var(--lyA, 1));animation:capshake .45s linear both}
+@keyframes capshake{0%{transform:translate(0,0) scale(1.3)}10%{transform:translate(-.12em,.04em) rotate(-4deg) scale(1.3)}20%{transform:translate(.1em,-.05em) rotate(3deg) scale(1.26)}30%{transform:translate(-.08em,.03em) rotate(-2deg) scale(1.22)}45%{transform:translate(.05em,-.02em) rotate(1.5deg) scale(1.18)}65%{transform:translate(-.025em,.01em) scale(1.12)}100%{transform:translate(0,0) scale(1.08)}}
+#app.lfx-jiggle #lyrics2 .w2{opacity:.4;transform:none;transition:opacity .15s}
+#app.lfx-jiggle #lyrics2 .w2.sung{opacity:1}
+#app.lfx-jiggle #lyrics2 .w2.cur{opacity:1;color:rgba(var(--lyhl, var(--accent)),var(--lyA, 1));animation:capjig .16s ease-in-out infinite alternate}
+@keyframes capjig{from{transform:rotate(-3.5deg) translateY(.02em) scale(1.12)}to{transform:rotate(3.5deg) translateY(-.03em) scale(1.12)}}
+#app.lfx-glitch #lyrics2 .w2{opacity:.4;transform:none;transition:opacity .1s}
+#app.lfx-glitch #lyrics2 .w2.sung{opacity:1}
+#app.lfx-glitch #lyrics2 .w2.cur{opacity:1;animation:capglitch .32s steps(1) infinite}
+@keyframes capglitch{0%{transform:translate(0,0);text-shadow:-.05em 0 #ff2d55,.05em 0 #00e5ff}20%{transform:translate(.04em,-.02em) skewX(-6deg);text-shadow:.06em .02em #ff2d55,-.06em -.02em #00e5ff}40%{transform:translate(-.05em,.02em);text-shadow:-.03em 0 #ff2d55,.07em 0 #00e5ff;clip-path:inset(0 0 55% 0)}45%{clip-path:none}60%{transform:translate(.02em,0) skewX(5deg);text-shadow:.05em 0 #ff2d55,-.05em 0 #00e5ff}80%{transform:translate(-.03em,.01em);text-shadow:-.06em 0 #ff2d55,.04em 0 #00e5ff}100%{transform:translate(0,0);text-shadow:-.05em 0 #ff2d55,.05em 0 #00e5ff}}
+#app.lfx-wave #lyrics2 .w2{opacity:1;transform:none;animation:capwave 1.1s ease-in-out infinite;animation-delay:calc(var(--i, 0) * -.13s)}
+#app.lfx-wave #lyrics2 .w2.cur{color:rgba(var(--lyhl, var(--accent)),var(--lyA, 1))}
+@keyframes capwave{0%,100%{transform:translateY(.09em)}50%{transform:translateY(-.09em)}}
+#app.lfx-zoom #lyrics2 .ln{animation:capzoom .55s cubic-bezier(.2,1.5,.4,1) both}
+@keyframes capzoom{from{transform:scale(.55);opacity:0}to{transform:none;opacity:1}}
+#app.lfx-zoom #lyrics2 .w2{opacity:.5;transform:none;transition:opacity .2s,color .2s}
+#app.lfx-zoom #lyrics2 .w2.sung{opacity:1}
+#app.lfx-zoom #lyrics2 .w2.cur{opacity:1;color:rgba(var(--lyhl, var(--accent)),var(--lyA, 1))}
+#app.lfx-slide #lyrics2 .w2{opacity:0;transform:translateX(-1.1em);transition:opacity .22s,transform .38s cubic-bezier(.2,.9,.3,1)}
+#app.lfx-slide #lyrics2 .w2:nth-child(even){transform:translateX(1.1em)}
+#app.lfx-slide #lyrics2 .w2.sung,#app.lfx-slide #lyrics2 .w2.cur{opacity:1;transform:none}
+#app.lfx-slide #lyrics2 .w2.cur{color:rgba(var(--lyhl, var(--accent)),var(--lyA, 1))}
 #lyrics2 .wd{display:inline-block;margin:0 .13em}
 #lyrics2 .c2{opacity:0;transition:opacity .07s}
 #lyrics2 .c2.on{opacity:1}
@@ -920,7 +950,7 @@ const LY_CASE = [['lower', 'abc'], ['orig', 'Abc'], ['upper', 'ABC']];
 const CK_POS = [['top', 'Top'], ['tl', 'Top left'], ['tr', 'Top right'], ['bl', 'Bottom left'], ['br', 'Bottom right']];
 const LY_POS = [['center', 'Center'], ['left', 'Left'], ['right', 'Right'], ['bottom', 'Bottom']];
 const LY_ST = [['player', 'Player'], ['yt', 'YouTube captions']];
-const LY_FX = [['stack', 'Stack'], ['line', 'Line'], ['bounce', 'Bounce'], ['type', 'Typewriter'], ['glow', 'Glow']];
+const LY_FX = [['stack', 'Stack'], ['line', 'Line'], ['bounce', 'Bounce'], ['type', 'Typewriter'], ['glow', 'Glow'], ['pop', 'Pop'], ['karaoke', 'Karaoke fill'], ['shake', 'Shake'], ['jiggle', 'Jiggle'], ['glitch', 'Glitch'], ['wave', 'Wave'], ['zoom', 'Zoom'], ['slide', 'Slide']];
 const VQ = [['auto', 'Auto'], ['medium', '360p'], ['large', '480p'], ['hd720', '720p'], ['hd1080', '1080p'], ['hd1440', '1440p'], ['hd2160', '4K']];
 const VQ_ORDER = ['tiny', 'small', 'medium', 'large', 'hd720', 'hd1080', 'hd1440', 'hd2160', 'highres'];
 // YouTube treats this as a request, not an order: it picks the closest quality the video really has
@@ -1019,7 +1049,7 @@ function renderLine2(i, sample){
     const words = (l1 || '♪').split(/\s+/).filter(Boolean);
     ln.innerHTML = (S.look.lfx === 'type'
       ? words.map(w => `<span class="wd">${[...w].map(c => `<span class="c2">${esc(c)}</span>`).join('')}</span>`).join(' ')
-      : words.map(w => `<span class="w2 future"><span class="gw">${esc(w)}</span></span>`).join('')) + (l2 ? `<span class="tr2">${esc(l2)}</span>` : '');
+      : words.map((w, k) => `<span class="w2 future" style="--i:${k}"><span class="gw">${esc(w)}</span></span>`).join('')) + (l2 ? `<span class="tr2">${esc(l2)}</span>` : '');
   }
   box.appendChild(ln); if (app.classList.contains('lyglass')) requestAnimationFrame(() => glassWords(ln));
   return ln;
@@ -1038,6 +1068,7 @@ function tick2(p){
     return;
   }
   for (let k = 0; k < n; k++) ws[k].className = 'w2 ' + (done || k < on ? 'sung' : k === on ? 'cur' : 'future');
+  if (S.look.lfx === 'karaoke'){ const fr = clamp(p * n - on, 0, 1); for (let k = 0; k < n; k++) ws[k].style.setProperty('--f', done || k < on ? 1 : k === on ? fr.toFixed(3) : 0) }
 }
 function sampleLine(){
   if (!app.classList.contains('editing') || $('#lyrics2 .ln:not(.out)')) return;
