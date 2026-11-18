@@ -1,0 +1,13 @@
+# Rust / Tauri build output
+src-tauri/target/
+src-tauri/gen/
+
+# Packaged builds (publish these as GitHub Releases instead)
+dist/
+*.zip
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

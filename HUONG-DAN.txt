@@ -1,0 +1,98 @@
+WALLPLAYER — Biến hình nền desktop thành trình phát nhạc (Windows 10/11)
+=======================================================================
+
+CÀI & CHẠY
+1. Giải nén cả thư mục "Wallplayer" (giữ Wallplayer.exe và WebView2Loader.dll cạnh nhau).
+2. Nhấp đúp Wallplayer.exe. Nếu Windows báo "Windows protected your PC" (app chưa ký số):
+   bấm "More info" → "Run anyway".
+3. App phủ kín màn hình, nằm dưới mọi cửa sổ như hình nền. Biểu tượng ở khay hệ thống.
+4. Rê chuột xuống cạnh dưới màn hình là taskbar hiện lên (kể cả taskbar tự ẩn).
+
+BỐ CỤC
+- Giữa: đồng hồ → cover flow (bài đang phát ở giữa, bài kế bên hai bên) → ô search → thanh player.
+- Trái: playlist "Continue Playing" (nút ↻ làm mới "Songs like …").
+- Lăn chuột trên cover flow để lướt, bấm card để phát.
+- Khi đã ẩn (H, nút ⤢, Full lyrics, tắt Cover flow/Playlist) thì phần bị ẩn không nhận click nữa
+  → không còn bấm nhầm card vô hình làm chuyển bài.
+
+THANH PLAYER (trái → phải)
+Nền tảng · Lùi · Phát/Dừng · Tới · Repeat (Tắt → Lặp danh sách → LẶP 1 BÀI)
+· Bìa + tên bài (thanh tiến trình bên dưới, bấm để tua) · ♡ · ··· (Shuffle, mở trên nền tảng,
+video nhạc làm nền, hình nền riêng, Accounts, Behind desktop icons, thoát)
+· 💬 Lyrics & phụ đề · ≡ Playlist · ⫶ Appearance · ☾ Làm tối nền
+· 🔊 Âm lượng: rê chuột vào để hiện thanh kéo, bấm để tắt tiếng, lăn chuột để chỉnh.
+  Phát trong app → chỉnh âm lượng player; phát qua Spotify/app khác → chỉnh âm lượng Windows.
+Mọi nút và bìa album canh giữa theo chiều dọc; thanh thời gian nằm thấp bên dưới bìa.
+Trong ô search: 👁 chế độ Full lyrics · ◎ video nhạc làm nền · ⤢ ẩn toàn bộ UI.
+
+SEARCH
+- Bấm vào ô search → hiện panel phía trên: chưa gõ thì là "Recently played";
+  gõ thì có "Top Results" (bìa lớn) + "Songs" (danh sách). ↑ ↓ chọn, Enter phát, Esc đóng.
+- Chọn một bài → panel đóng, kết quả trở thành playlist ở giữa (cover flow), phát bài đã chọn.
+
+NỀN TẢNG (search ngay trên nền tảng đã chọn)
+- YouTube Music: bài hát, phát trong hình nền + MV làm nền.
+- YouTube: video/clip, clip phát toàn màn hình làm hình nền.
+- SoundCloud: phát trong hình nền.
+- Spotify: search Spotify, phát trên app Spotify (cần kết nối tài khoản + Premium).
+- Spotify Web Player / Apple Music / Amazon Music: mở bài trên trình duyệt/app.
+Bài phát ở app khác vẫn được nhận qua Windows Media: bìa, lyrics, màu, điều khiển.
+
+TÀI KHOẢN (icon nền tảng → Accounts…)
+- YouTube / YouTube Music: Sign in bằng Google → có Premium thì không quảng cáo.
+- SoundCloud: Sign in (Go+ nghe bản đầy đủ).
+- Spotify: tạo app ở developer.spotify.com/dashboard, thêm Redirect URI
+  http://127.0.0.1:43821/callback, dán Client ID → Connect.
+
+LYRICS & PHỤ ĐỀ (nút 💬)
+- Nguồn: LRCLIB (lyrics chạy theo thời gian); không có thì lấy từ Genius
+  (thời gian ước lượng). Có mục "Search Google for lyrics" mở trình duyệt.
+- Dòng 1 / Dòng 2: chọn ngôn ngữ (Original, Tiếng Việt, English, 日本語, 한국어…).
+  Không có bản dịch thì app tự dịch từng dòng của lời gốc (giữ đúng thời gian).
+- Chế độ Full lyrics (nút 👁 hoặc phím L): ẩn cover flow + playlist, lyrics to ở giữa.
+
+CHỈNH ĐỒNG HỒ & LYRICS KIỂU LOCK SCREEN IPHONE
+- Bấm vào đồng hồ (hoặc phím E, hoặc Appearance → "Font, colour & glass…").
+- Trên cùng chọn Clock / Lyrics (hoặc bấm thẳng vào khung đồng hồ / lyrics đang viền trắng).
+- Font: lưới ô mẫu "12" / "Aa".  Weight: độ đậm đồng hồ.  Size: cỡ chữ lyrics.
+- Solid / Glass: chữ đặc, hoặc chữ kính (làm mờ và sáng hình nền phía sau, viền sáng).
+- Màu: Auto (theo màu album), các màu lấy từ bìa album (chấm trắng nhỏ), bảng màu iPhone,
+  ô "+" để chọn màu tự do. Thanh bên dưới chỉnh sắc độ tối ↔ sáng.
+- Opacity: độ trong suốt.  Glass: độ kính Clear → Frost → Milky (chỉ khi chọn Glass).
+- Bấm Done, Esc, hoặc bấm ra ngoài để xong. Cài đặt được lưu lại.
+
+APPEARANCE (nút ⫶)
+- Theme color: lấy màu từ bìa album theo mật độ (% diện tích):
+  Accent / Dominant / Secondary, hoặc bấm chọn trực tiếp một mảng màu.
+  Màu này dùng cho đồng hồ, ambient light và điểm nhấn UI.
+- Display: chọn màn hình hiển thị khi dùng nhiều màn hình
+  (hoặc khay hệ thống → "Move to next display").
+- Clock: bật/tắt; 7 kiểu Tall, Outline, Thin, Rounded, Serif, Bold, Mono;
+  vị trí Top / Top left / Top right / Bottom left / Bottom right.
+- Lyrics: Style Player (karaoke) hoặc YouTube captions (phụ đề nền đen);
+  Effect Stack / Line / Bounce / Typewriter / Glow; vị trí Center / Left / Right / Bottom
+  (Left/Right/Bottom hiện cả ở giao diện thường); 5 font, 3 cỡ chữ, chữ thường / Hoa đầu / IN HOA.
+- Ambient light: bật/tắt; Effect Comet (chạy thuận kim đồng hồ) / Pulse (cả viền đập theo nhịp)
+  / Spectrum (cột sóng nhạc quanh viền) / Rainbow / Aurora; Intensity (độ sáng), Blend (độ loang).
+- Layout: bật/tắt Player bar, Search field, Cover flow, Playlist.
+
+PHÍM TẮT
+Ctrl+Alt+Space  Search từ bất kỳ đâu      Ctrl+Alt+H  Ẩn/hiện toàn bộ UI từ bất kỳ đâu
+/ hoặc Ctrl+K   Search                    Space       Phát / dừng
+← →             Bài trước / sau           ↑ ↓         Âm lượng
+P Player bar   S Ô search   C Cover flow   Q Playlist   K Đồng hồ   L Full lyrics
+H Toàn bộ UI   A Ambient    M MV làm nền   D Làm tối    R Repeat/Loop   E Chỉnh clock & lyrics
+? Danh sách phím
+(Phím đơn hoạt động khi đang bấm vào hình nền, không gõ trong ô search.)
+
+CHẾ ĐỘ ĐẶT TRÊN DESKTOP (chuột phải biểu tượng khay)
+- Mặc định: bấm trực tiếp được mọi nút, che icon desktop.
+- "Behind desktop icons": nằm sau icon như hình nền thật; dùng Ctrl+Alt+Space để tương tác.
+- "Start with Windows": tự chạy khi mở máy.
+
+GIỚI HẠN ĐÃ BIẾT
+- Win + D ở chế độ mặc định sẽ che app → dùng "Behind desktop icons" nếu hay dùng Win + D.
+- Một số video YouTube chặn nhúng: app tự thử video khác.
+- Google có thể chặn đăng nhập trong cửa sổ nhúng ở một số tài khoản.
+- Genius, YouTube và dịch máy dùng API không chính thức: có thể đổi bất cứ lúc nào.
+- Cần Microsoft Edge WebView2 Runtime (có sẵn trên Windows 11 và hầu hết Windows 10).
