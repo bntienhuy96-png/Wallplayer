@@ -10,6 +10,12 @@ pub struct Settings {
     /// true = behind desktop icons (WorkerW), false = interactive desktop layer
     #[serde(default)]
     pub wallpaper_mode: bool,
+    /// settings layout version (2 = Wallpaper Engine style placement is the default)
+    #[serde(default)]
+    pub mode_ver: u8,
+    /// hide all desktop icons (incl. Recycle Bin) while Wallplayer runs; default on
+    #[serde(default = "yes")]
+    pub hide_icons: bool,
     #[serde(default)]
     pub spotify_client_id: String,
     #[serde(default)]
@@ -22,6 +28,10 @@ pub struct Settings {
     pub no_mirror: bool,
 }
 
+fn yes() -> bool {
+    true
+}
+
 fn path(app: &AppHandle) -> Option<PathBuf> {
     app.path().app_config_dir().ok().map(|d| d.join("settings.json"))
 }
@@ -29,8 +39,15 @@ fn path(app: &AppHandle) -> Option<PathBuf> {
 pub fn load(app: &AppHandle) -> Settings {
     path(app)
         .and_then(|p| std::fs::read_to_string(p).ok())
-        .and_then(|s| serde_json::from_str(&s).ok())
-        .unwrap_or_default()
+        .and_then(|s| serde_json::from_str::<Settings>(&s).ok())
+        .map(|mut s| {
+            if s.mode_ver < 2 {
+                s.wallpaper_mode = true;
+                s.mode_ver = 2;
+            }
+            s
+        })
+        .unwrap_or_else(|| Settings { wallpaper_mode: true, mode_ver: 2, hide_icons: true, ..Default::default() })
 }
 
 pub fn save(app: &AppHandle, s: &Settings) {
