@@ -29,6 +29,12 @@ SEARCH
 - Bấm vào ô search → hiện panel phía trên: chưa gõ thì là "Recently played";
   gõ thì có "Top Results" (bìa lớn) + "Songs" (danh sách). ↑ ↓ chọn, Enter phát, Esc đóng.
 - Chọn một bài → panel đóng, kết quả trở thành playlist ở giữa (cover flow), phát bài đã chọn.
+- "Playlists & albums": playlist và album của YouTube Music / SoundCloud (Spotify: cần kết nối tài
+  khoản, mở và phát cả playlist trong app Spotify). Bấm vào là phát cả danh sách.
+- Rê chuột lên một bài trong "Songs": nút ▶≡ "Play next" (phát ngay sau bài đang nghe) và ≡+ "Add to
+  playlist" (thêm vào cuối). Panel vẫn mở để thêm tiếp nhiều bài.
+- Hết playlist: app tự thêm bài tương tự (radio của YouTube Music / SoundCloud) để nhạc chạy liên tục.
+  Tắt/bật ở ··· → "Keep playing similar songs". Nút ↻ cạnh playlist: thay bằng radio của bài đang nghe.
 
 NỀN TẢNG (search ngay trên nền tảng đã chọn)
 - YouTube Music: bài hát, phát trong hình nền + MV làm nền.
