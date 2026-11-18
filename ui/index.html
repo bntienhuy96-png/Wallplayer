@@ -1082,6 +1082,7 @@ function blurBg(){
 async function applyBg(){
   const mode = S.look.bg, on = mode === 'desktop', img = $('#deskImg');
   app.classList.toggle('deskbg', on); blurBg();
+  if (!MIRROR && bgVid() && !S.mvOn){ S.mvOn = true; applyToggles() }   // a video background needs the video layer on
   if (!MIRROR && T && BGV.mode !== mode){
     BGV.mode = mode; BGV.cur = null; YTV.stop();
     if (bgVid()) bgVideo(S.track, true);
@@ -1104,7 +1105,7 @@ function applyLook(){
 }
 function renderAppPop(){
   const L = S.look; setTimeout(loadMonitors, 0);
-  const chips = (key, opts, font) => opts.length > 5
+  const chips = (key, opts, font) => opts.length > 5 && !['lfx', 'afx'].includes(key)
     ? `<div class="chips"><select class="dd" data-k="${key}">${opts.map(([v, n, f]) => `<option value="${v}" ${L[key] === v ? 'selected' : ''} ${font && f ? `style="font-family:${f.replace(/"/g, '&quot;')}"` : ''}>${n}</option>`).join('')}</select></div>`
     : `<div class="chips">${opts.map(([v, n, f]) => `<button class="chip ${L[key] === v ? 'on' : ''}" data-k="${key}" data-v="${v}" ${font && f ? `style="font-family:${f.replace(/"/g, '&quot;')}"` : ''}>${n}</button>`).join('')}</div>`;
   const P = S.pal, role = w => !P ? '' : w === P.accent ? 'Accent' : w === P.dominant ? 'Dominant' : w === P.secondary ? 'Secondary' : '';
