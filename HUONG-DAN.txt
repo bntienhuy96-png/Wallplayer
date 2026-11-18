@@ -105,6 +105,12 @@ APPEARANCE (nút ⫶)
   / Spectrum (cột sóng nhạc quanh viền) / Rainbow / Aurora; Intensity (độ sáng), Blend (độ loang).
 - Layout: bật/tắt Player bar, Search field, Cover flow, Playlist.
 
+CONTINUE PLAYING (danh sách bên trái)
+- Bấm vào MỘT bài lẻ trong kết quả search → bài phát ngay, danh sách bên trái tự thành "Picked for you": gợi ý của YouTube Music
+  cho bài đó, trộn thêm bài từ trang chủ YouTube Music (theo tài khoản bạn đã đăng nhập; chưa đăng nhập thì là gợi ý chung).
+- Nút ↻ : làm mới danh sách gợi ý.  Nút đồng hồ ⟲ bên cạnh: chuyển sang "History Playing" - xem lại tối đa 100 bài đã phát,
+  bấm một bài để phát lại, bấm nút lần nữa để quay về Continue Playing.
+
 PHÍM TẮT
 Chỉ có một phím tắt toàn cục: "Search from anywhere" (mặc định Ctrl+Alt+Space) - gọi ô search từ bất kỳ đâu.
 Đổi phím: Appearance → Search from anywhere → bấm nút → bấm tổ hợp phím mới (bàn phím, cần kèm Ctrl/Alt/Shift,

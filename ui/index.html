@@ -145,6 +145,7 @@ img{display:block}
 .qt b .ico{width:1.3rem;height:1.3rem;transition:transform .3s}
 #queue.collapsed .qt b .ico{transform:rotate(-90deg)}
 .qt span{display:block;font-size:1.08rem;color:var(--txt2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:.15rem}
+.qbtns{display:flex;gap:.6rem;flex:none}.qbtn.on{background:rgba(255,255,255,.9);color:#111;border-color:transparent}
 .qbtn{width:2.5rem;height:2.5rem;border-radius:50%;display:grid;place-items:center;border:1px solid rgba(255,255,255,.28);background:rgba(255,255,255,.06);flex:none;transition:background .2s,transform .4s}
 .qbtn:hover{background:rgba(255,255,255,.16)}
 .qbtn.spin{transform:rotate(360deg)}
@@ -562,8 +563,8 @@ button.bgv:hover{background:rgba(255,255,255,.08)}
 
   <section id="queue" class="widget">
     <header class="qhead">
-      <div class="qt" id="qToggle"><b>Continue Playing <svg class="ico" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></b><span id="qsub">Up next</span></div>
-      <button class="qbtn" id="qRefresh" title="Refresh — songs like this"></button>
+      <div class="qt" id="qToggle"><b><span id="qTitle">Continue Playing</span> <svg class="ico" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></b><span id="qsub">Up next</span></div>
+      <span class="qbtns"><button class="qbtn" id="qRefresh" title="Refresh — songs like this"></button><button class="qbtn" id="qHist" title="History — songs you played"></button></span>
     </header>
     <ol id="qlist"></ol>
   </section>
@@ -666,6 +667,7 @@ const I = {
   repeat1:'<svg class="ico" viewBox="0 0 24 24"><path d="M17 2.5 20.5 6 17 9.5"/><path d="M3.5 11.5V10a4 4 0 0 1 4-4h13"/><path d="M7 21.5 3.5 18 7 14.5"/><path d="M20.5 12.5V14a4 4 0 0 1-4 4h-13"/><path d="M11 10.5h1.6v5" stroke-width="1.9"/></svg>',
   list:'<svg class="ico" viewBox="0 0 24 24"><path d="M8.5 6.5h12M8.5 12h12M8.5 17.5h12"/><circle cx="4.2" cy="6.5" r=".9" fill="currentColor"/><circle cx="4.2" cy="12" r=".9" fill="currentColor"/><circle cx="4.2" cy="17.5" r=".9" fill="currentColor"/></svg>',
   sliders:'<svg class="ico" viewBox="0 0 24 24"><path d="M6 4v16M12 4v16M18 4v16"/><rect x="4" y="13" width="4" height="3.2" rx="1" fill="currentColor"/><rect x="10" y="7" width="4" height="3.2" rx="1" fill="currentColor"/><rect x="16" y="11" width="4" height="3.2" rx="1" fill="currentColor"/></svg>',
+  history:'<svg class="ico" viewBox="0 0 24 24"><path d="M3.5 12a8.5 8.5 0 1 0 2.6-6.1"/><path d="M3.5 4.5v4h4"/><path d="M12 7.5V12l3 2"/></svg>',
   refresh:'<svg class="ico" viewBox="0 0 24 24"><path d="M19.5 12a7.5 7.5 0 1 1-2.2-5.3"/><path d="M19.5 4.5v4h-4"/></svg>'
 };
 
@@ -1522,7 +1524,7 @@ function setTrack(t){
   if (t) loadLyrics(t); else setLyrics([]);
 }
 function pushHistory(t){
-  const k = (t.title + '|' + t.artist).toLowerCase(); S.history = [t, ...S.history.filter(h => (h.title + '|' + h.artist).toLowerCase() !== k)].slice(0, 20);
+  const k = (t.title + '|' + t.artist).toLowerCase(); S.history = [t, ...S.history.filter(h => (h.title + '|' + h.artist).toLowerCase() !== k)].slice(0, 100);
   store.set('history', S.history.map(h => ({...h, art: h.art && h.art.startsWith('data:') && h.art.length > 200000 ? '' : h.art, lyrics: undefined})));
 }
 function renderPlay(){
@@ -1658,12 +1660,16 @@ function mvSync(){
 /* ════════════════════ playlist (left) ════════════════════ */
 const queueList = () => S.qKind === 'history' || !S.queue.length ? S.history : S.queue;
 const isCurrent = t => !!(S.track && t && t.title === S.track.title && t.artist === S.track.artist);
+S.qView = 'queue';   // 'queue' = Continue Playing · 'history' = History Playing
 function renderQueue(){
-  const list = queueList();
-  $('#qsub').textContent = S.qKind === 'history' || !S.queue.length ? (S.history.length ? 'Recently played' : 'Nothing yet') : (S.qLabel || `Up next on ${platById(effectivePlatform()).name}`);
+  const hist = S.qView === 'history';
+  const list = hist ? S.history : queueList();
+  $('#qTitle').textContent = hist ? 'History Playing' : 'Continue Playing'; $('#qHist').classList.toggle('on', hist);
+  $('#qHist').title = hist ? 'Back to Continue Playing' : 'History — songs you played';
+  $('#qsub').textContent = hist ? (S.history.length ? `${S.history.length} songs you played` : 'Nothing played yet') : S.qKind === 'history' || !S.queue.length ? (S.history.length ? 'Recently played' : 'Nothing yet') : (S.qLabel || `Up next on ${platById(effectivePlatform()).name}`);
   const ol = $('#qlist');
-  ol.innerHTML = list.length ? list.slice(0, 50).map((t, i) => `<li class="qi ${isCurrent(t) ? 'cur' : ''}" data-i="${i}"><b>${esc(t.title)}</b><span>${esc(t.artist)}</span></li>`).join('') : '<li class="qempty">Press Ctrl+Alt+Space to search</li>';
-  ol.onclick = e => { const li = e.target.closest('.qi'); if (!li) return; const t = list[+li.dataset.i]; if (t) playTrack(t, list) };
+  ol.innerHTML = list.length ? list.slice(0, 100).map((t, i) => `<li class="qi ${isCurrent(t) ? 'cur' : ''}" data-i="${i}"><b>${esc(t.title)}</b><span>${esc(t.artist)}</span></li>`).join('') : `<li class="qempty">${hist ? 'Songs you play will show up here' : 'Press Ctrl+Alt+Space to search'}</li>`;
+  ol.onclick = e => { const li = e.target.closest('.qi'); if (!li) return; const t = list[+li.dataset.i]; if (!t) return; if (hist) playTrack(t); else playTrack(t, list) };
   const cur = ol.querySelector('.cur'); if (cur) cur.scrollIntoView({block: 'nearest'});
 }
 async function refreshQueue(){
@@ -1901,7 +1907,21 @@ $('#rEnt').addEventListener('click', e => { const c = e.target.closest('.ent'); 
 $('#rSug').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; e.stopPropagation(); $('#q').value = b.dataset.s; $('#q').focus(); doSearch(b.dataset.s) });
 const qaHTML = i => `<span class="qa"><button class="b sm" data-qn="${i}" title="Play next">${I.playNext}</button><button class="b sm" data-qa="${i}" title="Add to playlist">${I.addQ}</button></span>`;
 const cardHTML = (t, i) => `<div class="rc" data-i="${i}"><div class="ra"><img src="${esc(t.art || '')}" alt="" loading="lazy"><span class="pl">${I.play}</span>${qaHTML(i)}</div><b>${esc(t.title)}</b><span>Song · ${esc(t.artist)}</span></div>`;
-function chooseResult(i){ const t = S.results[i]; if (!t) return; const list = S.results.slice(); S.qLabel = `Songs like ${t.title}`; closeSearch(); playTrack(t, list) }
+function chooseResult(i){
+  const t = S.results[i]; if (!t) return; const list = S.results.slice(); closeSearch();
+  const key = t => (t.title + '|' + t.artist).toLowerCase();
+  if (T && t.play && (t.source === 'ytmusic' || t.source === 'youtube')){
+    // one song picked: play it now, then build "Continue Playing" from YouTube's suggestions for it (+ the account's picks)
+    S.radioKey = t.title + '|' + t.artist; S.qLabel = 'Finding songs for you…'; playTrack(t, [t]);
+    invoke('suggest', {id: t.play}).then(r => {
+      const more = (r.tracks || []).map(mapTrack).filter(x => key(x) !== key(t)); if (!more.length) throw 0;
+      if (!S.track || key(S.track) !== key(t)) return;      // the user already moved on
+      S.queue = [t, ...more]; S.qIdx = 0; S.qKind = 'queue'; S.qLabel = (r.personal ? 'Picked for you · ' : 'Radio · ') + t.title; renderQueue(); renderFlow(true);
+    }).catch(() => { if (S.track && key(S.track) === key(t)){ S.queue = list.includes(t) ? list : [t, ...list]; S.qIdx = S.queue.indexOf(t); S.qKind = 'queue'; S.qLabel = `Songs like ${t.title}`; renderQueue(); renderFlow(true) } });
+    return;
+  }
+  S.qLabel = `Songs like ${t.title}`; playTrack(t, list);
+}
 $('#rTop').addEventListener('click', e => {
   const qn = e.target.closest('[data-qn]'), qa = e.target.closest('[data-qa]');
   if (qn || qa){ e.stopPropagation(); queueAdd(S.results[+(qn || qa).dataset[qn ? 'qn' : 'qa']], !!qn); return }
@@ -2134,7 +2154,7 @@ function toast(msg){ const t = $('#toast'); t.textContent = msg; t.classList.add
 $('#prevBtn').innerHTML = I.prev; $('#nextBtn').innerHTML = I.next; $('#moreBtn').innerHTML = I.more;
 $('#lyrBtn').innerHTML = I.lyrics; $('#listBtn').innerHTML = I.list; $('#ambBtn').innerHTML = I.sliders; $('#dimBtn').innerHTML = I.moon;
 $('#mvBtn').innerHTML = I.record; $('#focusBtn').innerHTML = I.expand; $('#eyeBtn').innerHTML = I.eye;
-$('#qRefresh').innerHTML = I.refresh; $('#restoreBtn').innerHTML = I.eye;
+$('#qRefresh').innerHTML = I.refresh; $('#qHist').innerHTML = I.history; $('#restoreBtn').innerHTML = I.eye;
 $('#playBtn').onclick = togglePlay; $('#nextBtn').onclick = next; $('#prevBtn').onclick = prev;
 $('#repBtn').onclick = () => { S.repeat = {off: 'all', all: 'one', one: 'off'}[S.repeat]; applyToggles();
   toast({off: 'Repeat off', all: 'Repeat all', one: 'Looping this song'}[S.repeat]) };
@@ -2342,6 +2362,7 @@ let tbAt = 0;
 addEventListener('mousemove', e => { if (!T || e.clientY < innerHeight - 3) return; const now = performance.now(); if (now - tbAt < 900) return; tbAt = now; invoke('reveal_taskbar').catch(() => {}) });
 $('#qToggle').onclick = () => $('#queue').classList.toggle('collapsed');
 $('#qRefresh').onclick = refreshQueue;
+$('#qHist').onclick = e => { e.stopPropagation(); S.qView = S.qView === 'history' ? 'queue' : 'history'; renderQueue() };
 $('#prog').onclick = e => { const r = e.currentTarget.getBoundingClientRect(); const d = getDur(); if (d) seekTo(clamp((e.clientX - r.left) / r.width, 0, 1) * d) };
 document.addEventListener('click', e => { if (!e.target.closest('.menu')) closeMenus();
   if (app.classList.contains('editing') && !e.target.closest('#editSheet, #clock, #lyrics2')) closeEditor();

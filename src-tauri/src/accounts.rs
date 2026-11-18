@@ -66,6 +66,30 @@ fn delete_cookies(app: &AppHandle, url: &str) {
     }
 }
 
+/// The signed-in YouTube session (cookie header + SAPISID) from the in-app browser, for personalised YouTube Music requests.
+pub fn yt_auth(app: &AppHandle) -> Option<(String, String)> {
+    let w = app.get_webview_window("main")?;
+    let mut all: Vec<(String, String)> = Vec::new();
+    for u in ["https://music.youtube.com", "https://www.youtube.com"] {
+        if let Ok(url) = Url::parse(u) {
+            if let Ok(list) = w.cookies_for_url(url) {
+                for c in list {
+                    if !c.value().is_empty() && !all.iter().any(|(n, _)| n == c.name()) {
+                        all.push((c.name().to_string(), c.value().to_string()));
+                    }
+                }
+            }
+        }
+    }
+    let sapisid = all
+        .iter()
+        .find(|(n, _)| n == "SAPISID")
+        .or_else(|| all.iter().find(|(n, _)| n == "__Secure-3PAPISID"))
+        .map(|(_, v)| v.clone())?;
+    let cookie = all.iter().map(|(n, v)| format!("{n}={v}")).collect::<Vec<_>>().join("; ");
+    Some((cookie, sapisid))
+}
+
 pub async fn status(app: &AppHandle) -> Accounts {
     let youtube = has_cookie(app, "https://www.youtube.com", YT_COOKIES);
     let soundcloud = has_cookie(app, "https://soundcloud.com", SC_COOKIES);

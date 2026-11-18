@@ -772,12 +772,34 @@ fn ytm_ctx() -> Value {
     json!({"client": {"clientName": "WEB_REMIX", "clientVersion": "1.20241111.01.00", "hl": "en", "gl": "US"}})
 }
 
+/// The user's YouTube session (cookie header, SAPISID). When set, YouTube Music requests are personalised.
+static YT_AUTH: std::sync::Mutex<Option<(String, String)>> = std::sync::Mutex::new(None);
+
+pub fn set_yt_auth(a: Option<(String, String)>) {
+    *YT_AUTH.lock().unwrap_or_else(|e| e.into_inner()) = a;
+}
+
+fn yt_signed_in() -> bool {
+    YT_AUTH.lock().map(|g| g.is_some()).unwrap_or(false)
+}
+
 async fn ytm_post(path: &str, body: Value) -> Result<Value, String> {
-    client()
+    use sha1::{Digest, Sha1};
+    let mut req = client()
         .post(format!("https://music.youtube.com/youtubei/v1/{path}?prettyPrint=false"))
         .header("Origin", "https://music.youtube.com")
-        .header("Referer", "https://music.youtube.com/")
-        .json(&body)
+        .header("Referer", "https://music.youtube.com/");
+    if let Some((cookie, sapisid)) = YT_AUTH.lock().unwrap_or_else(|e| e.into_inner()).clone() {
+        let ts = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map(|d| d.as_secs()).unwrap_or(0);
+        let hash = Sha1::digest(format!("{ts} {sapisid} https://music.youtube.com").as_bytes());
+        let hex: String = hash.iter().map(|b| format!("{b:02x}")).collect();
+        req = req
+            .header("Cookie", cookie)
+            .header("Authorization", format!("SAPISIDHASH {ts}_{hex}"))
+            .header("X-Goog-AuthUser", "0")
+            .header("X-Origin", "https://music.youtube.com");
+    }
+    req.json(&body)
         .send()
         .await
         .map_err(|e| e.to_string())?
@@ -1059,6 +1081,81 @@ pub async fn ytm_playlist(playlist_id: &str) -> Result<Vec<Track>, String> {
 }
 
 /// YouTube Music radio for a song: what YouTube Music would play after it.
+/// Songs from the YouTube Music home page ("Quick picks", "Listen again"…): personal when signed in.
+pub async fn ytm_home_picks() -> Result<Vec<Track>, String> {
+    let v = ytm_post("browse", json!({"context": ytm_ctx(), "browseId": "FEmusic_home"})).await?;
+    let mut out: Vec<Track> = Vec::new();
+    let mut rows = Vec::new();
+    walk(&v, "musicResponsiveListItemRenderer", &mut rows);
+    for it in rows {
+        if let Some(t) = ytm_track(it, "", "") {
+            out.push(t);
+        }
+    }
+    let mut cards = Vec::new();
+    walk(&v, "musicTwoRowItemRenderer", &mut cards);
+    for it in cards {
+        let Some(vid) = first_str(it, "videoId") else { continue };
+        let title = it.get("title").map(runs_text).unwrap_or_default();
+        let sub = it.get("subtitle").map(runs_text).unwrap_or_default();
+        let parts: Vec<&str> = sub.split(" • ").map(|p| p.trim()).filter(|p| !p.is_empty() && *p != "Song" && *p != "Video").collect();
+        let artist = parts.first().copied().unwrap_or("").to_string();
+        if title.is_empty() {
+            continue;
+        }
+        out.push(Track {
+            id: vid.to_string(),
+            title,
+            artist,
+            album: String::new(),
+            art: big_thumb(&last_thumb(it)),
+            preview: String::new(),
+            url: format!("https://music.youtube.com/watch?v={vid}"),
+            duration_ms: 0,
+            source: "ytmusic".into(),
+            play: vid.to_string(),
+        });
+    }
+    let mut seen = std::collections::HashSet::new();
+    out.retain(|t| seen.insert(t.id.clone()));
+    Ok(out)
+}
+
+/// Combined list for one chosen song: its radio ("up next") mixed with picks from the user's home page
+/// (3 radio songs : 1 home pick). Personalised when the user is signed in to YouTube.
+pub async fn ytm_suggest(video_id: &str) -> Result<(Vec<Track>, bool), String> {
+    let radio = ytm_radio(video_id).await;
+    let home = ytm_home_picks().await;
+    let radio = radio.unwrap_or_default();
+    let home: Vec<Track> = home.unwrap_or_default().into_iter().filter(|t| t.id != video_id).collect();
+    if radio.is_empty() && home.is_empty() {
+        return Err("no suggestions".into());
+    }
+    let mut out: Vec<Track> = Vec::new();
+    let (mut r, mut h) = (radio.into_iter(), home.into_iter());
+    loop {
+        let mut got = false;
+        for _ in 0..3 {
+            if let Some(t) = r.next() {
+                got = true;
+                if !out.iter().any(|x| x.id == t.id) {
+                    out.push(t);
+                }
+            }
+        }
+        if let Some(t) = h.next() {
+            got = true;
+            if !out.iter().any(|x| x.id == t.id) {
+                out.push(t);
+            }
+        }
+        if !got || out.len() >= 40 {
+            break;
+        }
+    }
+    Ok((out, yt_signed_in()))
+}
+
 pub async fn ytm_radio(video_id: &str) -> Result<Vec<Track>, String> {
     let v = ytm_post(
         "next",

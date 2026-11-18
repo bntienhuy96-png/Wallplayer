@@ -320,8 +320,23 @@ async fn collection_tracks(source: String, id: String) -> Result<Vec<net::Track>
 }
 
 /// Songs to play after a song ("radio"), from the platform it came from.
+#[derive(serde::Serialize)]
+struct Suggest {
+    tracks: Vec<net::Track>,
+    personal: bool,
+}
+
+/// Radio + the user's YouTube Music picks for one song.
 #[tauri::command]
-async fn radio(source: String, id: String) -> Result<Vec<net::Track>, String> {
+async fn suggest(app: AppHandle, id: String) -> Result<Suggest, String> {
+    net::set_yt_auth(accounts::yt_auth(&app));
+    let (tracks, personal) = net::ytm_suggest(&id).await?;
+    Ok(Suggest { tracks, personal })
+}
+
+#[tauri::command]
+async fn radio(app: AppHandle, source: String, id: String) -> Result<Vec<net::Track>, String> {
+    net::set_yt_auth(accounts::yt_auth(&app));
     match source.as_str() {
         "soundcloud" => net::sc_related(&id).await,
         "ytmusic" | "youtube" => net::ytm_radio(&id).await,
@@ -520,6 +535,7 @@ fn main() {
             capture_mouse_bind,
             search_rich,
             browse_artist,
+            suggest,
             lyrics,
             lyrics_search,
             fetch_image,
