@@ -26,6 +26,13 @@ pub struct Settings {
     /// true = leave the other monitors alone (no companion "mirror" windows)
     #[serde(default)]
     pub no_mirror: bool,
+    /// "Search from anywhere" binding: "Ctrl+Alt+Space", "Mouse:Middle", "Ctrl+Mouse:X1"…
+    #[serde(default = "default_search_key")]
+    pub search_key: String,
+}
+
+pub fn default_search_key() -> String {
+    "Ctrl+Alt+Space".into()
 }
 
 fn yes() -> bool {
@@ -47,7 +54,7 @@ pub fn load(app: &AppHandle) -> Settings {
             }
             s
         })
-        .unwrap_or_else(|| Settings { wallpaper_mode: true, mode_ver: 2, hide_icons: true, ..Default::default() })
+        .unwrap_or_else(|| Settings { wallpaper_mode: true, mode_ver: 2, hide_icons: true, search_key: default_search_key(), ..Default::default() })
 }
 
 pub fn save(app: &AppHandle, s: &Settings) {

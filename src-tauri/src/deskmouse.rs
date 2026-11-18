@@ -6,7 +6,7 @@
 //! (not over an icon, not over another app) the position and buttons are sent to the
 //! page as `desk-mouse` events, which the page turns into hover / click / drag / wheel.
 
-use std::sync::atomic::{AtomicBool, AtomicIsize, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicIsize, AtomicU32, Ordering};
 use std::sync::mpsc::{channel, Sender};
 use std::sync::{Mutex, OnceLock};
 use std::time::{Duration, Instant};
@@ -20,6 +20,7 @@ use windows::Win32::System::Memory::{VirtualAllocEx, VirtualFreeEx, MEM_COMMIT, 
 use windows::Win32::System::Threading::{
     GetCurrentProcessId, OpenProcess, PROCESS_VM_OPERATION, PROCESS_VM_READ, PROCESS_VM_WRITE,
 };
+use windows::Win32::UI::Input::KeyboardAndMouse::{GetAsyncKeyState, VK_CONTROL, VK_LWIN, VK_MENU, VK_RWIN, VK_SHIFT};
 use windows::Win32::UI::WindowsAndMessaging::*;
 
 use crate::desktop;
@@ -36,6 +37,35 @@ static CAPTURED: AtomicBool = AtomicBool::new(false);
 static OVER: AtomicBool = AtomicBool::new(false);
 static LAST_MOVE: Mutex<Option<Instant>> = Mutex::new(None);
 static OWN_PID: AtomicIsize = AtomicIsize::new(0);
+
+// "Search from anywhere" bound to a mouse button (1 = middle, 2 = X1/back, 3 = X2/forward; 0 = none)
+static BIND_BTN: AtomicU32 = AtomicU32::new(0);
+static BIND_MODS: AtomicU32 = AtomicU32::new(0); // 1 ctrl · 2 alt · 4 shift · 8 win
+static CAPTURE: AtomicBool = AtomicBool::new(false);
+static SWALLOW_UP: AtomicU32 = AtomicU32::new(0);
+
+pub fn set_bind(btn: u32, mods: u32) {
+    BIND_BTN.store(btn, Ordering::Relaxed);
+    BIND_MODS.store(mods, Ordering::Relaxed);
+}
+pub fn set_capture(on: bool) {
+    CAPTURE.store(on, Ordering::Relaxed);
+}
+
+unsafe fn held_mods() -> u32 {
+    let down = |vk: u16| (GetAsyncKeyState(vk as i32) as u16) & 0x8000 != 0;
+    (down(VK_CONTROL.0) as u32) | ((down(VK_MENU.0) as u32) << 1) | ((down(VK_SHIFT.0) as u32) << 2) | (((down(VK_LWIN.0) || down(VK_RWIN.0)) as u32) << 3)
+}
+
+/// 0 = not a bindable button. Left / right are never bindable.
+fn side_button(msg: u32, data: u32) -> (u32, bool) {
+    match msg {
+        WM_MBUTTONDOWN => (1, true),
+        WM_MBUTTONUP => (1, false),
+        WM_XBUTTONDOWN | WM_XBUTTONUP => (if (data >> 16) & 0xFFFF == 2 { 3 } else { 2 }, msg == WM_XBUTTONDOWN),
+        _ => (0, false),
+    }
+}
 
 fn send(k: &'static str, x: i32, y: i32, d: i32) {
     if let Some(tx) = TX.get() {
@@ -112,12 +142,34 @@ unsafe fn over_desktop(pt: POINT, check_icon: bool) -> bool {
 }
 
 unsafe extern "system" fn hook(code: i32, wp: WPARAM, lp: LPARAM) -> LRESULT {
-    if code < 0 || !desktop::is_wallpaper() {
+    if code < 0 {
         return CallNextHookEx(None, code, wp, lp);
     }
     let ms = &*(lp.0 as *const MSLLHOOKSTRUCT);
     if ms.flags & 1 != 0 {
         return CallNextHookEx(None, code, wp, lp); // injected by us / another app
+    }
+    // ── the user's "Search from anywhere" mouse button ──
+    let (btn, down) = side_button(wp.0 as u32, ms.mouseData);
+    if btn != 0 {
+        if down {
+            if CAPTURE.swap(false, Ordering::Relaxed) {
+                SWALLOW_UP.store(btn, Ordering::Relaxed);
+                send("bind", 0, 0, ((held_mods() << 8) | btn) as i32);
+                return LRESULT(1);
+            }
+            if BIND_BTN.load(Ordering::Relaxed) == btn && BIND_MODS.load(Ordering::Relaxed) == held_mods() {
+                SWALLOW_UP.store(btn, Ordering::Relaxed);
+                send("search", 0, 0, 0);
+                return LRESULT(1);
+            }
+        } else if SWALLOW_UP.swap(0, Ordering::Relaxed) == btn {
+            return LRESULT(1);
+        }
+        return CallNextHookEx(None, code, wp, lp);
+    }
+    if !desktop::is_wallpaper() {
+        return CallNextHookEx(None, code, wp, lp);
     }
     let pt = ms.pt;
     let (mx, my, sw, sh) = desktop::target_rect();
@@ -172,7 +224,23 @@ pub fn start(app: AppHandle) {
     unsafe { OWN_PID.store(GetCurrentProcessId() as isize, Ordering::Relaxed) };
     std::thread::spawn(move || {
         for e in rx {
-            let _ = app.emit("desk-mouse", json!({"k": e.k, "x": e.x, "y": e.y, "d": e.d}));
+            match e.k {
+                "search" => crate::open_search(&app),
+                "bind" => {
+                    let (btn, mods) = ((e.d & 0xFF) as u32, ((e.d >> 8) & 0xFF) as u32);
+                    let mut spec = String::new();
+                    for (bit, name) in [(1u32, "Ctrl+"), (2, "Alt+"), (4, "Shift+"), (8, "Super+")] {
+                        if mods & bit != 0 {
+                            spec.push_str(name);
+                        }
+                    }
+                    spec.push_str(match btn { 1 => "Mouse:Middle", 2 => "Mouse:X1", _ => "Mouse:X2" });
+                    let _ = app.emit("bind-captured", spec);
+                }
+                _ => {
+                    let _ = app.emit("desk-mouse", json!({"k": e.k, "x": e.x, "y": e.y, "d": e.d}));
+                }
+            }
         }
     });
     std::thread::spawn(|| unsafe {

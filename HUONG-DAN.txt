@@ -100,13 +100,10 @@ APPEARANCE (nút ⫶)
 - Layout: bật/tắt Player bar, Search field, Cover flow, Playlist.
 
 PHÍM TẮT
-Ctrl+Alt+Space  Search từ bất kỳ đâu      Ctrl+Alt+H  Ẩn/hiện toàn bộ UI từ bất kỳ đâu
-/ hoặc Ctrl+K   Search                    Space       Phát / dừng
-← →             Bài trước / sau           ↑ ↓         Âm lượng
-P Player bar   S Ô search   C Cover flow   Q Playlist   K Đồng hồ   L Full lyrics
-H Toàn bộ UI   A Ambient    M MV làm nền   D Làm tối    R Repeat/Loop   E Chỉnh clock & lyrics
-? Danh sách phím
-(Phím đơn hoạt động khi đang bấm vào hình nền, không gõ trong ô search.)
+Chỉ có một phím tắt toàn cục: "Search from anywhere" (mặc định Ctrl+Alt+Space) - gọi ô search từ bất kỳ đâu.
+Đổi phím: Appearance → Search from anywhere → bấm nút → bấm tổ hợp phím mới (bàn phím, cần kèm Ctrl/Alt/Shift,
+hoặc F1–F24), hoặc nút chuột giữa / nút bên (back, forward), có thể kèm Ctrl/Alt/Shift. Esc để hủy, Reset để về mặc định.
+(Chuột trái và phải không dùng được.)
 
 CHẾ ĐỘ ĐẶT TRÊN DESKTOP (chuột phải biểu tượng khay)
 - Mặc định (giống Wallpaper Engine): Wallplayer nằm trong lớp hình nền, phía sau icon desktop.

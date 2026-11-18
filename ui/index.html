@@ -248,6 +248,7 @@ img{display:block}
 .swc small{font-size:.98rem;font-weight:700}
 .swc em{font-style:normal;font-size:.8rem;color:var(--txt3);min-height:1rem}
 .keys{display:grid;grid-template-columns:auto 1fr;gap:.45rem 1rem;padding:.3rem .8rem .6rem;font-size:1.05rem;color:var(--txt2)}
+.keybind{display:flex;gap:.8rem;align-items:center}.kbtn{flex:1;text-align:left;padding:.6rem 1rem;border-radius:.9rem;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.16);font:700 1.1rem Inter,system-ui;color:#fff}.kbtn:hover{background:rgba(255,255,255,.18)}.kbtn.rec{background:rgba(var(--accent),.35);border-color:rgba(var(--accent),.9)}
 .keys kbd{justify-self:start;font:700 .95rem Inter,system-ui;color:#fff;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.18);border-radius:.5rem;padding:.12rem .5rem;min-width:1.9rem;text-align:center}
 #dock{transition:opacity .4s}
 .rem{font-size:1rem;color:var(--txt3)}
@@ -1150,8 +1151,8 @@ function renderAppPop(){
     <div class="lrow"><span>Search field</span><button class="tg ${S.hide.search ? '' : 'on'}" data-h="search"></button></div>
     <div class="lrow"><span>Cover flow</span><button class="tg ${S.hide.flow ? '' : 'on'}" data-h="flow"></button></div>
     <div class="lrow"><span>Playlist</span><button class="tg ${S.qOff ? '' : 'on'}" data-h="queue"></button></div>
-    <div class="msep"></div><div class="mh">Keyboard shortcuts</div>
-    <div class="keys">${SHORTCUTS.map(([k, d]) => `<kbd>${esc(k)}</kbd><span>${esc(d)}</span>`).join('')}</div>
+    <div class="msep"></div><div class="mh">Search from anywhere</div>
+    <div class="keys keybind"><button class="kbtn ${S.binding ? 'rec' : ''}" id="bindBtn">${S.binding ? 'Press a key or mouse button…' : keyLabel(S.searchKey)}</button><button class="chip" id="bindReset" title="Back to Ctrl Alt Space">Reset</button></div>
     <div class="msep"></div><div class="chips"><button class="chip" id="selfTestBtn">Self-test (Ctrl+Shift+D)</button></div>`;
 }
 
@@ -1920,6 +1921,8 @@ async function openLyricsPanel(){
 }
 $('#appPop').addEventListener('click', e => {
   const ed = e.target.closest('[data-edit]'); if (ed){ e.stopPropagation(); closeMenus(); openEditor(ed.dataset.edit); return }
+  if (e.target.closest('#bindBtn')){ e.stopPropagation(); S.binding ? stopBinding() : startBinding(); return }
+  if (e.target.closest('#bindReset')){ e.stopPropagation(); stopBinding(); applySearchKey('Ctrl+Alt+Space'); return }
   if (e.target.closest('#selfTestBtn')){ e.stopPropagation(); closeMenus(); selfTest(); return }
   e.stopPropagation(); const c = e.target.closest('.chip[data-k]'), tg = e.target.closest('[data-t]'), sw = e.target.closest('[data-sw]'), mon = e.target.closest('[data-mon]');
   if (sw){ S.look.theme = 'manual'; S.look.pickIdx = +sw.dataset.sw; store.set('look', S.look); applyTheme(); renderAppPop(); return }
@@ -2181,8 +2184,35 @@ $('#editSheet').addEventListener('change', e => { if (e.target.dataset.r === 'he
 $('#clock').addEventListener('click', e => { if (!e.target.closest('#clockSvg, #clockTxt') && !app.classList.contains('editing')) return; e.stopPropagation(); openEditor('clock') });
 $('#lyrics2').addEventListener('click', e => { if (!app.classList.contains('editing')) return; e.stopPropagation(); openEditor('lyrics') });
 $('#clock').addEventListener('dblclick', e => e.stopPropagation());
-const SHORTCUTS = [['Ctrl Alt Space', 'Search from anywhere'], ['Ctrl Alt H', 'Hide / show all UI from anywhere'], ['/  or  Ctrl K', 'Search'], ['Space', 'Play / pause'], ['← →', 'Previous / next'], ['↑ ↓', 'Volume'],
-  ['P', 'Player bar'], ['S', 'Search field'], ['C', 'Cover flow'], ['Q', 'Playlist'], ['K', 'Clock'], ['L', 'Full-lyrics view'], ['[  ]', 'Lyrics later / earlier 0.5 s'], ['H', 'All UI'], ['A', 'Ambient light'], ['M', 'Music-video wallpaper'], ['D', 'Dim wallpaper'], ['R', 'Repeat / loop'], ['E', 'Edit clock & lyrics (font, colour, glass)']];
+/* "Search from anywhere": one rebindable key / mouse button (default Ctrl Alt Space) */
+S.searchKey = 'Ctrl+Alt+Space'; S.binding = false;
+const keyLabel = k => (k || '').replace(/Mouse:Middle/, 'Middle click').replace(/Mouse:X1/, 'Mouse back button').replace(/Mouse:X2/, 'Mouse forward button').replace(/\+/g, ' + ').replace(/Super/, 'Win').replace(/\bKey([A-Z])\b/, '$1').replace(/\bDigit(\d)\b/, '$1');
+async function applySearchKey(spec){
+  try { S.searchKey = await invoke('set_search_key', {spec}); toast('Search from anywhere: ' + keyLabel(S.searchKey)) }
+  catch(err){ toast("Can't use that one — try another") }
+  stopBinding();
+}
+function stopBinding(){ S.binding = false; document.removeEventListener('keydown', bindKey, true); document.removeEventListener('mousedown', bindMouse, true);
+  if (T){ invoke('capture_mouse_bind', {on: false}).catch(() => {}); if (S.bindPeek){ S.bindPeek = false; invoke('peek', {on: false}).catch(() => {}) } } renderAppPop() }
+function startBinding(){
+  S.binding = true; renderAppPop();
+  document.addEventListener('keydown', bindKey, true); document.addEventListener('mousedown', bindMouse, true);
+  if (T){ invoke('capture_mouse_bind', {on: true}).catch(() => {}); if (!S.ui.peek){ S.bindPeek = true; invoke('peek', {on: true}).catch(() => {}) } }
+}
+function bindKey(e){
+  e.preventDefault(); e.stopPropagation();
+  if (['Control', 'Alt', 'Shift', 'Meta'].includes(e.key)) return;
+  if (e.key === 'Escape'){ stopBinding(); return }
+  const mods = [e.ctrlKey && 'Ctrl', e.altKey && 'Alt', e.shiftKey && 'Shift', e.metaKey && 'Super'].filter(Boolean);
+  if (!mods.length && !/^F\d+$/.test(e.code)){ toast('Hold Ctrl, Alt or Shift together with the key'); return }
+  applySearchKey([...mods, e.code].join('+'));
+}
+function bindMouse(e){
+  if (e.target.closest('#bindBtn') && e.button === 0) return;
+  const m = {1: 'Middle', 3: 'X1', 4: 'X2'}[e.button]; if (!m) return;   // left / right can't be used
+  e.preventDefault(); e.stopPropagation();
+  applySearchKey([e.ctrlKey && 'Ctrl', e.altKey && 'Alt', e.shiftKey && 'Shift', e.metaKey && 'Super'].filter(Boolean).concat('Mouse:' + m).join('+'));
+}
 function setBare(on){ app.classList.toggle('bare', on); closeMenus(); if (on){ closeSearch(); toast('UI hidden — click the eye, press H or double-click to show') } }
 $('#eyeBtn').onclick = e => { e.stopPropagation(); setLyricsMode(!app.classList.contains('lyricsmode')) };
 $('#focusBtn').onclick = e => { e.stopPropagation(); setBare(true) };
@@ -2307,8 +2337,9 @@ async function boot(){
     listen('media', e => onMedia(e.payload));
     listen('audio-spectrum', e => AU.feed(e.payload, performance.now()));
     listen('hotkey-search', () => openSearch());
+    listen('bind-captured', e => { if (S.binding) applySearchKey(e.payload) });
+    invoke('get_search_key').then(k => { S.searchKey = k; if ($('#appPop').classList.contains('open')) renderAppPop() }).catch(() => {});
     listen('desk-mouse', e => deskMouse(e.payload));
-    listen('hotkey-action', e => runKey(e.payload));
     listen('peek-ended', () => app.classList.remove('searching'));
     listen('mode-changed', e => { S.ui = e.payload });
     listen('accounts-changed', () => refreshAccounts());

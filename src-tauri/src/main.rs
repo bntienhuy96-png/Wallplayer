@@ -16,7 +16,7 @@ use serde::Serialize;
 use tauri::menu::{CheckMenuItem, Menu, MenuItem, PredefinedMenuItem};
 use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
 use tauri::{AppHandle, Emitter, Manager, WindowEvent};
-use tauri_plugin_global_shortcut::{Code, GlobalShortcutExt, Modifiers, Shortcut, ShortcutState};
+use tauri_plugin_global_shortcut::{GlobalShortcutExt, Shortcut, ShortcutState};
 
 pub(crate) struct AppState {
     pub(crate) settings: Mutex<settings::Settings>,
@@ -103,7 +103,7 @@ pub(crate) fn end_peek(app: &AppHandle) {
     let _ = app.emit("peek-ended", ());
 }
 
-fn open_search(app: &AppHandle) {
+pub(crate) fn open_search(app: &AppHandle) {
     set_peek(app, true);
     let _ = app.emit("hotkey-search", ());
 }
@@ -378,25 +378,73 @@ fn quit_app(app: AppHandle) {
     quit(&app);
 }
 
+// ───────────────────────── "Search from anywhere" binding ─────────────────────────
+
+/// Register the binding: a keyboard shortcut (global-shortcut plugin) or a mouse button (low-level hook).
+fn apply_search_key(app: &AppHandle, spec: &str) -> Result<(), String> {
+    let _ = app.global_shortcut().unregister_all();
+    deskmouse::set_bind(0, 0);
+    let spec = spec.trim();
+    if let Some(i) = spec.find("Mouse:") {
+        let mut mods = 0u32;
+        for part in spec[..i].split('+').filter(|p| !p.is_empty()) {
+            mods |= match part {
+                "Ctrl" => 1,
+                "Alt" => 2,
+                "Shift" => 4,
+                "Super" => 8,
+                _ => return Err(format!("unknown modifier {part}")),
+            };
+        }
+        let btn = match &spec[i + 6..] {
+            "Middle" => 1,
+            "X1" => 2,
+            "X2" => 3,
+            _ => return Err("this mouse button can't be used".into()),
+        };
+        deskmouse::set_bind(btn, mods);
+        return Ok(());
+    }
+    let sc: Shortcut = spec.parse().map_err(|e| format!("{e}"))?;
+    app.global_shortcut().register(sc).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+fn get_search_key(app: AppHandle) -> String {
+    app.state::<AppState>().settings.lock().unwrap().search_key.clone()
+}
+
+#[tauri::command]
+fn set_search_key(app: AppHandle, spec: String) -> Result<String, String> {
+    if let Err(e) = apply_search_key(&app, &spec) {
+        let old = get_search_key(app.clone());
+        let _ = apply_search_key(&app, &old);
+        return Err(e);
+    }
+    let st = app.state::<AppState>();
+    let mut s = st.settings.lock().unwrap();
+    s.search_key = spec.clone();
+    settings::save(&app, &s);
+    Ok(spec)
+}
+
+/// While true, the next middle / side mouse button press (anywhere) is reported as `bind-captured`.
+#[tauri::command]
+fn capture_mouse_bind(on: bool) {
+    deskmouse::set_capture(on);
+}
+
 // ───────────────────────── main ─────────────────────────
 
 fn main() {
     desktop::set_app_id();
 
-    let hotkey = Shortcut::new(Some(Modifiers::CONTROL | Modifiers::ALT), Code::Space);
-    let hotkey_ui = Shortcut::new(Some(Modifiers::CONTROL | Modifiers::ALT), Code::KeyH);
-
     tauri::Builder::default()
         .plugin(
             tauri_plugin_global_shortcut::Builder::new()
-                .with_handler(move |app, sc, ev| {
-                    if ev.state() != ShortcutState::Pressed {
-                        return;
-                    }
-                    if sc == &hotkey {
+                .with_handler(move |app, _sc, ev| {
+                    if ev.state() == ShortcutState::Pressed {
                         open_search(app);
-                    } else if sc == &hotkey_ui {
-                        let _ = app.emit("hotkey-action", "h");
                     }
                 })
                 .build(),
@@ -433,6 +481,9 @@ fn main() {
             spotify_connect,
             spotify_play,
             youtube_search,
+            get_search_key,
+            set_search_key,
+            capture_mouse_bind,
             search_rich,
             browse_entity,
             lyrics,
@@ -567,10 +618,10 @@ fn main() {
             tray.build(app)?;
 
             // hotkey
-            for hk in [hotkey, hotkey_ui] {
-                if let Err(e) = app.global_shortcut().register(hk) {
-                    eprintln!("hotkey: {e}");
-                }
+            let key = app.state::<AppState>().settings.lock().unwrap().search_key.clone();
+            if let Err(e) = apply_search_key(&handle, &key) {
+                eprintln!("hotkey: {e}");
+                let _ = apply_search_key(&handle, &settings::default_search_key());
             }
 
             // companion windows on the other monitors; re-check when monitors come and go
