@@ -622,6 +622,141 @@ pub async fn yt_search(q: &str) -> Result<Vec<Track>, String> {
         .collect())
 }
 
+// ───────────────────────── playlists, albums, radio ─────────────────────────
+
+/// A playlist or album found by search.
+#[derive(Serialize, Clone, Debug)]
+pub struct Collection {
+    /// YouTube Music playlistId, SoundCloud playlist id or Spotify URI
+    pub id: String,
+    /// album | playlist
+    pub kind: String,
+    pub title: String,
+    pub sub: String,
+    pub art: String,
+    pub source: String,
+}
+
+async fn ytm_post(endpoint: &str, body: Value) -> Result<Value, String> {
+    client()
+        .post(format!("https://music.youtube.com/youtubei/v1/{endpoint}?prettyPrint=false"))
+        .header("Origin", "https://music.youtube.com")
+        .header("Referer", "https://music.youtube.com/")
+        .json(&body)
+        .send()
+        .await
+        .map_err(|e| e.to_string())?
+        .json()
+        .await
+        .map_err(|e| e.to_string())
+}
+
+fn ytm_ctx() -> Value {
+    json!({"client": {"clientName": "WEB_REMIX", "clientVersion": "1.20241111.01.00", "hl": "en", "gl": "US"}})
+}
+
+/// Albums and playlists on YouTube Music matching a query.
+pub async fn ytm_collections(q: &str) -> Result<Vec<Collection>, String> {
+    // search filters: albums, community playlists, featured playlists
+    let filters = [
+        ("album", "EgWKAQIYAWoMEA4QChADEAQQCRAF"),
+        ("playlist", "EgeKAQQoADgBagwQDhAKEAMQBBAJEAU="),
+        ("playlist", "EgeKAQQoAEABagwQDhAKEAMQBBAJEAU="),
+    ];
+    let mut out: Vec<Collection> = Vec::new();
+    for (kind, params) in filters {
+        let Ok(v) = ytm_post("search", json!({"context": ytm_ctx(), "query": q, "params": params})).await else { continue };
+        let mut items = Vec::new();
+        walk(&v, "musicResponsiveListItemRenderer", &mut items);
+        for it in items.into_iter().take(if kind == "album" { 8 } else { 6 }) {
+            // the play button carries the list to play (albums: OLAK5uy_…, playlists: PL…/RDCLAK…)
+            let Some(pid) = first_str(it, "playlistId") else { continue };
+            if out.iter().any(|c| c.id == pid) {
+                continue;
+            }
+            let cols = it.get("flexColumns").and_then(|c| c.as_array());
+            let col = |i: usize| {
+                cols.and_then(|c| c.get(i))
+                    .and_then(|c| c.get("musicResponsiveListItemFlexColumnRenderer"))
+                    .and_then(|c| c.get("text"))
+                    .map(runs_text)
+                    .unwrap_or_default()
+            };
+            let title = col(0);
+            if title.is_empty() {
+                continue;
+            }
+            out.push(Collection {
+                id: pid.to_string(),
+                kind: kind.into(),
+                title,
+                sub: col(1),
+                art: big_thumb(&last_thumb(it)),
+                source: "ytmusic".into(),
+            });
+        }
+    }
+    Ok(out)
+}
+
+/// Songs of a YouTube Music "up next" panel (a playlist, an album or a radio).
+fn ytm_panel(v: &Value) -> Vec<Track> {
+    let mut items = Vec::new();
+    walk(v, "playlistPanelVideoRenderer", &mut items);
+    let mut out: Vec<Track> = Vec::new();
+    for it in items {
+        let Some(vid) = it.get("videoId").and_then(|x| x.as_str()) else { continue };
+        let title = it.get("title").map(runs_text).unwrap_or_default();
+        let by = it.get("longBylineText").map(runs_text).unwrap_or_default();
+        let parts: Vec<String> = by.split(" • ").map(|p| p.trim().to_string()).filter(|p| !p.is_empty()).collect();
+        let artist = parts.first().cloned().unwrap_or_default();
+        // the same song can appear twice (audio + music-video version)
+        if title.is_empty() || out.iter().any(|t| t.id == vid || (t.title == title && t.artist == artist)) {
+            continue;
+        }
+        let album = if parts.len() >= 3 { parts[1].clone() } else { String::new() };
+        let dur = it.get("lengthText").map(runs_text).map(|d| parse_dur(&d)).unwrap_or(0);
+        out.push(Track {
+            id: vid.to_string(),
+            title,
+            artist,
+            album,
+            art: big_thumb(&last_thumb(it)),
+            preview: String::new(),
+            url: format!("https://music.youtube.com/watch?v={vid}"),
+            duration_ms: dur,
+            source: "ytmusic".into(),
+            play: vid.to_string(),
+        });
+    }
+    out
+}
+
+/// All songs of a YouTube Music playlist or album (by playlistId).
+pub async fn ytm_playlist(playlist_id: &str) -> Result<Vec<Track>, String> {
+    let v = ytm_post(
+        "next",
+        json!({"context": ytm_ctx(), "playlistId": playlist_id, "enablePersistentPlaylistPanel": true, "isAudioOnly": true}),
+    )
+    .await?;
+    let out = ytm_panel(&v);
+    if out.is_empty() {
+        return Err("That playlist is empty or private".into());
+    }
+    Ok(out)
+}
+
+/// YouTube Music radio for a song: what YouTube Music would play after it.
+pub async fn ytm_radio(video_id: &str) -> Result<Vec<Track>, String> {
+    let v = ytm_post(
+        "next",
+        json!({"context": ytm_ctx(), "videoId": video_id, "playlistId": format!("RDAMVM{video_id}"),
+               "params": "wAEB", "enablePersistentPlaylistPanel": true, "isAudioOnly": true}),
+    )
+    .await?;
+    Ok(ytm_panel(&v).into_iter().filter(|t| t.id != video_id).collect())
+}
+
 // ───────────────────────── SoundCloud ─────────────────────────
 
 static SC_ID: std::sync::Mutex<Option<String>> = std::sync::Mutex::new(None);
@@ -658,16 +793,15 @@ async fn sc_client_id(refresh: bool) -> Result<String, String> {
     Err("SoundCloud search is unavailable right now".into())
 }
 
-pub async fn sc_search(q: &str) -> Result<Vec<Track>, String> {
+/// GET an api-v2.soundcloud.com path (with its own query string, or none);
+/// adds the client_id and retries once with a fresh one.
+async fn sc_get(path: &str) -> Result<Value, String> {
     let mut id = sc_client_id(false).await?;
+    let sep = if path.contains('?') { '&' } else { '?' };
     let mut tries = 0;
-    let v: Value = loop {
+    loop {
         let r = client()
-            .get(format!(
-                "https://api-v2.soundcloud.com/search/tracks?q={}&client_id={}&limit=24",
-                enc(q),
-                id
-            ))
+            .get(format!("https://api-v2.soundcloud.com{path}{sep}client_id={id}"))
             .send()
             .await
             .map_err(|e| e.to_string())?;
@@ -676,40 +810,111 @@ pub async fn sc_search(q: &str) -> Result<Vec<Track>, String> {
             id = sc_client_id(true).await?;
             continue;
         }
-        break r.json().await.map_err(|e| e.to_string())?;
+        return r.json().await.map_err(|e| e.to_string());
+    }
+}
+
+fn sc_track(x: &Value) -> Option<Track> {
+    let s = |p: &str| x.pointer(p).and_then(|v| v.as_str()).unwrap_or("").to_string();
+    let link = s("/permalink_url");
+    if link.is_empty() {
+        return None;
+    }
+    let art = {
+        let a = s("/artwork_url");
+        let a = if a.is_empty() { s("/user/avatar_url") } else { a };
+        a.replace("-large.", "-t500x500.")
     };
+    let artist = {
+        let a = s("/publisher_metadata/artist");
+        if a.is_empty() { s("/user/username") } else { a }
+    };
+    Some(Track {
+        id: x.get("id").map(|i| i.to_string()).unwrap_or_default(),
+        title: s("/title"),
+        artist,
+        album: s("/publisher_metadata/album_title"),
+        art,
+        preview: String::new(),
+        url: link.clone(),
+        duration_ms: x.get("full_duration").or_else(|| x.get("duration")).and_then(|d| d.as_i64()).unwrap_or(0),
+        source: "soundcloud".into(),
+        play: link,
+    })
+}
+
+pub async fn sc_search(q: &str) -> Result<Vec<Track>, String> {
+    let v = sc_get(&format!("/search/tracks?q={}&limit=24", enc(q))).await?;
+    let arr = v.get("collection").and_then(|c| c.as_array()).cloned().unwrap_or_default();
+    Ok(arr.iter().filter_map(sc_track).collect())
+}
+
+/// SoundCloud playlists and albums matching a query.
+pub async fn sc_collections(q: &str) -> Result<Vec<Collection>, String> {
+    let v = sc_get(&format!("/search/playlists?q={}&limit=12", enc(q))).await?;
     let arr = v.get("collection").and_then(|c| c.as_array()).cloned().unwrap_or_default();
     Ok(arr
         .iter()
         .filter_map(|x| {
             let s = |p: &str| x.pointer(p).and_then(|v| v.as_str()).unwrap_or("").to_string();
-            let link = s("/permalink_url");
-            if link.is_empty() {
-                return None;
-            }
+            let id = x.get("id")?.to_string();
             let art = {
                 let a = s("/artwork_url");
+                let a = if a.is_empty() { s("/tracks/0/artwork_url") } else { a };
                 let a = if a.is_empty() { s("/user/avatar_url") } else { a };
                 a.replace("-large.", "-t500x500.")
             };
-            let artist = {
-                let a = s("/publisher_metadata/artist");
-                if a.is_empty() { s("/user/username") } else { a }
-            };
-            Some(Track {
-                id: x.get("id").map(|i| i.to_string()).unwrap_or_default(),
+            let n = x.get("track_count").and_then(|n| n.as_i64()).unwrap_or(0);
+            let album = x.get("is_album").and_then(|b| b.as_bool()).unwrap_or(false) || s("/set_type") == "album";
+            Some(Collection {
+                id,
+                kind: if album { "album" } else { "playlist" }.into(),
                 title: s("/title"),
-                artist,
-                album: s("/publisher_metadata/album_title"),
+                sub: format!("{} · {} tracks", s("/user/username"), n),
                 art,
-                preview: String::new(),
-                url: link.clone(),
-                duration_ms: x.get("full_duration").or_else(|| x.get("duration")).and_then(|d| d.as_i64()).unwrap_or(0),
                 source: "soundcloud".into(),
-                play: link,
             })
         })
+        .filter(|c| !c.title.is_empty())
         .collect())
+}
+
+/// All tracks of a SoundCloud playlist / album (the API only fills in the first few).
+pub async fn sc_playlist(id: &str) -> Result<Vec<Track>, String> {
+    let v = sc_get(&format!("/playlists/{id}")).await?;
+    let arr = v.get("tracks").and_then(|c| c.as_array()).cloned().unwrap_or_default();
+    let missing: Vec<String> = arr
+        .iter()
+        .filter(|x| x.get("permalink_url").is_none())
+        .filter_map(|x| x.get("id").map(|i| i.to_string()))
+        .collect();
+    let mut full: std::collections::HashMap<String, Value> = std::collections::HashMap::new();
+    for chunk in missing.chunks(50) {
+        if let Ok(Value::Array(a)) = sc_get(&format!("/tracks?ids={}", chunk.join(","))).await {
+            for x in a {
+                if let Some(i) = x.get("id").map(|i| i.to_string()) {
+                    full.insert(i, x);
+                }
+            }
+        }
+    }
+    Ok(arr
+        .iter()
+        .filter_map(|x| {
+            if x.get("permalink_url").is_some() {
+                sc_track(x)
+            } else {
+                x.get("id").and_then(|i| full.get(&i.to_string())).and_then(sc_track)
+            }
+        })
+        .collect())
+}
+
+/// Tracks SoundCloud considers related to a track (its "radio").
+pub async fn sc_related(track_id: &str) -> Result<Vec<Track>, String> {
+    let v = sc_get(&format!("/tracks/{track_id}/related?limit=25")).await?;
+    let arr = v.get("collection").and_then(|c| c.as_array()).cloned().unwrap_or_default();
+    Ok(arr.iter().filter_map(sc_track).collect())
 }
 
 #[derive(Serialize, Clone, Debug)]
