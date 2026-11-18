@@ -298,14 +298,45 @@ async fn search(app: AppHandle, platform: String, query: String) -> SearchOut {
     }
 }
 
+/// Playlists and albums for the search panel (empty where the platform has none for us).
+#[tauri::command]
+async fn search_collections(app: AppHandle, platform: String, query: String) -> Vec<net::Collection> {
+    match platform.as_str() {
+        "ytmusic" | "auto" | "youtube" => net::ytm_collections(&query).await.unwrap_or_default(),
+        "soundcloud" => net::sc_collections(&query).await.unwrap_or_default(),
+        "spotify" | "spotifyweb" => accounts::spotify_collections(&app, &query).await.unwrap_or_default(),
+        _ => vec![],
+    }
+}
+
+/// The songs of a playlist / album found by `search_collections`.
+#[tauri::command]
+async fn collection_tracks(source: String, id: String) -> Result<Vec<net::Track>, String> {
+    match source.as_str() {
+        "ytmusic" => net::ytm_playlist(&id).await,
+        "soundcloud" => net::sc_playlist(&id).await,
+        _ => Err("Open this one in its app".into()),
+    }
+}
+
+/// Songs to play after a song ("radio"), from the platform it came from.
+#[tauri::command]
+async fn radio(source: String, id: String) -> Result<Vec<net::Track>, String> {
+    match source.as_str() {
+        "soundcloud" => net::sc_related(&id).await,
+        "ytmusic" | "youtube" => net::ytm_radio(&id).await,
+        _ => Err("no radio for this platform".into()),
+    }
+}
+
 #[tauri::command]
 async fn search_rich(query: String) -> Result<net::Rich, String> {
     net::ytm_rich(&query).await
 }
 
 #[tauri::command]
-async fn browse_entity(kind: String, id: String, title: String, art: String) -> Result<Vec<net::Track>, String> {
-    net::ytm_browse(&kind, &id, &title, &art).await
+async fn browse_artist(id: String, title: String, art: String) -> Result<Vec<net::Track>, String> {
+    net::ytm_artist(&id, &title, &art).await
 }
 
 #[tauri::command]
@@ -475,6 +506,9 @@ fn main() {
             set_mirror,
             media_control,
             search,
+            search_collections,
+            collection_tracks,
+            radio,
             account_status,
             account_login,
             account_logout,
@@ -485,7 +519,7 @@ fn main() {
             set_search_key,
             capture_mouse_bind,
             search_rich,
-            browse_entity,
+            browse_artist,
             lyrics,
             lyrics_search,
             fetch_image,

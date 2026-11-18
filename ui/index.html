@@ -50,7 +50,8 @@ img{display:block}
 #app.hasCustom #fx,#app.mv #fx{opacity:.25}
 /* Background → Desktop wallpaper: the Windows wallpaper of this monitor, optionally blurred */
 #deskImg{object-fit:cover;width:100%;height:100%;opacity:0;transition:opacity .8s,filter .3s,transform .3s}
-#app.deskbg #deskImg.ok{opacity:1}
+#app.deskbg #deskImg.ok,#app.deskfill #deskImg.ok{opacity:1}
+#app.deskbg .custom{opacity:0!important}   /* Desktop wallpaper mode wins over a custom image */
 #app.deskbg #fx{opacity:0}
 #app.clip #deskImg,#app.clip-mirror #deskImg{opacity:0!important}
 
@@ -284,6 +285,17 @@ img{display:block}
 .srow b{display:block;font-size:1.2rem;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .srow span{display:block;font-size:1rem;color:var(--txt2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .srow em{font-style:normal;font-size:1rem;color:var(--txt3);flex:none}
+.srow .qa{display:flex;gap:.2rem;flex:none;opacity:.45;transition:opacity .15s}
+.rc .ra .qa{position:absolute;left:.4rem;top:.4rem;display:flex;gap:.25rem;opacity:0;transition:opacity .15s}
+.rc:hover .ra .qa,.rc.sel .ra .qa{opacity:1}
+.rc .ra .qa .b{width:2.5rem;height:2.5rem;background:rgba(0,0,0,.5);-webkit-backdrop-filter:blur(.8rem);backdrop-filter:blur(.8rem)}
+.rc .ra .qa .b:hover{background:rgba(0,0,0,.72)}
+.rc .ra .qa .ico{width:1.35rem;height:1.35rem}
+.srow:hover .qa,.srow.sel .qa{opacity:1}
+.srow .qa .b{width:2.6rem;height:2.6rem}
+.srow .qa .b:hover{background:rgba(255,255,255,.14)}
+#rCols:empty{display:none}
+.rc.col .ra{border-radius:1.1rem}
 .rempty{font-size:1.1rem;color:var(--txt3);padding:.4rem .2rem}
 .skel{flex:none;width:10.2rem;height:12.6rem;border-radius:1.1rem;background:linear-gradient(90deg,rgba(255,255,255,.06),rgba(255,255,255,.12),rgba(255,255,255,.06));background-size:200% 100%;animation:sk 1.2s linear infinite}
 @keyframes sk{to{background-position:-200% 0}}
@@ -536,10 +548,10 @@ button.bgv:hover{background:rgba(255,255,255,.08)}
     <div class="wl wart" id="artA"></div>
     <div class="wl wart" id="artB"></div>
     <canvas id="fx"></canvas>
+    <img id="deskImg" class="wl" alt="">
     <img id="customImg" class="wl custom" alt="">
     <video id="customVid" class="wl custom" muted loop playsinline autoplay></video>
     <div id="ytWrap"><div id="ytHost"></div></div>
-    <img id="deskImg" class="wl" alt="">
     <div class="wl shade"></div>
   </div>
   <div id="ambient"><i class="amb top"></i><i class="amb bottom"></i><i class="amb left"></i><i class="amb right"></i></div>
@@ -565,6 +577,7 @@ button.bgv:hover{background:rgba(255,255,255,.08)}
   <div id="dock">
     <div id="results" class="glass">
       <div id="rCta"></div><div class="rsug" id="rSug"></div><div class="rtabs" id="rTabs"></div><div class="rlabel" id="rTopLabel">Top Results</div><div class="rrow" id="rTop"></div><div id="rEnt"></div>
+      <div class="rlabel" id="rColLabel" style="display:none">Playlists &amp; albums</div><div class="rrow" id="rCols"></div>
       <div class="rlabel" id="rSongsLabel">Songs</div><div id="rSongs"></div>
     </div>
     <div id="searchBox"><span id="sIco"></span><input id="q" placeholder="Search YouTube Music" spellcheck="false" autocomplete="off">
@@ -621,6 +634,8 @@ const enc = encodeURIComponent;
 
 /* ════════════════════ icons ════════════════════ */
 const I = {
+  playNext:'<svg class="ico" viewBox="0 0 24 24"><path d="M4 6.5h11M4 12h7M4 17.5h7"/><path d="M14.5 10.5v8.5l6.5-4.25z" fill="currentColor" stroke="none"/></svg>',
+  addQ:'<svg class="ico" viewBox="0 0 24 24"><path d="M4 6.5h11M4 12h11M4 17.5h7M17.5 14.5v7M14 18h7"/></svg>',
   prev:'<svg class="ico f" viewBox="0 0 24 24"><path d="M11.5 6.2v11.6L3.6 12zM20.4 6.2v11.6L12.5 12z"/></svg>',
   next:'<svg class="ico f" viewBox="0 0 24 24"><path d="M12.5 6.2v11.6l7.9-5.8zM3.6 6.2v11.6l7.9-5.8z"/></svg>',
   play:'<svg class="ico f" viewBox="0 0 24 24"><path d="M7 4.8v14.4c0 .8.9 1.3 1.6.9l11.3-7.2c.6-.4.6-1.4 0-1.8L8.6 3.9C7.9 3.5 7 4 7 4.8z"/></svg>',
@@ -685,7 +700,7 @@ const platById = id => PLATFORMS.find(p => p.id === id) || AUTO;
 /* ════════════════════ state ════════════════════ */
 const S = {
   platform: store.get('platform', 'auto'),
-  queue: [], qIdx: -1, qKind: 'queue',
+  queue: [], qIdx: -1, qKind: 'queue', cols: [], radioOn: store.get('radioOn', true), radioKey: '',
   history: store.get('history', []),
   track: null, src: 'none',          // none | demo | yt | system
   demo: {pos: 0, playing: false},
@@ -1028,6 +1043,15 @@ const SURPRISE = {
   energy: ['new york city walk 4K', 'shibuya crossing 4K', 'city timelapse 4K', 'las vegas night walk 4K', 'night highway drive 4K POV'],
   snow:   ['snow walk 4K POV', 'winter city walk snow 4K', 'snowy forest 4K static', 'snowfall at night city 4K']
 };
+// extra scenes mixed in for variety (cinematic, lofi, rain, sunset, sea, forest), weighted to the mood
+const SURPRISE_MORE = {
+  night:  ['rainy night city cinematic 4K', 'lofi rainy night window scene', 'neon rain street cinematic 4K', 'night train window rain 4K'],
+  chill:  ['lofi cozy room rain scene 4K', 'rain on window cinematic 4K', 'lofi cafe rainy day scene', 'cinematic slow motion rain 4K'],
+  nature: ['cinematic forest 4K', 'forest rain ambience 4K', 'misty mountains cinematic drone 4K', 'jungle rain 4K static'],
+  summer: ['sunset beach cinematic 4K', 'golden hour sunset ocean 4K', 'ocean drone cinematic 4K', 'sea waves slow motion 4K'],
+  energy: ['cinematic city drone 4K', 'cinematic b-roll city night 4K', 'aerial coastline cinematic 4K'],
+  snow:   ['cinematic snowfall 4K', 'snowy cabin lofi scene']
+};
 const MOOD_WORDS = [
   ['night', /night|midnight|moon|dark|neon|tokyo|city|club|lonely|alone|3am|dream/],
   ['summer', /summer|beach|sun|ocean|island|tropic|wave|sea|vacation|hot|palm|sunset/],
@@ -1066,9 +1090,12 @@ async function bgVideo(t, force){
     if (BGV.cur === v.id && !force && YTV.ids[0] === v.id) return; BGV.cur = v.id; await YTV.load([v.id], 0); return;
   }
   if (S.look.bg !== 'surprise' || (BGV.cur && !force && !S.look.bgEach && YTV.ids.includes(BGV.cur))) return;
-  const pick = SURPRISE[surpriseMood()], q = pick[Math.floor(Math.random() * pick.length)];
+  const mood = surpriseMood(), pick = Math.random() < .45 ? SURPRISE_MORE[mood] : SURPRISE[mood], q = pick[Math.floor(Math.random() * pick.length)];
   try {
-    const ids = (await invoke('youtube_search', {query: q})).slice(0, 10);
+    // real footage only: drop AI-generated videos (by title and channel)
+    const AI_RE = /\b(ai|a\.i\.)\b|ai[- ]?generated|\bsora\b|midjourney|runway|\bkling\b|\bveo\b|stable diffusion|dall[- ]?e|\bluma\b|\bpika\b|hailuo|generative|text[- ]to[- ]video/i;
+    const out = await invoke('search', {platform: 'youtube', query: q + ' -ai'});
+    const ids = (out.tracks || []).filter(v => !AI_RE.test((v.title || '') + ' ' + (v.artist || ''))).map(v => v.id).slice(0, 10);
     const fresh = ids.filter(id => !BGV.recent.includes(id)), pool = (fresh.length ? fresh : ids).sort(() => Math.random() - .5);
     if (!pool.length) return; BGV.cur = pool[0]; BGV.recent = [pool[0], ...BGV.recent].slice(0, 15);
     await YTV.load(pool, 30 + Math.random() * 300);   // long videos: start somewhere in the middle
@@ -1092,16 +1119,18 @@ async function applyBg(){
     if (bgVid()) bgVideo(S.track, true);
     else if (!on && S.track && S.src !== 'demo' && S.src !== 'none' && S.mvOn) mvFor(S.track);
   }
-  if (!on) return;
-  if (!MIRROR) YTV.stop();
-  if (!T) return;
+  if (on && !MIRROR) YTV.stop();
+  if (!T || (!on && !deskFill())) return;
   try {
     const r = await invoke('desktop_wallpaper', {known: deskPath});
     if (!r){ img.classList.remove('ok'); return }
     if (r.data){ deskPath = r.path; img.onload = () => img.classList.add('ok'); img.src = r.data }
   } catch(e){ img.classList.remove('ok') }
 }
-setInterval(() => { if (S.look.bg === 'desktop' && T) applyBg() }, 60000);   // picks up a new wallpaper / slideshow
+// Video backgrounds (MV, My video, Surprise me): while the next video loads — between two songs,
+// or when a song has no video — the Windows wallpaper shows instead of a plain colour gradient.
+function deskFill(){ const on = S.look.bg !== 'desktop' && (bgVid() || S.mvOn); app.classList.toggle('deskfill', on); return on }
+setInterval(() => { if ((S.look.bg === 'desktop' || deskFill()) && T) applyBg() }, 60000);   // picks up a new wallpaper / slideshow
 function applyLook(){
   const L = S.look; app.className = app.className.replace(/\b(ckpos|lypos|lyst|lfx|ck|ly|lys|lc)-\S+/g, '').replace(/\s+/g, ' ').trim();
   app.classList.add('ck-' + L.ck, 'ly-' + L.ly, 'lys-' + L.lys, 'lc-' + L.lc, 'ckpos-' + L.ckpos, 'lypos-' + L.lypos, 'lyst-' + L.lyst, 'lfx-' + L.lfx); S.lyrIdx = -2; app.classList.toggle('noclock', !L.clock);
@@ -1545,15 +1574,15 @@ async function playTrack(t, list){
   if (!t.play) return resolveAndPlay(t);
   if (t.source === 'ytmusic'){
     SCW.stop(); pauseSystem(); app.classList.remove('clip'); S.src = 'yt'; setTrack(t); pushHistory(t); cardStarting(t, 'Starting on YouTube Music', null, 'ytmusic');
-    await YTA.load([t.play]); mvFor(t); return;
+    await YTA.load([t.play]); mvFor(t); maybeRadio(); return;
   }
   if (t.source === 'youtube'){   // the clip itself becomes the wallpaper, with sound
     SCW.stop(); pauseSystem(); YTV.stop(); S.src = 'yt'; setTrack(t); pushHistory(t); cardStarting(t, 'Playing on YouTube', null, 'youtube');
-    app.classList.add('clip'); await YTA.load([t.play]); return;
+    app.classList.add('clip'); await YTA.load([t.play]); maybeRadio(); return;
   }
   if (t.source === 'soundcloud'){
     YTA.stop(); pauseSystem(); S.src = 'sc'; setTrack(t); pushHistory(t); cardStarting(t, 'Starting on SoundCloud', null, 'soundcloud');
-    SCW.load(t.play); mvFor(t); return;
+    SCW.load(t.play); mvFor(t); maybeRadio(); return;
   }
   // external apps / web players — Windows media sessions bring "now playing" back here
   stopInternal(); if (S.src === 'yt' || S.src === 'sc') S.src = 'none';
@@ -1641,6 +1670,11 @@ async function refreshQueue(){
   const b = $('#qRefresh'); b.classList.add('spin'); setTimeout(() => b.classList.remove('spin'), 450);
   const t = S.track; if (!t){ toast('Play something first'); return }
   if (!T || t.demo){ S.queue = [t, ...DEMO.filter(d => d !== t).sort(() => Math.random() - .5)]; S.qIdx = 0; S.qKind = 'queue'; S.qLabel = `Songs like ${t.title}`; renderQueue(); renderFlow(true); return }
+  // songs like this one: the platform's own radio (YouTube Music / SoundCloud), else the same artist
+  if (t.play && (t.source === 'ytmusic' || t.source === 'youtube' || t.source === 'soundcloud')){
+    try { const res = (await invoke('radio', {source: t.source === 'soundcloud' ? 'soundcloud' : 'ytmusic', id: t.source === 'soundcloud' ? t.id : t.play})).map(mapTrack);
+      if (res.length){ S.queue = [t, ...res]; S.qIdx = 0; S.qKind = 'queue'; S.qLabel = `Radio · ${t.title}`; S.radioKey = t.title + '|' + t.artist; renderQueue(); renderFlow(true); return } } catch(e){}
+  }
   try { const out = await invoke('search', {platform: searchPlatform(), query: t.artist}); const res = (out.tracks || []).map(mapTrack).filter(x => x.title !== t.title);
     if (res.length){ S.queue = [t, ...res]; S.qIdx = 0; S.qKind = 'queue'; S.qLabel = `Songs like ${t.title}`; renderQueue(); renderFlow(true) } else toast('Nothing new found') } catch(e){ toast("Couldn't refresh") }
 }
@@ -1740,69 +1774,143 @@ $('#q').addEventListener('input', () => { clearTimeout(sTimer); const v = $('#q'
   if (!v.trim()){ S.results = []; renderResults(null); return } sTimer = setTimeout(() => doSearch(v), 320) });
 async function doSearch(q){
   q = q.trim(); const seq = ++S.searchSeq; if (!q) return;
-  $('#rTop').innerHTML = '<div class="skel"></div>'.repeat(5); $('#rSongs').innerHTML = ''; $('#rCta').innerHTML = ''; $('#rEnt').innerHTML = ''; $('#rSug').innerHTML = '';
-  const plat = searchPlatform(); let res = [], meta = {source: plat, needs_login: false}; S.rich = null; S.rtab = 'song';
+  $('#rTop').innerHTML = '<div class="skel"></div>'.repeat(5); $('#rSongs').innerHTML = ''; $('#rCta').innerHTML = ''; $('#rEnt').innerHTML = ''; $('#rSug').innerHTML = ''; $('#rCols').innerHTML = ''; $('#rColLabel').style.display = 'none';
+  const plat = searchPlatform(); let res = [], meta = {source: plat, needs_login: false}; S.rich = null; S.rtab = 'all'; S.cols = [];
   if (T){
     if (plat === 'ytmusic'){ try { const r = await invoke('search_rich', {query: q}); if (r && r.songs && r.songs.length){ S.rich = r; res = r.songs.map(mapTrack); meta = {source: plat, needs_login: false} } } catch(e){} }
     if (!res.length){ try { const out = await invoke('search', {platform: plat, query: q}); meta = out; res = (out.tracks || []).map(mapTrack); if (out.error && !res.length) toast(out.error) } catch(e){ toast('Search failed — check your connection') } }
   } else {
     const k = q.toLowerCase(); res = DEMO.filter(t => (t.title + ' ' + t.artist + ' ' + t.album).toLowerCase().includes(k)); if (!res.length) res = DEMO.slice().sort(() => Math.random() - .5).slice(0, 6);
     if (window.__richDemo) S.rich = window.__richDemo(q, res);
+    if (window.__colsDemo) setTimeout(() => { if (seq === S.searchSeq){ S.cols = window.__colsDemo(q); renderCols() } }, 150);
   }
   if (seq !== S.searchSeq) return; S.results = res; S.resSel = -1; renderResults(res, meta);
+  // playlists & albums (every platform) — loaded after the songs so the page shows up fast
+  if (T){ try { const cols = await invoke('search_collections', {platform: plat, query: q}); if (seq !== S.searchSeq) return; S.cols = cols || []; renderCols() } catch(e){} }
+}
+const colHTML = (c, i) => `<div class="rc col" data-c="${i}"><div class="ra"><img src="${esc(c.art || '')}" alt="" loading="lazy"><span class="pl">${I.play}</span></div><b>${esc(c.title)}</b><span>${c.kind === 'album' ? 'Album' : 'Playlist'}${c.sub ? ' · ' + esc(c.sub.replace(/^(Album|Playlist|EP|Single)\s*•\s*/i, '')) : ''}</span></div>`;
+function renderCols(){ renderTabs(); applyTab() }
+// play a whole playlist / album
+async function playCollection(c){
+  if (!c) return;
+  if (c.source === 'spotify'){ closeSearch(); stopInternal(); try { const r = await invoke('spotify_play', {uri: c.id}); toast(r === 'played' ? `Playing ${c.title} on Spotify` : `Opened ${c.title} in Spotify`) } catch(e){ openExternal(c.id) } return }
+  toast(`Loading ${c.title}…`);
+  try {
+    const list = (await invoke('collection_tracks', {source: c.source, id: c.id})).map(mapTrack);
+    if (!list.length) return toast('That one is empty');
+    S.qLabel = `${c.kind === 'album' ? 'Album' : 'Playlist'} · ${c.title}`; closeSearch(); playTrack(list[0], list);
+  } catch(e){ toast(String(e)) }
+}
+// add a song to the playlist on the left without replacing it
+function queueAdd(t, playNext){
+  if (!t) return;
+  if (!S.track || S.src === 'none'){ playTrack(t, [t]); return }
+  if (S.qKind !== 'queue' || !S.queue.length){ S.queue = [S.track]; S.qIdx = 0; S.qKind = 'queue'; S.qLabel = 'Up next' }
+  const k = x => (x.title + '|' + x.artist).toLowerCase();
+  const old = S.queue.findIndex((x, i) => i !== S.qIdx && k(x) === k(t));
+  if (old >= 0){ S.queue.splice(old, 1); if (old < S.qIdx) S.qIdx-- }
+  if (playNext) S.queue.splice(S.qIdx + 1, 0, t); else S.queue.push(t);
+  renderQueue(); renderFlow(true);
+  toast(playNext ? `Plays next: ${t.title}` : `Added to playlist: ${t.title}`);
+}
+
+/* radio: when the playlist is about to run out, add songs like the one playing */
+async function maybeRadio(force){
+  const t = S.track; if (!T || !t || (!S.radioOn && !force)) return false;
+  if (!force && (S.qKind !== 'queue' || S.qIdx < S.queue.length - 2)) return false;
+  if (!(S.src === 'yt' || S.src === 'sc')) return false;          // Spotify / other apps continue by themselves
+  const key = t.title + '|' + t.artist; if (!force && S.radioKey === key) return false; S.radioKey = key;
+  const source = t.source === 'soundcloud' ? 'soundcloud' : 'ytmusic', id = t.source === 'soundcloud' ? t.id : t.play;
+  try {
+    const have = new Set(S.queue.map(x => (x.title + '|' + x.artist).toLowerCase()));
+    const add = (await invoke('radio', {source, id})).map(mapTrack).filter(x => !have.has((x.title + '|' + x.artist).toLowerCase()));
+    if (!add.length) return false;
+    if (S.qKind !== 'queue' || !S.queue.length){ S.queue = [t]; S.qIdx = 0; S.qKind = 'queue' }
+    S.queue.push(...add.slice(0, 25));
+    if (!/radio/i.test(S.qLabel || '')) S.qLabel = (S.qLabel ? S.qLabel + ' · ' : '') + 'Radio';
+    renderQueue(); renderFlow(true); return true;
+  } catch(e){ return false }
 }
 const fmtDur = s => s > 0 ? `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}` : '';
 function renderResults(res, meta){
   const top = $('#rTop'), songs = $('#rSongs'), cta = $('#rCta');
   if (!res){
-    const base = (S.history.length ? S.history : S.queue).slice(0, 10); S.results = base; cta.innerHTML = '';
+    const base = (S.history.length ? S.history : S.queue).slice(0, 10); S.results = base; S.resKind = 'recent'; cta.innerHTML = '';
     $('#rTopLabel').innerHTML = base.length ? 'Recently played' : `Search ${esc(platById(searchPlatform()).name)}`;
     top.innerHTML = base.length ? base.map(cardHTML).join('') : `<div class="rempty">Type a song, artist or album</div>`;
-    $('#rSongsLabel').style.display = 'none'; songs.innerHTML = ''; $('#rEnt').innerHTML = ''; $('#rSug').innerHTML = ''; $('#rTabs').innerHTML = ''; return;
+    $('#rSongsLabel').style.display = 'none'; songs.innerHTML = ''; $('#rEnt').innerHTML = ''; $('#rSug').innerHTML = ''; S.cols = []; S.rich = null; S.rtab = 'all'; renderCols(); renderTabs(); return;
   }
+  S.resKind = 'search';
   const src = platById(meta && meta.source || searchPlatform());
   $('#rTopLabel').innerHTML = `Top Results <small>·</small> ${src.icon}<small>${esc(src.name)}</small>`;
   cta.innerHTML = meta && meta.needs_login ? `<div class="rcta">${platById('spotify').icon}<span>Connect your Spotify account to search Spotify. Showing the Apple Music catalogue for now.</span><button class="abtn pri" data-acc="1">Connect</button></div>` : '';
   top.innerHTML = res.slice(0, 8).map(cardHTML).join('') || '<div class="rempty">Nothing found</div>';
   $('#rSongsLabel').style.display = res.length ? '' : 'none';
+  songs.innerHTML = res.slice(0, 25).map((t, i) => `<div class="srow" data-i="${i}"><img src="${esc(t.art || '')}" alt="" loading="lazy"><div class="tx"><b>${esc(t.title)}</b><span>${esc(t.artist)}${t.album ? ' · ' + esc(t.album) : ''}</span></div><em>${fmtDur(t.duration)}</em>${qaHTML(i)}</div>`).join('');
   renderRich();
-  songs.innerHTML = res.slice(0, 25).map((t, i) => `<div class="srow" data-i="${i}"><img src="${esc(t.art || '')}" alt="" loading="lazy"><div class="tx"><b>${esc(t.title)}</b><span>${esc(t.artist)}${t.album ? ' · ' + esc(t.album) : ''}</span></div><em>${fmtDur(t.duration)}</em></div>`).join('');
 }
-const ENT_LABEL = {artist: 'Artists', playlist: 'Playlists', album: 'Albums'}, ENT_ONE = {artist: 'Artist', playlist: 'Playlist', album: 'Album'};
-S.rtab = 'song';
+/* Result tabs: All (everything, like the full layout) · Songs · Singers · Playlists.
+   Singers come from smart search (YouTube Music); playlists/albums from search_collections on every platform. */
+S.rtab = 'all'; S.cols = [];
+const artHTML = (e, j) => `<div class="rc ent art" data-e="${j}"><div class="ra"><img src="${esc(e.art || '')}" alt="" loading="lazy"><span class="pl">${I.play}</span></div><b>${esc(e.title)}</b><span>${esc(e.sub || 'Artist')}</span></div>`;
+function renderTabs(){
+  const tabs = $('#rTabs'), q = $('#q').value.trim();
+  if (!q || !S.results.length && !S.cols.length && !S.rich){ tabs.innerHTML = ''; return }
+  const n = {song: S.results.length, artist: S.rich ? (S.rich.artists || []).length : -1, playlist: S.cols.length};
+  const list = [['all', 'All'], ['song', 'Songs'], ['artist', 'Singers'], ['playlist', 'Playlists']].filter(([k]) => k !== 'artist' || n.artist >= 0);
+  if (!list.some(([k]) => k === S.rtab)) S.rtab = 'all';
+  tabs.innerHTML = list.map(([k, nm]) => `<button data-t="${k}" class="${S.rtab === k ? 'on' : ''}">${nm}${n[k] > 0 ? `<small>${n[k]}</small>` : ''}</button>`).join('');
+}
+/* show / hide the blocks for the chosen tab */
+function applyTab(){
+  const t = S.rtab, r = S.rich, on = !!$('#q').value.trim() && app.classList.contains('searching');
+  const songsOn = t === 'all' || t === 'song';
+  ['#rTopLabel', '#rTop'].forEach(q => $(q).style.display = songsOn ? '' : 'none');
+  $('#rSongsLabel').style.display = songsOn && S.results.length && S.resKind !== 'recent' ? '' : 'none'; $('#rSongs').style.display = songsOn ? '' : 'none';
+  // singers
+  S.ents = (r && r.artists || []).slice(0, t === 'artist' ? 40 : 12);
+  const showArt = (t === 'all' || t === 'artist') && S.ents.length;
+  $('#rEnt').innerHTML = !showArt ? (t === 'artist' && r ? '<div class="rempty">No singers found</div>' : '')
+    : t === 'artist' ? `<div class="rgrid">${S.ents.map(artHTML).join('')}</div>`
+    : `<div class="rlabel">Singers</div><div class="rrow">${S.ents.map(artHTML).join('')}</div>`;
+  // playlists & albums
+  const colsOn = on && (t === 'all' || t === 'playlist') && S.cols.length;
+  $('#rColLabel').style.display = colsOn && t === 'all' ? '' : 'none';
+  $('#rCols').className = t === 'playlist' ? 'rgrid' : 'rrow';
+  $('#rCols').innerHTML = colsOn ? S.cols.map(colHTML).join('') : (t === 'playlist' && on ? '<div class="rempty">No playlists found</div>' : '');
+}
 function renderRich(){
-  const r = S.rich, sug = $('#rSug'), ent = $('#rEnt'), tabs = $('#rTabs');
-  const songsOn = S.rtab === 'song';
-  ['#rTopLabel', '#rTop', '#rSongsLabel', '#rSongs'].forEach(q => { if (!songsOn) $(q).style.display = 'none'; else if (q !== '#rSongsLabel') $(q).style.display = '' });
-  if (!r){ S.rtab = 'song'; sug.innerHTML = ''; ent.innerHTML = ''; tabs.innerHTML = ''; return }
-  sug.innerHTML = (r.suggestions || []).slice(0, 6).map(t => `<button data-s="${esc(t)}">${esc(t)}</button>`).join('');
-  const lists = {song: r.songs || [], artist: r.artists || [], playlist: [...(r.playlists || []), ...(r.albums || [])]};
-  const names = {song: 'Songs', artist: 'Singers', playlist: 'Playlists'};
-  tabs.innerHTML = ['song', 'artist', 'playlist'].map(k => `<button data-t="${k}" class="${S.rtab === k ? 'on' : ''}">${names[k]}<small>${lists[k].length || ''}</small></button>`).join('');
-  S.ents = [];
-  if (songsOn){ ent.innerHTML = ''; return }
-  const list = lists[S.rtab].slice(0, 30);
-  ent.innerHTML = list.length ? `<div class="rgrid">${list.map(e => { const j = S.ents.push(e) - 1; return `<div class="rc ent ${e.kind === 'artist' ? 'art' : ''}" data-e="${j}"><div class="ra"><img src="${esc(e.art || '')}" alt="" loading="lazy"><span class="pl">${I.play}</span></div><b>${esc(e.title)}</b><span>${esc(e.sub || ENT_ONE[e.kind])}</span></div>` }).join('')}</div>`
-    : `<div class="rempty">No ${names[S.rtab].toLowerCase()} found</div>`;
+  const r = S.rich;
+  $('#rSug').innerHTML = r ? (r.suggestions || []).slice(0, 6).map(t => `<button data-s="${esc(t)}">${esc(t)}</button>`).join('') : '';
+  renderTabs(); applyTab();
 }
-$('#rTabs').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; e.stopPropagation(); S.rtab = b.dataset.t; renderRich(); $('#results').scrollTop = 0 });
-async function openEntity(j, el){
+$('#rTabs').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; e.stopPropagation(); S.rtab = b.dataset.t; renderTabs(); applyTab(); $('#results').scrollTop = 0 });
+// a singer: play the singer's best songs
+async function openArtist(j, el){
   const e = (S.ents || [])[j]; if (!e) return; if (el) el.classList.add('busy');
   try {
     let list;
-    if (T) list = (await invoke('browse_entity', {kind: e.kind, id: e.id, title: e.title, art: e.art || ''})).map(mapTrack);
+    if (T) list = (await invoke('browse_artist', {id: e.id, title: e.title, art: e.art || ''})).map(mapTrack);
     else list = (window.__browseDemo ? window.__browseDemo(e) : []);
     if (!list.length) throw 0;
-    S.qLabel = e.kind === 'artist' ? `Best of ${e.title}` : e.title; closeSearch(); playTrack(list[0], list);
-  } catch(err){ toast("Couldn't open this one — try another") }
+    S.qLabel = `Best of ${e.title}`; closeSearch(); playTrack(list[0], list);
+  } catch(err){ toast("Couldn't open this singer — try another") }
   if (el) el.classList.remove('busy');
 }
-$('#rEnt').addEventListener('click', e => { const c = e.target.closest('.ent'); if (c){ e.stopPropagation(); openEntity(+c.dataset.e, c) } });
+$('#rEnt').addEventListener('click', e => { const c = e.target.closest('.ent'); if (c){ e.stopPropagation(); openArtist(+c.dataset.e, c) } });
 $('#rSug').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; e.stopPropagation(); $('#q').value = b.dataset.s; $('#q').focus(); doSearch(b.dataset.s) });
-const cardHTML = (t, i) => `<div class="rc" data-i="${i}"><div class="ra"><img src="${esc(t.art || '')}" alt="" loading="lazy"><span class="pl">${I.play}</span></div><b>${esc(t.title)}</b><span>Song · ${esc(t.artist)}</span></div>`;
+const qaHTML = i => `<span class="qa"><button class="b sm" data-qn="${i}" title="Play next">${I.playNext}</button><button class="b sm" data-qa="${i}" title="Add to playlist">${I.addQ}</button></span>`;
+const cardHTML = (t, i) => `<div class="rc" data-i="${i}"><div class="ra"><img src="${esc(t.art || '')}" alt="" loading="lazy"><span class="pl">${I.play}</span>${qaHTML(i)}</div><b>${esc(t.title)}</b><span>Song · ${esc(t.artist)}</span></div>`;
 function chooseResult(i){ const t = S.results[i]; if (!t) return; const list = S.results.slice(); S.qLabel = `Songs like ${t.title}`; closeSearch(); playTrack(t, list) }
-$('#rTop').addEventListener('click', e => { const c = e.target.closest('.rc'); if (c) chooseResult(+c.dataset.i) });
-$('#rSongs').addEventListener('click', e => { const c = e.target.closest('.srow'); if (c) chooseResult(+c.dataset.i) });
+$('#rTop').addEventListener('click', e => {
+  const qn = e.target.closest('[data-qn]'), qa = e.target.closest('[data-qa]');
+  if (qn || qa){ e.stopPropagation(); queueAdd(S.results[+(qn || qa).dataset[qn ? 'qn' : 'qa']], !!qn); return }
+  const c = e.target.closest('.rc'); if (c) chooseResult(+c.dataset.i) });
+$('#rSongs').addEventListener('click', e => {
+  const qn = e.target.closest('[data-qn]'), qa = e.target.closest('[data-qa]');
+  if (qn || qa){ e.stopPropagation(); queueAdd(S.results[+(qn || qa).dataset[qn ? 'qn' : 'qa']], !!qn); return }   // search stays open: add more
+  const c = e.target.closest('.srow'); if (c) chooseResult(+c.dataset.i) });
+$('#rCols').addEventListener('click', e => { const c = e.target.closest('.rc'); if (c) playCollection(S.cols[+c.dataset.c]) });
 $('#rCta').addEventListener('click', e => { if (e.target.closest('[data-acc]')){ e.stopPropagation(); openAccounts() } });
 $('#q').addEventListener('keydown', e => {
   if (e.key === 'Escape'){ e.preventDefault(); closeSearch(); return }
@@ -1874,6 +1982,7 @@ function renderMoreMenu(){
   items.push(`<button class="mi" data-a="wall">${I.image}<span>Set wallpaper image / video…</span></button>`);
   if (app.classList.contains('hasCustom')) items.push(`<button class="mi" data-a="unwall">${I.layers}<span>Use album-art wallpaper</span></button>`);
   items.push(`<button class="mi ${S.shuffle ? 'chk' : ''}" data-a="shuf">${I.shuffle}<span>Shuffle</span>${I.check}</button>`);
+  items.push(`<button class="mi ${S.radioOn ? 'chk' : ''}" data-a="radio">${I.refresh}<span>Keep playing similar songs</span>${I.check}</button>`);
   items.push(`<button class="mi" data-a="lyr">${I.lyrics}<span>Lyrics &amp; subtitles…</span></button>`);
   items.push(`<button class="mi" data-a="look">${I.sliders}<span>Appearance…</span></button>`);
   items.push(`<button class="mi" data-a="acc">${I.user}<span>Accounts…</span></button>`);
@@ -1891,6 +2000,7 @@ $('#moreMenu').addEventListener('click', async e => {
   if (a === 'acc') openAccounts();
   if (a === 'lyr') openLyricsPanel();
   if (a === 'look') openAppPop();
+  if (a === 'radio'){ S.radioOn = !S.radioOn; store.set('radioOn', S.radioOn); toast(S.radioOn ? 'Keeps playing similar songs when the playlist ends' : 'Stops when the playlist ends'); if (S.radioOn) maybeRadio() }
   if (a === 'shuf'){ if (S.src === 'system') invoke('media_control', {action: 'shuffle'}).catch(err => toast(String(err))); else { S.shuffle = !S.shuffle; toast(S.shuffle ? 'Shuffle on' : 'Shuffle off') } }
   if (a === 'behind'){ try { S.ui = await invoke('set_wallpaper_mode', {on: !S.ui.wallpaper_mode}); toast(S.ui.wallpaper_mode ? 'Behind desktop icons — Ctrl+Alt+Space to search' : 'Interactive desktop mode') } catch(err){ toast(String(err)) } }
   if (a === 'quit') invoke('quit_app');
@@ -2004,6 +2114,7 @@ function deskMouse(m){
 /* ════════════════════ toggles ════════════════════ */
 function renderLike(){ const k = S.track ? S.track.title + '|' + S.track.artist : ''; const on = S.liked.has(k); $('#likeBtn').innerHTML = on ? I.heartF : I.heart; $('#likeBtn').classList.toggle('on', on) }
 function applyToggles(){
+  if (deskFill() && T && !$('#deskImg').classList.contains('ok')) applyBg();
   app.classList.toggle('nolyr', !S.lyrOn);
   app.classList.toggle('noamb', !S.ambOn);
   app.classList.toggle('dim', S.dim); $('#dimBtn').classList.toggle('on', S.dim);

@@ -20,7 +20,7 @@ use serde_json::{json, Value};
 use sha2::{Digest, Sha256};
 use tauri::{AppHandle, Emitter, Manager, Url, WebviewUrl, WebviewWindowBuilder};
 
-use crate::net::{client, Track};
+use crate::net::{client, Collection, Track};
 
 pub const UA: &str = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36";
 /// Must be identical for every webview of the app (shared WebView2 environment).
@@ -401,7 +401,8 @@ pub async fn spotify_play(app: &AppHandle, uri: &str) -> Result<String, String> 
             let r = client()
                 .put(format!("https://api.spotify.com/v1/me/player/play?device_id={}", enc(&id)))
                 .bearer_auth(&tok)
-                .json(&json!({ "uris": [uri] }))
+                // a single song plays by itself; an album / playlist plays as a whole
+                .json(&if uri.starts_with("spotify:track:") { json!({ "uris": [uri] }) } else { json!({ "context_uri": uri }) })
                 .send()
                 .await
                 .map_err(|e| e.to_string())?;
@@ -423,4 +424,40 @@ pub async fn spotify_play(app: &AppHandle, uri: &str) -> Result<String, String> 
     }
     crate::desktop::open_external(uri);
     Ok("opened".into())
+}
+
+/// Spotify albums and playlists matching a query (needs the account connected).
+pub async fn spotify_collections(app: &AppHandle, q: &str) -> Result<Vec<Collection>, String> {
+    let tok = token(app).await?;
+    let v: Value = client()
+        .get(format!("https://api.spotify.com/v1/search?q={}&type=album,playlist&limit=8", enc(q)))
+        .bearer_auth(tok)
+        .send()
+        .await
+        .map_err(|e| e.to_string())?
+        .json()
+        .await
+        .map_err(|e| e.to_string())?;
+    let mut out = Vec::new();
+    for (kind, path) in [("album", "/albums/items"), ("playlist", "/playlists/items")] {
+        for x in v.pointer(path).and_then(|i| i.as_array()).cloned().unwrap_or_default() {
+            if x.is_null() {
+                continue; // Spotify returns nulls for playlists it hides
+            }
+            let s = |p: &str| x.pointer(p).and_then(|v| v.as_str()).unwrap_or("").to_string();
+            let sub = if kind == "album" {
+                x.get("artists")
+                    .and_then(|a| a.as_array())
+                    .map(|a| a.iter().filter_map(|n| n.get("name").and_then(|n| n.as_str())).collect::<Vec<_>>().join(", "))
+                    .unwrap_or_default()
+            } else {
+                s("/owner/display_name")
+            };
+            if s("/uri").is_empty() {
+                continue;
+            }
+            out.push(Collection { id: s("/uri"), kind: kind.into(), title: s("/name"), sub, art: s("/images/0/url"), source: "spotify".into() });
+        }
+    }
+    Ok(out)
 }
