@@ -129,3 +129,5 @@ CUON NGANG: cac hang Top Results, hang mau trong bang chinh sua va playlist o gi
 KIEM TRA CHUC NANG: bam Ctrl+Shift+D (hoac Appearance > Self-test) de xem tung chuc nang Windows/YouTube co chay khong (am luong, Win+D, mau video, CC, chat luong video). Neu co muc loi, chup man hinh bang nay gui lai de sua.
 
 PLAYLIST BEN TRAI: cuon bang con lan chuot hoac keo len/xuong. Font, mau, co chu, do trong suot, kinh cua dong ho va lyrics chinh tap trung o cua so 'Font, colour & glass...' (bam vao dong ho/lyrics hoac phim E); bang Appearance chi con vi tri, kieu, hieu ung.
+
+LYRICS TU DONG: app tu tim loi bai hat co moc thoi gian tu nhieu nguon (LRCLIB, NetEase), doc ten bai kieu 'Ca si - Ten bai (Official MV)', chon ban khop ten va do dai bai nhat. Neu loi lech: bam ] de loi hien som hon, [ de hien tre hon (moi lan 0.5 giay, nho rieng cho tung bai).
