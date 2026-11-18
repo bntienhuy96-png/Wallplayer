@@ -1307,10 +1307,10 @@ vec3 edge(float d,float s,float side){
     amp=(.28+uE*.85+uB*1.35+uS*.3)*side; wc=.0028+uB*.004; wb=.016+uE*.03+uB*.045; wh=.08+uE*.05+uB*.06;
     col=mix(uA,uC,.5+.5*sin(uT*.7)); hot=.25+uB*.3;
   } else if(uMode<2.5){                                      /* SPECTRUM: equaliser bars around the frame */
-    float N=110.,seg=floor(s*N),lc=fract(s*N),sc=(seg+.5)/N;
+    float N=260.,seg=floor(s*N),lc=fract(s*N),sc=(seg+.5)/N;
     float b2=1.-abs(2.*fract((sc-uRot)*2.)-1.);
     float h=pow(texture2D(uSpec,vec2(.016+b2*.968,.5)).r,1.25);
-    float mask=smoothstep(.1,.22,lc)*smoothstep(.9,.78,lc);
+    float mask=smoothstep(.04,.14,lc)*smoothstep(.96,.86,lc);
     float H=.004+h*(.07+uB*.03);
     float inside=1.-smoothstep(H-.003,H+.001,d);
     vec3 bc=mix(uA,mix(uC,vec3(1.),.5),clamp(d/max(H,.001),0.,1.)*h);
