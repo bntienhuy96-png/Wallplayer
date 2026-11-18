@@ -263,6 +263,11 @@ async fn youtube_search(query: String) -> Result<Vec<String>, String> {
 }
 
 #[tauri::command]
+async fn yt_captions(video_id: String) -> Result<Vec<net::Cue>, String> {
+    net::yt_captions(&video_id).await
+}
+
+#[tauri::command]
 async fn lyrics(artist: String, title: String, duration: Option<f64>) -> Result<Option<net::Lyrics>, String> {
     net::lyrics(&artist, &title, duration).await
 }
@@ -328,6 +333,7 @@ fn main() {
             open_external,
             reveal_taskbar,
             screen_colors,
+            yt_captions,
             get_volume,
             set_volume,
             set_mute,

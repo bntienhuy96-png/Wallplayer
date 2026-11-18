@@ -992,6 +992,9 @@ function setLyrics(arr, t, source){
 async function loadLyrics(t){
   const seq = ++S.lyrSeq; setLyrics([]); S.lyrSeq = seq;
   if (t.demo || !T){ setLyrics(t.lyrics || [], t, 'demo'); return }
+  if (t.source === 'youtube' && t.play){   // YouTube clip: its own CC (hidden by YouTube) becomes the lyrics
+    try { const cc = await invoke('yt_captions', {videoId: t.play}); if (seq !== S.lyrSeq) return; if (cc && cc.length){ setLyrics(cc.map(c => ({t: c.t, text: c.text})), t, 'YouTube CC'); return } } catch(e){}
+  }
   try { const L = await invoke('lyrics', {artist: t.artist, title: t.title, duration: t.duration || null}); if (seq === S.lyrSeq) setLyrics(lyricsFromObj(L, t.duration), t, L && L.source) } catch(e){}
 }
 const trKey = lang => (S.track ? S.track.title + '|' + S.track.artist : '') + '|' + S.lyrSource + '|' + lang;

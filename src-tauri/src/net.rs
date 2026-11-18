@@ -711,3 +711,75 @@ pub async fn sc_search(q: &str) -> Result<Vec<Track>, String> {
         })
         .collect())
 }
+
+#[derive(Serialize, Clone, Debug)]
+pub struct Cue {
+    pub t: f64,
+    pub text: String,
+}
+
+/// The YouTube video's own captions (CC), even though the player keeps them hidden.
+/// Manual captions win over auto-generated ones. Returns [] when there are none.
+pub async fn yt_captions(video_id: &str) -> Result<Vec<Cue>, String> {
+    let clients = [
+        json!({"clientName": "ANDROID", "clientVersion": "19.09.37", "androidSdkVersion": 30, "hl": "en", "gl": "US"}),
+        json!({"clientName": "WEB", "clientVersion": "2.20241111.01.00", "hl": "en", "gl": "US"}),
+    ];
+    for c in clients {
+        let body = json!({"context": {"client": c}, "videoId": video_id, "contentCheckOk": true, "racyCheckOk": true});
+        let ua = if c["clientName"] == "ANDROID" { "com.google.android.youtube/19.09.37 (Linux; U; Android 11) gzip" } else { "" };
+        let mut req = client().post("https://www.youtube.com/youtubei/v1/player?prettyPrint=false").json(&body);
+        if !ua.is_empty() {
+            req = req.header("User-Agent", ua);
+        } else {
+            req = req.header("Origin", "https://www.youtube.com");
+        }
+        let v: Value = match req.send().await {
+            Ok(r) => match r.json().await {
+                Ok(v) => v,
+                Err(_) => continue,
+            },
+            Err(_) => continue,
+        };
+        let tracks = v
+            .pointer("/captions/playerCaptionsTracklistRenderer/captionTracks")
+            .and_then(|t| t.as_array())
+            .cloned()
+            .unwrap_or_default();
+        if tracks.is_empty() {
+            continue;
+        }
+        let pick = tracks
+            .iter()
+            .find(|t| t.get("kind").and_then(|k| k.as_str()) != Some("asr"))
+            .or_else(|| tracks.first())
+            .unwrap();
+        let Some(base) = pick.get("baseUrl").and_then(|b| b.as_str()) else { continue };
+        let url = format!("{}&fmt=json3", base.replace("&fmt=srv3", ""));
+        let r: Value = match client().get(url).send().await {
+            Ok(r) => match r.json().await {
+                Ok(v) => v,
+                Err(_) => continue,
+            },
+            Err(_) => continue,
+        };
+        let mut out: Vec<Cue> = Vec::new();
+        for e in r.get("events").and_then(|e| e.as_array()).cloned().unwrap_or_default() {
+            let Some(segs) = e.get("segs").and_then(|s| s.as_array()) else { continue };
+            let t = e.get("tStartMs").and_then(|t| t.as_f64()).unwrap_or(0.0) / 1000.0;
+            let text: String = segs.iter().filter_map(|s| s.get("utf8").and_then(|u| u.as_str())).collect::<Vec<_>>().join("");
+            let text = text.replace('\n', " ").split_whitespace().collect::<Vec<_>>().join(" ");
+            if text.is_empty() || (text.starts_with('[') && text.ends_with(']') && text.len() < 4) {
+                continue;
+            }
+            if out.last().map(|l| l.text == text).unwrap_or(false) {
+                continue;
+            }
+            out.push(Cue { t, text });
+        }
+        if !out.is_empty() {
+            return Ok(out);
+        }
+    }
+    Ok(vec![])
+}

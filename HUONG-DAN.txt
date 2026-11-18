@@ -49,6 +49,8 @@ LYRICS & PHỤ ĐỀ (nút 💬)
   (thời gian ước lượng). Có mục "Search Google for lyrics" mở trình duyệt.
 - Dòng 1 / Dòng 2: chọn ngôn ngữ (Original, Tiếng Việt, English, 日本語, 한국어…).
   Không có bản dịch thì app tự dịch từng dòng của lời gốc (giữ đúng thời gian).
+- Clip YouTube: phụ đề CC của video (YouTube mặc định ẩn) được lấy ra và hiện như lyrics theo kiểu
+  của player (font, hiệu ứng, vị trí, dịch sang ngôn ngữ khác). Video không có CC thì dùng lyrics thường.
 - Chế độ Full lyrics (nút 👁 hoặc phím L): ẩn cover flow + playlist, lyrics to ở giữa.
 
 CHỈNH ĐỒNG HỒ & LYRICS KIỂU LOCK SCREEN IPHONE
