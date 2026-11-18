@@ -50,7 +50,8 @@ img{display:block}
 #app.hasCustom #fx,#app.mv #fx{opacity:.25}
 /* Background → Desktop wallpaper: the Windows wallpaper of this monitor, optionally blurred */
 #deskImg{object-fit:cover;width:100%;height:100%;opacity:0;transition:opacity .8s,filter .3s,transform .3s}
-#app.deskbg #deskImg.ok{opacity:1}
+#app.deskbg #deskImg.ok,#app.deskfill #deskImg.ok{opacity:1}
+#app.deskbg .custom{opacity:0!important}   /* Desktop wallpaper mode wins over a custom image */
 #app.deskbg #fx{opacity:0}
 #app.clip #deskImg,#app.clip-mirror #deskImg{opacity:0!important}
 
@@ -543,10 +544,10 @@ button.bgv:hover{background:rgba(255,255,255,.08)}
     <div class="wl wart" id="artA"></div>
     <div class="wl wart" id="artB"></div>
     <canvas id="fx"></canvas>
+    <img id="deskImg" class="wl" alt="">
     <img id="customImg" class="wl custom" alt="">
     <video id="customVid" class="wl custom" muted loop playsinline autoplay></video>
     <div id="ytWrap"><div id="ytHost"></div></div>
-    <img id="deskImg" class="wl" alt="">
     <div class="wl shade"></div>
   </div>
   <div id="ambient"><i class="amb top"></i><i class="amb bottom"></i><i class="amb left"></i><i class="amb right"></i></div>
@@ -1111,16 +1112,18 @@ async function applyBg(){
     if (bgVid()) bgVideo(S.track, true);
     else if (!on && S.track && S.src !== 'demo' && S.src !== 'none' && S.mvOn) mvFor(S.track);
   }
-  if (!on) return;
-  if (!MIRROR) YTV.stop();
-  if (!T) return;
+  if (on && !MIRROR) YTV.stop();
+  if (!T || (!on && !deskFill())) return;
   try {
     const r = await invoke('desktop_wallpaper', {known: deskPath});
     if (!r){ img.classList.remove('ok'); return }
     if (r.data){ deskPath = r.path; img.onload = () => img.classList.add('ok'); img.src = r.data }
   } catch(e){ img.classList.remove('ok') }
 }
-setInterval(() => { if (S.look.bg === 'desktop' && T) applyBg() }, 60000);   // picks up a new wallpaper / slideshow
+// Video backgrounds (MV, My video, Surprise me): while the next video loads — between two songs,
+// or when a song has no video — the Windows wallpaper shows instead of a plain colour gradient.
+function deskFill(){ const on = S.look.bg !== 'desktop' && (bgVid() || S.mvOn); app.classList.toggle('deskfill', on); return on }
+setInterval(() => { if ((S.look.bg === 'desktop' || deskFill()) && T) applyBg() }, 60000);   // picks up a new wallpaper / slideshow
 function applyLook(){
   const L = S.look; app.className = app.className.replace(/\b(ckpos|lypos|lyst|lfx|ck|ly|lys|lc)-\S+/g, '').replace(/\s+/g, ' ').trim();
   app.classList.add('ck-' + L.ck, 'ly-' + L.ly, 'lys-' + L.lys, 'lc-' + L.lc, 'ckpos-' + L.ckpos, 'lypos-' + L.lypos, 'lyst-' + L.lyst, 'lfx-' + L.lfx); S.lyrIdx = -2; app.classList.toggle('noclock', !L.clock);
@@ -2048,6 +2051,7 @@ function deskMouse(m){
 /* ════════════════════ toggles ════════════════════ */
 function renderLike(){ const k = S.track ? S.track.title + '|' + S.track.artist : ''; const on = S.liked.has(k); $('#likeBtn').innerHTML = on ? I.heartF : I.heart; $('#likeBtn').classList.toggle('on', on) }
 function applyToggles(){
+  if (deskFill() && T && !$('#deskImg').classList.contains('ok')) applyBg();
   app.classList.toggle('nolyr', !S.lyrOn);
   app.classList.toggle('noamb', !S.ambOn);
   app.classList.toggle('dim', S.dim); $('#dimBtn').classList.toggle('on', S.dim);
