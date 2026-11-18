@@ -45,6 +45,9 @@ impl Mode {
 /// e.g. after Win+D / "show desktop".
 static FRONT: AtomicBool = AtomicBool::new(false);
 static MODE: AtomicU8 = AtomicU8::new(Mode::Desktop as u8);
+pub fn is_wallpaper() -> bool {
+    MODE.load(Ordering::Relaxed) == Mode::Wallpaper as u8
+}
 /// Device name of the monitor to cover ("" = primary).
 static TARGET: Mutex<String> = Mutex::new(String::new());
 
@@ -85,7 +88,7 @@ pub fn set_target(id: &str) {
 }
 
 /// Rect of the chosen monitor (falls back to the primary one).
-fn target_rect() -> (i32, i32, i32, i32) {
+pub fn target_rect() -> (i32, i32, i32, i32) {
     let want = TARGET.lock().unwrap().clone();
     let list = monitors();
     let m = list

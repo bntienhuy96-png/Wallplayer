@@ -2,6 +2,7 @@
 
 mod accounts;
 mod audio;
+mod deskmouse;
 mod desktop;
 mod media;
 mod net;
@@ -376,6 +377,7 @@ fn main() {
             if raw != 0 {
                 desktop::install(raw);
                 desktop::spawn_watcher(raw);
+                deskmouse::start(handle.clone());
             }
             apply_mode(&handle);
 

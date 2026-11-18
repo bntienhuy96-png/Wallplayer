@@ -24,3 +24,5 @@ File ra: `src-tauri/target/release/wallplayer.exe`. Khi phát hành phải đi k
 - Bản exe cũ được build chéo từ Linux và chưa từng chạy thử trên Windows thật: hãy build và kiểm tra lại trên máy Windows trước khi phát hành.
 - Genius, YouTube InnerTube, dịch Google dùng API không chính thức, có thể đổi bất cứ lúc nào.
 - Google lyrics không tự động hóa được (captcha), app chỉ mở trình duyệt.
+
+- Chế độ mặc định = Wallpaper (WorkerW, như Wallpaper Engine). Chuột được chuyển bằng hook WH_MOUSE_LL (`src-tauri/src/deskmouse.rs`) → sự kiện `desk-mouse` → `deskMouse()` trong ui/index.html. Chưa chạy thử trên Windows thật: kiểm tra rê/bấm/kéo/cuộn, Win+D, và ô search (tự gọi `peek`).

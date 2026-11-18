@@ -1736,6 +1736,47 @@ $('#appPop').addEventListener('change', e => { const d = e.target.closest('selec
   if (k === 'lys') S.look.lysz = 0; if (k === 'ck') S.look.clock = true; if (k === 'theme') applyTheme(); applyLook(); renderAppPop() });
 $('#appPop').addEventListener('input', e => { const r = e.target.closest('[data-r]'); if (!r) return; S.look[r.dataset.r] = +r.value; store.set('look', S.look) });
 
+/* ════════════════════ desktop mouse (Wallpaper mode): the app is behind the icons, so Windows sends the mouse here as events ════════════════════ */
+const VM = {el: null, down: null};
+const vmPath = el => { const a = []; for (let n = el; n; n = n.parentElement) a.push(n); return a };
+function vmFire(type, el, x, y, extra){
+  if (!el) return; const P = type.startsWith('pointer') && window.PointerEvent ? PointerEvent : (type === 'wheel' ? WheelEvent : MouseEvent);
+  el.dispatchEvent(new P(type, Object.assign({bubbles: type !== 'mouseenter' && type !== 'mouseleave', cancelable: true, clientX: x, clientY: y, view: window, button: 0, buttons: VM.down ? 1 : 0, pointerId: 1, pointerType: 'mouse', isPrimary: true}, extra || {})));
+}
+function vmHover(x, y){
+  const el = document.elementFromPoint(x, y), prev = VM.el;
+  if (el !== prev){
+    const a = prev ? vmPath(prev) : [], b = el ? vmPath(el) : [];
+    if (prev){ vmFire('mouseout', prev, x, y); for (const n of a) if (!b.includes(n)){ vmFire('mouseleave', n, x, y); n.classList.remove('vh') } }
+    if (el){ vmFire('mouseover', el, x, y); for (const n of b.slice().reverse()) if (!a.includes(n)){ vmFire('mouseenter', n, x, y); n.classList.add('vh') } }
+    VM.el = el;
+  }
+  return el;
+}
+function vmRange(r, x){ const b = r.getBoundingClientRect(), f = clamp((x - b.left) / b.width, 0, 1), mn = +r.min || 0, mx = r.max === '' ? 100 : +r.max, st = +r.step || 0;
+  let v = mn + f * (mx - mn); if (st) v = Math.round(v / st) * st; r.value = v; vmFire('input', r, x, 0); vmFire('change', r, x, 0) }
+function deskMouse(m){
+  const k = m.k, d = window.devicePixelRatio || 1, x = m.x / d, y = m.y / d;
+  if (k === 'leave'){ vmHover(-1, -1); return }
+  if (k === 'move'){ const el = vmHover(x, y); if (VM.down && VM.down.type === 'range') vmRange(VM.down, x);
+    vmFire('pointermove', VM.down || el || document.body, x, y); vmFire('mousemove', VM.down || el || document.body, x, y); return }
+  if (k === 'wheel'){ const el = document.elementFromPoint(x, y); if (el) vmFire('wheel', el, x, y, {deltaY: -m.d, deltaMode: 0}); return }
+  if (k === 'down'){
+    const el = vmHover(x, y); VM.down = el; if (!el) return;
+    if (el.closest('input[type=text],input:not([type]),input[type=search],textarea,select,[contenteditable]')){   // needs the keyboard / a real popup: raise the skin for a moment
+      VM.down = null; if (T) invoke('peek', {on: true}); setTimeout(() => { try { el.focus() } catch(e){} }, 120); return }
+    if (el.type === 'range') vmRange(el, x);
+    vmFire('pointerdown', el, x, y); vmFire('mousedown', el, x, y); return }
+  if (k === 'up'){
+    const el = document.elementFromPoint(x, y), dn = VM.down; VM.down = null;
+    vmFire('pointerup', el || document.body, x, y); vmFire('mouseup', el || document.body, x, y);
+    if (dn && el && (el === dn || dn.contains(el) || el.contains(dn))) vmFire('click', el, x, y);
+    return }
+}
+/* every ":hover" rule gets a twin for ".vh", the class a forwarded hover sets */
+(function mirrorHover(){ for (const sh of document.styleSheets){ let rules; try { rules = sh.cssRules } catch(e){ continue }
+  for (const r of [...rules]){ if (r.selectorText && r.selectorText.includes(':hover')){ try { sh.insertRule(r.cssText.replace(/:hover/g, '.vh'), sh.cssRules.length) } catch(e){} } } } })();
+
 /* ════════════════════ toggles ════════════════════ */
 function renderLike(){ const k = S.track ? S.track.title + '|' + S.track.artist : ''; const on = S.liked.has(k); $('#likeBtn').innerHTML = on ? I.heartF : I.heart; $('#likeBtn').classList.toggle('on', on) }
 function applyToggles(){
@@ -1999,6 +2040,7 @@ async function boot(){
     listen('media', e => onMedia(e.payload));
     listen('audio-spectrum', e => AU.feed(e.payload, performance.now()));
     listen('hotkey-search', () => openSearch());
+    listen('desk-mouse', e => deskMouse(e.payload));
     listen('hotkey-action', e => runKey(e.payload));
     listen('peek-ended', () => app.classList.remove('searching'));
     listen('mode-changed', e => { S.ui = e.payload });

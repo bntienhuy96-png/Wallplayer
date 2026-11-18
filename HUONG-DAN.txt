@@ -94,10 +94,13 @@ H Toàn bộ UI   A Ambient    M MV làm nền   D Làm tối    R Repeat/Loop  
 (Phím đơn hoạt động khi đang bấm vào hình nền, không gõ trong ô search.)
 
 CHẾ ĐỘ ĐẶT TRÊN DESKTOP (chuột phải biểu tượng khay)
-- Mặc định: bấm trực tiếp được mọi nút, che icon desktop.
-  Khi bấm Win + D, nút Show desktop ở góc taskbar hoặc Win + M (không còn cửa sổ nào hiện),
-  Wallplayer tự hiện lên thay cho desktop trống; mở lại ứng dụng thì nó nằm dưới như cũ.
-- "Behind desktop icons": nằm sau icon như hình nền thật; dùng Ctrl+Alt+Space để tương tác.
+- Mặc định (giống Wallpaper Engine): Wallplayer nằm trong lớp hình nền, phía sau icon desktop.
+  Nhờ vậy bấm Win + D, Show desktop hay Win + M thì Wallplayer vẫn hiện như hình nền.
+  Chuột vẫn dùng được: rê, bấm, kéo, cuộn trên vùng desktop trống (không phải trên icon).
+  Khi bấm vào ô search, Wallplayer tạm nổi lên để bạn gõ chữ; bấm ra ngoài thì trở lại nền.
+  Phím tắt đơn (Space, H, L, E...) chỉ dùng được khi Wallplayer đang nổi lên (Ctrl+Alt+Space).
+- Bỏ tick "Behind desktop icons": Wallplayer thành cửa sổ thường nằm sát đáy, che icon desktop,
+  bấm trực tiếp mọi nút; khi Win + D thì app tự cố hiện lên thay desktop trống (kém ổn định hơn).
 - "Start with Windows": tự chạy khi mở máy.
 
 GIỚI HẠN ĐÃ BIẾT
