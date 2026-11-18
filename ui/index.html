@@ -244,6 +244,7 @@ img{display:block}
 .rlabel small{font-size:1rem;font-weight:500;color:var(--txt3)}
 .rrow{display:flex;gap:1.1rem;overflow-x:auto;scrollbar-width:none;padding-bottom:.3rem;margin-bottom:1.3rem;min-height:2rem}
 .rrow::-webkit-scrollbar{display:none}
+.rrow,.ecolors{cursor:grab}.rrow.dragging,.ecolors.dragging{cursor:grabbing;user-select:none}.rrow img,.ecolors img,#flow img{-webkit-user-drag:none;user-select:none}#flowWrap.dragging,#flowWrap.dragging *{cursor:grabbing!important}
 .rc{flex:none;width:10.2rem;cursor:pointer}
 .rc .ra{position:relative;width:10.2rem;height:10.2rem;border-radius:1.1rem;overflow:hidden;background:rgba(255,255,255,.08);box-shadow:0 .5rem 1.4rem rgba(0,0,0,.3)}
 .rc .ra img{width:100%;height:100%;object-fit:cover;transition:transform .35s}
@@ -1514,6 +1515,39 @@ $('#flowWrap').addEventListener('wheel', e => {
   FLOW.browse = clamp(FLOW.center + d, 0, FLOW.list.length - 1); renderFlow();
   clearTimeout(FLOW.browseT); FLOW.browseT = setTimeout(() => { FLOW.browse = null; renderFlow() }, 6000);
 }, {passive: false});
+
+/* ── horizontal scrolling: wheel + drag-to-scroll (search rows, colour rows, centre cover flow) ── */
+let dragMoved = 0;
+function dragScroll(el){
+  el.addEventListener('wheel', e => {
+    if (el.scrollWidth <= el.clientWidth || Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;   // sideways trackpad swipe already works
+    e.preventDefault(); el.scrollLeft += e.deltaY }, {passive: false});
+  el.addEventListener('dragstart', e => e.preventDefault());
+  el.addEventListener('pointerdown', e => {
+    if (e.button !== 0 || el.scrollWidth <= el.clientWidth) return;
+    const x0 = e.clientX, s0 = el.scrollLeft; let moved = false;
+    const mv = ev => { const dx = ev.clientX - x0; if (!moved && Math.abs(dx) < 5) return; moved = true; el.classList.add('dragging'); el.scrollLeft = s0 - dx };
+    const up = () => { removeEventListener('pointermove', mv); removeEventListener('pointerup', up); removeEventListener('pointercancel', up);
+      el.classList.remove('dragging'); if (moved){ dragMoved = performance.now() } };
+    addEventListener('pointermove', mv); addEventListener('pointerup', up); addEventListener('pointercancel', up);
+  });
+}
+function watchDragScroll(root){ root.querySelectorAll('.rrow,.ecolors').forEach(el => { if (!el._ds){ el._ds = 1; dragScroll(el) } }) }
+watchDragScroll(document);
+new MutationObserver(() => watchDragScroll(document)).observe(document.body, {childList: true, subtree: true});
+/* a drag must not count as a click on the card underneath */
+addEventListener('click', e => { if (performance.now() - dragMoved < 250){ e.stopPropagation(); e.preventDefault() } }, true);
+/* centre cover flow: drag left/right to browse the cards */
+$('#flowWrap').addEventListener('pointerdown', e => {
+  if (e.button !== 0 || !e.target.closest('.fc') || !FLOW.list || FLOW.list.length < 2) return;
+  const x0 = e.clientX, c0 = FLOW.center, step = parseFloat(getComputedStyle(document.documentElement).fontSize) * 9; let moved = false;
+  const wrap = $('#flowWrap');
+  const mv = ev => { const dx = ev.clientX - x0; if (!moved && Math.abs(dx) < 6) return; moved = true; wrap.classList.add('dragging');
+    const n = clamp(c0 - Math.round(dx / step), 0, FLOW.list.length - 1); if (n !== FLOW.center){ FLOW.browse = n; renderFlow() } };
+  const up = () => { removeEventListener('pointermove', mv); removeEventListener('pointerup', up); removeEventListener('pointercancel', up); wrap.classList.remove('dragging');
+    if (moved){ dragMoved = performance.now(); clearTimeout(FLOW.browseT); FLOW.browseT = setTimeout(() => { FLOW.browse = null; renderFlow() }, 6000) } };
+  addEventListener('pointermove', mv); addEventListener('pointerup', up); addEventListener('pointercancel', up);
+});
 
 /* ════════════════════ search (panel above the field; choosing a song turns the results into the playlist) ════════════════════ */
 function openSearch(){ closeMenus(); if (S.hide.search){ S.hide.search = false; applyHide() } $('#q').focus(); showSearch() }

@@ -105,3 +105,5 @@ GIỚI HẠN ĐÃ BIẾT
 - Google có thể chặn đăng nhập trong cửa sổ nhúng ở một số tài khoản.
 - Genius, YouTube và dịch máy dùng API không chính thức: có thể đổi bất cứ lúc nào.
 - Cần Microsoft Edge WebView2 Runtime (có sẵn trên Windows 11 và hầu hết Windows 10).
+
+CUON NGANG: cac hang Top Results, hang mau trong bang chinh sua va playlist o giua deu cuon duoc bang con lan chuot (hoac vuot ngang tren touchpad) va keo-tha chuot de cuon.
