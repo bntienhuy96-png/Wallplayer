@@ -447,6 +447,7 @@ img{display:block}
 .tg.on::after{transform:translateX(1.5rem)}
 .chips{display:flex;flex-wrap:wrap;gap:.5rem;padding:.3rem .8rem .6rem}
 .lrow .chips{padding:0}
+.dd{width:100%;padding:.55rem .9rem;border-radius:1.2rem;background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.14);font:600 1.12rem system-ui;outline:none;cursor:pointer;appearance:none;-webkit-appearance:none;background-image:linear-gradient(45deg,transparent 50%,#fff 50%),linear-gradient(135deg,#fff 50%,transparent 50%);background-position:calc(100% - 1.3rem) 55%,calc(100% - .95rem) 55%;background-size:.4rem .4rem;background-repeat:no-repeat}.dd option{background:#1c1c20;color:#fff}
 .chip{padding:.45rem .95rem;border-radius:1.2rem;background:rgba(255,255,255,.1);font-size:1.12rem;font-weight:600;color:#fff;border:1px solid transparent;transition:background .15s}
 .chip:hover{background:rgba(255,255,255,.18)}
 .chip.on{background:rgba(var(--accent),.3);border-color:rgba(var(--accent),.8)}
@@ -983,7 +984,9 @@ function applyLook(){
 }
 function renderAppPop(){
   const L = S.look; setTimeout(loadMonitors, 0);
-  const chips = (key, opts, font) => `<div class="chips">${opts.map(([v, n, f]) => `<button class="chip ${L[key] === v ? 'on' : ''}" data-k="${key}" data-v="${v}" ${font && f ? `style="font-family:${f.replace(/"/g, '&quot;')}"` : ''}>${n}</button>`).join('')}</div>`;
+  const chips = (key, opts, font) => opts.length > 5
+    ? `<div class="chips"><select class="dd" data-k="${key}">${opts.map(([v, n, f]) => `<option value="${v}" ${L[key] === v ? 'selected' : ''} ${font && f ? `style="font-family:${f.replace(/"/g, '&quot;')}"` : ''}>${n}</option>`).join('')}</select></div>`
+    : `<div class="chips">${opts.map(([v, n, f]) => `<button class="chip ${L[key] === v ? 'on' : ''}" data-k="${key}" data-v="${v}" ${font && f ? `style="font-family:${f.replace(/"/g, '&quot;')}"` : ''}>${n}</button>`).join('')}</div>`;
   const P = S.pal, role = w => !P ? '' : w === P.accent ? 'Accent' : w === P.dominant ? 'Dominant' : w === P.secondary ? 'Secondary' : '';
   const picked = P ? (L.theme === 'dominant' ? P.dominant : L.theme === 'secondary' ? P.secondary : L.theme === 'manual' ? P.swatches[Math.min(L.pickIdx, P.swatches.length - 1)] : P.accent) : null;
   const theme = `<div class="mh">Theme color</div>${chips('theme', [['accent', 'Accent'], ['dominant', 'Dominant'], ['secondary', 'Secondary']])}
@@ -1729,6 +1732,8 @@ $('#appPop').addEventListener('click', e => {
   if (tg){ if (tg.dataset.t === 'clock'){ S.look.clock = !S.look.clock; applyLook() } else { S.ambOn = !S.ambOn; applyToggles() } renderAppPop() }
   const hb = e.target.closest('[data-h]'); if (hb){ if (hb.dataset.h === 'queue'){ S.qOff = !S.qOff; applyToggles() } else { S.hide[hb.dataset.h] = !S.hide[hb.dataset.h]; applyHide() } renderAppPop() }
 });
+$('#appPop').addEventListener('change', e => { const d = e.target.closest('select.dd'); if (!d) return; const k = d.dataset.k; S.look[k] = d.value;
+  if (k === 'lys') S.look.lysz = 0; if (k === 'ck') S.look.clock = true; if (k === 'theme') applyTheme(); applyLook(); renderAppPop() });
 $('#appPop').addEventListener('input', e => { const r = e.target.closest('[data-r]'); if (!r) return; S.look[r.dataset.r] = +r.value; store.set('look', S.look) });
 
 /* ════════════════════ toggles ════════════════════ */
