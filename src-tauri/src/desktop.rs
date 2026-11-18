@@ -426,6 +426,10 @@ pub fn spawn_watcher(raw: isize) {
 /// tiny bitmap and two quiet zones, away from the UI and the edge light,
 /// are averaged: left and right of the middle. Returns [left, right] as RGB.
 pub fn screen_colors() -> Option<[[u8; 3]; 2]> {
+    // an app window is covering the screen: its colours are not the video's
+    if unsafe { apps_visible(HWND::default()) } {
+        return None;
+    }
     use windows::Win32::Graphics::Gdi::{
         CreateCompatibleBitmap, CreateCompatibleDC, DeleteDC, DeleteObject, GetDC, GetDIBits, ReleaseDC,
         SelectObject, SetStretchBltMode, StretchBlt, BITMAPINFO, BITMAPINFOHEADER, BI_RGB, DIB_RGB_COLORS,
@@ -481,4 +485,31 @@ pub fn screen_colors() -> Option<[[u8; 3]; 2]> {
         ReleaseDC(HWND::default(), sdc);
         out
     }
+}
+
+/// Self-test text: which windows count as "apps on screen" (these stop the skin from
+/// rising on Win+D), and whether the skin is currently in front.
+pub fn debug_state() -> String {
+    unsafe extern "system" fn cb(w: HWND, lp: LPARAM) -> BOOL {
+        let v = &mut *(lp.0 as *mut Vec<String>);
+        let mut st: (HWND, u32) = (HWND::default(), 0);
+        let _ = count_cb(w, LPARAM(&mut st as *mut _ as isize));
+        if st.1 > 0 {
+            let mut buf = [0u16; 120];
+            let n = GetWindowTextW(w, &mut buf);
+            v.push(format!("{} [{}]", String::from_utf16_lossy(&buf[..n as usize]), class_of(w)));
+        }
+        TRUE
+    }
+    let mut v: Vec<String> = Vec::new();
+    unsafe {
+        let _ = EnumWindows(Some(cb), LPARAM(&mut v as *mut _ as isize));
+    }
+    format!(
+        "mode={} front={} blocking_windows={}{}",
+        MODE.load(Ordering::Relaxed),
+        FRONT.load(Ordering::Relaxed),
+        v.len(),
+        if v.is_empty() { String::new() } else { format!(" → {}", v.join(" | ")) }
+    )
 }

@@ -107,3 +107,5 @@ GIỚI HẠN ĐÃ BIẾT
 - Cần Microsoft Edge WebView2 Runtime (có sẵn trên Windows 11 và hầu hết Windows 10).
 
 CUON NGANG: cac hang Top Results, hang mau trong bang chinh sua va playlist o giua deu cuon duoc bang con lan chuot (hoac vuot ngang tren touchpad) va keo-tha chuot de cuon.
+
+KIEM TRA CHUC NANG: bam Ctrl+Shift+D (hoac Appearance > Self-test) de xem tung chuc nang Windows/YouTube co chay khong (am luong, Win+D, mau video, CC, chat luong video). Neu co muc loi, chup man hinh bang nay gui lai de sua.
