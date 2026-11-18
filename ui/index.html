@@ -1911,6 +1911,29 @@ function frame(now){
 }
 setInterval(() => { renderClock(); if (S.src !== 'demo') renderPlay(); mvSync() }, 1000);
 
+/* ════════════════════ mirror windows (other monitors) ════════════════════ */
+// The other monitors run ui/mirror.html. They show what this window plays:
+// the music video (muted, in sync) or the blurred cover, plus the current lyric line.
+let mirrorArt = null;
+function mirrorSync(force){
+  if (!T) return;
+  const t = S.track, clip = app.classList.contains('clip');
+  const P = clip ? YTA : YTV;
+  const vidOn = clip || $('#ytWrap').classList.contains('on');
+  const video = vidOn ? (P.ids[P.i] || null) : null;
+  const art = (t && t.art) || $('#npArt').getAttribute('src') || null;
+  const artChanged = force || art !== mirrorArt; mirrorArt = art;
+  const ln = S.lyrIdx >= 0 && S.lyr[S.lyrIdx] ? S.lyr[S.lyrIdx].text || '' : '';
+  T.event.emit('mirror-state', {
+    title: t ? t.title : '', artist: t ? t.artist : '',
+    artChanged, art: artChanged ? art : null,
+    accent: S.tgtA, accent2: S.tgtB,
+    video, time: video ? P.time() : 0, playing: video ? P.playing() : isPlaying(),
+    lyric: ln, at: Date.now()
+  }).catch(() => {});
+}
+setInterval(() => mirrorSync(false), 500);
+
 /* ════════════════════ boot ════════════════════ */
 async function boot(){
   applyLook(); applyHide(); renderClock(); renderPlatMenu(); applyToggles(); setLyricsMode(store.get('lyricsMode', false));
@@ -1926,6 +1949,7 @@ async function boot(){
     listen('accounts-changed', () => refreshAccounts());
     listen('monitor-changed', () => loadMonitors());
     listen('toast', e => toast(e.payload));
+    listen('mirror-hello', () => mirrorSync(true));
     try { S.ui = await invoke('get_state') } catch(e){}
     refreshAccounts();
     S.qKind = 'history'; setTrack(null); setAccent(null); setWallArt(null);

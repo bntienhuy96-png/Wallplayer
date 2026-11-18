@@ -69,6 +69,8 @@ APPEARANCE (nút ⫶)
   Màu này dùng cho đồng hồ, ambient light và điểm nhấn UI.
 - Display: chọn màn hình hiển thị khi dùng nhiều màn hình
   (hoặc khay hệ thống → "Move to next display").
+  (khay hệ thống → "Fill other displays": các màn hình còn lại hiện MV đang phát, tắt tiếng và chạy khớp,
+   hoặc bìa album mờ + đồng hồ + dòng lyrics hiện tại. Bỏ chọn để tắt.)
 - Clock: bật/tắt; 7 kiểu Tall, Outline, Thin, Rounded, Serif, Bold, Mono;
   vị trí Top / Top left / Top right / Bottom left / Bottom right.
 - Lyrics: Style Player (karaoke) hoặc YouTube captions (phụ đề nền đen);

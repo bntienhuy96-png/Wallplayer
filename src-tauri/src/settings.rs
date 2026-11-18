@@ -17,6 +17,9 @@ pub struct Settings {
     /// monitor device name ("" = primary)
     #[serde(default)]
     pub monitor: String,
+    /// true = leave the other monitors alone (no companion "mirror" windows)
+    #[serde(default)]
+    pub no_mirror: bool,
 }
 
 fn path(app: &AppHandle) -> Option<PathBuf> {

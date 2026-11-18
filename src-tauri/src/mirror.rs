@@ -1,0 +1,91 @@
+//! Companion windows for the other monitors.
+//!
+//! The main skin lives on one monitor. Every other monitor gets a light
+//! "mirror" window (`ui/mirror.html`) that shows the music video of the song
+//! that is playing (muted, kept in sync), or the blurred album cover with the
+//! album colours. The main UI broadcasts its state with the `mirror-state`
+//! event; mirrors never play sound.
+
+use tauri::{AppHandle, Manager, WebviewUrl, WebviewWindowBuilder};
+
+use crate::{desktop, AppState};
+
+// Must match the main window in tauri.conf.json: every webview in the app
+// shares one WebView2 environment, and it refuses a second set of arguments.
+const USER_AGENT: &str = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36";
+const BROWSER_ARGS: &str = "--disable-features=msWebOOUI,msPdfOOUI,msSmartScreenProtection,UserAgentClientHint --autoplay-policy=no-user-gesture-required";
+
+fn label_for(monitor_id: &str) -> String {
+    let clean: String = monitor_id.chars().filter(|c| c.is_ascii_alphanumeric()).collect();
+    format!("mirror-{clean}")
+}
+
+/// Make the set of mirror windows match the monitors: one per monitor other
+/// than the main skin's, none when turned off. Safe to call from anywhere.
+pub fn sync(app: &AppHandle) {
+    let app = app.clone();
+    // Windows are built off the main thread (building inside a menu handler or
+    // a sync command deadlocks WebView2 on Windows).
+    tauri::async_runtime::spawn(async move {
+        let off = app.state::<AppState>().settings.lock().unwrap().no_mirror;
+        let main_id = desktop::target_id();
+        let wanted: Vec<desktop::Monitor> = if off {
+            vec![]
+        } else {
+            desktop::monitors().into_iter().filter(|m| m.id != main_id).collect()
+        };
+        let wanted_labels: Vec<String> = wanted.iter().map(|m| label_for(&m.id)).collect();
+
+        // close mirrors that are no longer needed
+        for (label, w) in app.webview_windows() {
+            if label.starts_with("mirror-") && !wanted_labels.contains(&label) {
+                if let Ok(h) = w.hwnd() {
+                    desktop::remove_mirror(h.0 as isize);
+                }
+                let _ = w.destroy();
+            }
+        }
+
+        // open the missing ones
+        for m in wanted {
+            let label = label_for(&m.id);
+            let win = match app.get_webview_window(&label) {
+                Some(w) => w,
+                None => match WebviewWindowBuilder::new(&app, &label, WebviewUrl::App("mirror.html".into()))
+                    .title("Wallplayer")
+                    .decorations(false)
+                    .resizable(false)
+                    .skip_taskbar(true)
+                    .visible(false)
+                    .focused(false)
+                    .shadow(false)
+                    .use_https_scheme(true)
+                    .user_agent(USER_AGENT)
+                    .additional_browser_args(BROWSER_ARGS)
+                    .position(m.x as f64, m.y as f64)
+                    .build()
+                {
+                    Ok(w) => w,
+                    Err(e) => {
+                        eprintln!("mirror window: {e}");
+                        continue;
+                    }
+                },
+            };
+            let Ok(h) = win.hwnd() else { continue };
+            let raw = h.0 as isize;
+            desktop::add_mirror(raw, &m.id);
+            let first = !app.state::<AppState>().mirrors_installed.lock().unwrap().contains(&raw);
+            if first {
+                app.state::<AppState>().mirrors_installed.lock().unwrap().push(raw);
+            }
+            // Window subclassing has to happen on the thread that owns the window.
+            let _ = app.run_on_main_thread(move || {
+                if first {
+                    desktop::install(raw);
+                }
+                desktop::place_mirrors(desktop::current_mode());
+            });
+        }
+    });
+}
