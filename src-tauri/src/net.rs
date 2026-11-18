@@ -155,39 +155,166 @@ fn clean_title(t: &str) -> String {
     re.replace_all(t, "").trim().to_string()
 }
 
-pub async fn lyrics(artist: &str, title: &str, duration: Option<f64>) -> Result<Option<Lyrics>, String> {
-    let title = clean_title(title);
-    let artist = artist.split(&[',', '&'][..]).next().unwrap_or(artist).trim().to_string();
+/// Query variants for a track. YouTube titles are often "Artist - Song (Official MV)" and the
+/// "artist" is the channel ("SomethingVEVO", "Name - Topic").
+fn variants(artist: &str, title: &str) -> Vec<(String, String)> {
+    let re = Regex::new(r"(?i)\s*(-\s*topic|vevo|official)\s*$").unwrap();
+    let first = artist.split(&[',', '&'][..]).next().unwrap_or(artist);
+    let a = re.replace_all(first, "").trim().to_string();
+    let t = clean_title(title);
+    let mut v: Vec<(String, String)> = vec![(t.clone(), a.clone())];
+    for sep in [" - ", " – ", " | "] {
+        if let Some((l, r)) = t.split_once(sep) {
+            let (l, r) = (l.trim().to_string(), r.trim().to_string());
+            if !l.is_empty() && !r.is_empty() {
+                v.push((r.clone(), l.clone())); // "Artist - Song"
+                v.push((l, r)); // "Song - Artist"
+            }
+            break;
+        }
+    }
+    v.push((t, String::new()));
+    let mut out: Vec<(String, String)> = Vec::new();
+    for x in v {
+        if !x.0.is_empty() && !out.contains(&x) {
+            out.push(x);
+        }
+    }
+    out
+}
+
+fn sim(a: &str, b: &str) -> f64 {
+    let (a, b) = (norm(a), norm(b));
+    if a.is_empty() || b.is_empty() {
+        0.0
+    } else if a == b {
+        1.0
+    } else if a.contains(&b) || b.contains(&a) {
+        0.8
+    } else {
+        0.0
+    }
+}
+
+async fn lrclib_candidates(t: &str, a: &str, d: f64, out: &mut Vec<Lyrics>) {
+    if d > 0.0 && !a.is_empty() {
+        let url = format!("https://lrclib.net/api/get?track_name={}&artist_name={}&duration={}", enc(t), enc(a), d.round() as i64);
+        if let Ok(v) = lrclib(url).await {
+            if v.get("id").is_some() {
+                out.push(to_lyrics(&v));
+            }
+        }
+    }
+    let url = if a.is_empty() {
+        format!("https://lrclib.net/api/search?q={}", enc(t))
+    } else {
+        format!("https://lrclib.net/api/search?track_name={}&artist_name={}", enc(t), enc(a))
+    };
+    if let Ok(v) = lrclib(url).await {
+        if let Some(arr) = v.as_array() {
+            out.extend(arr.iter().take(12).map(to_lyrics));
+        }
+    }
+}
+
+/// NetEase Cloud Music: large catalogue (incl. Asian and Vietnamese songs) with timed lyrics.
+async fn netease_candidates(t: &str, a: &str, out: &mut Vec<Lyrics>) {
     let url = format!(
-        "https://lrclib.net/api/search?track_name={}&artist_name={}",
-        enc(&title),
-        enc(&artist)
+        "https://music.163.com/api/search/get/web?csrf_token=&hlpretrans=NONE&hlposttrans=NONE&s={}&type=1&offset=0&total=true&limit=6",
+        enc(&format!("{t} {a}"))
     );
-    let v = lrclib(url).await?;
-    let mut list: Vec<Lyrics> = v.as_array().map(|a| a.iter().map(to_lyrics).collect()).unwrap_or_default();
-    if list.is_empty() {
-        let v = lrclib(format!("https://lrclib.net/api/search?q={}", enc(&format!("{title} {artist}")))).await?;
-        list = v.as_array().map(|a| a.iter().map(to_lyrics).collect()).unwrap_or_default();
+    let Ok(r) = client().get(url).header("Referer", "https://music.163.com/").send().await else { return };
+    let Ok(v) = r.json::<Value>().await else { return };
+    for x in v.pointer("/result/songs").and_then(|s| s.as_array()).cloned().unwrap_or_default().into_iter().take(6) {
+        out.push(Lyrics {
+            id: x.get("id").and_then(|i| i.as_i64()).unwrap_or(0),
+            track: x.get("name").and_then(|n| n.as_str()).unwrap_or("").to_string(),
+            artist: x.pointer("/artists/0/name").and_then(|n| n.as_str()).unwrap_or("").to_string(),
+            album: String::new(),
+            duration: x.get("duration").and_then(|d| d.as_f64()).unwrap_or(0.0) / 1000.0,
+            synced: None,
+            plain: None,
+            source: "netease".into(),
+            url: None,
+        });
     }
-    // Prefer synced lyrics whose duration matches.
+}
+
+async fn netease_lrc(id: i64) -> Option<String> {
+    let v: Value = client()
+        .get(format!("https://music.163.com/api/song/lyric?id={id}&lv=1&kv=1&tv=-1"))
+        .header("Referer", "https://music.163.com/")
+        .send()
+        .await
+        .ok()?
+        .json()
+        .await
+        .ok()?;
+    let lrc = v.pointer("/lrc/lyric")?.as_str()?;
+    let credit = Regex::new(r"^\[[^\]]+\]\s*(作词|作曲|编曲|制作|混音|母带|Lyrics|Composer|Arranger|Producer)\s*[:：]").unwrap();
+    let kept: Vec<&str> = lrc.lines().filter(|l| !credit.is_match(l)).collect();
+    let text = kept.join("\n");
+    if Regex::new(r"\[\d+:\d+").unwrap().is_match(&text) {
+        Some(text)
+    } else {
+        None
+    }
+}
+
+pub async fn lyrics(artist: &str, title: &str, duration: Option<f64>) -> Result<Option<Lyrics>, String> {
     let d = duration.unwrap_or(0.0);
-    list.sort_by(|a, b| {
-        let score = |l: &Lyrics| {
-            let mut s = 0.0;
-            if l.synced.is_some() {
-                s -= 1000.0;
-            }
-            if d > 0.0 {
-                s += (l.duration - d).abs();
-            }
-            s
-        };
-        score(a).partial_cmp(&score(b)).unwrap_or(std::cmp::Ordering::Equal)
-    });
-    if let Some(best) = list.into_iter().next() {
-        return Ok(Some(best));
+    let vars = variants(artist, title);
+    let mut cands: Vec<Lyrics> = Vec::new();
+    for (t, a) in vars.iter().take(3) {
+        lrclib_candidates(t, a, d, &mut cands).await;
+        // a timed lyric that fits the song length: no need to look further
+        let good = |l: &Lyrics| l.synced.is_some() && d > 0.0 && (l.duration - d).abs() <= 2.5 && vars.iter().any(|(vt, _)| sim(&l.track, vt) >= 0.8);
+        if cands.iter().any(good) {
+            break;
+        }
     }
-    Ok(genius_lyrics(&artist, &title).await.ok().flatten())
+    if !cands.iter().any(|l| l.synced.is_some()) {
+        let (t, a) = &vars[0];
+        netease_candidates(t, a, &mut cands).await;
+        if vars.len() > 1 && !cands.iter().any(|l| l.source == "netease") {
+            let (t, a) = &vars[1];
+            netease_candidates(t, a, &mut cands).await;
+        }
+    }
+    // Only songs whose title matches; nearest length first; timed beats plain; a matching artist helps.
+    let mut ranked: Vec<(f64, Lyrics)> = cands
+        .into_iter()
+        .filter(|l| vars.iter().any(|(vt, _)| sim(&l.track, vt) >= 0.8))
+        .map(|l| {
+            let mut s = if l.synced.is_some() {
+                0.0
+            } else if l.source == "netease" {
+                2.0
+            } else {
+                100.0
+            };
+            s += if d > 0.0 && l.duration > 0.0 { (l.duration - d).abs() } else { 5.0 };
+            if !vars.iter().any(|(_, va)| sim(&l.artist, va) > 0.0) {
+                s += 8.0;
+            }
+            (s, l)
+        })
+        .collect();
+    ranked.sort_by(|a, b| a.0.partial_cmp(&b.0).unwrap_or(std::cmp::Ordering::Equal));
+    for (_, mut l) in ranked.into_iter().take(4) {
+        if l.source == "netease" {
+            match netease_lrc(l.id).await {
+                Some(lrc) => {
+                    l.synced = Some(lrc);
+                    return Ok(Some(l));
+                }
+                None => continue,
+            }
+        }
+        return Ok(Some(l));
+    }
+    let (t, a) = &vars[0];
+    Ok(genius_lyrics(a, t).await.ok().flatten())
 }
 
 pub async fn lyrics_search(query: &str) -> Result<Vec<Lyrics>, String> {

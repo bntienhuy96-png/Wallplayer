@@ -695,7 +695,7 @@ const S = {
   track: null, src: 'none',          // none | demo | yt | system
   demo: {pos: 0, playing: false},
   sys: null, sysKey: '', sysArt: null, sysRecv: 0, sysOptimistic: null,
-  lyr: [], lyrIdx: -2, lyrSeq: 0,
+  lyr: [], lyrIdx: -2, lyrSeq: 0, lyrOff: 0,
   results: [], resSel: -1, searchSeq: 0,
   liked: new Set(store.get('liked', [])),
   vol: store.get('vol', .8), muted: false,
@@ -1185,7 +1185,7 @@ function setLyrics(arr, t, source){
   $('#lyrics2').innerHTML = ''; applySubs();
 }
 async function loadLyrics(t){
-  const seq = ++S.lyrSeq; setLyrics([]); S.lyrSeq = seq;
+  const seq = ++S.lyrSeq; setLyrics([]); S.lyrSeq = seq; S.lyrOff = (store.get('lyroff', {}) || {})[t.title + '|' + t.artist] || 0;
   if (MIRROR) return;   // the main window sends its lyrics
   if (t.demo || !T){ setLyrics(t.lyrics || [], t, 'demo'); return }
   if (t.source === 'youtube' && t.play){   // YouTube clip: its own CC (hidden by YouTube) becomes the lyrics
@@ -1242,6 +1242,7 @@ function sampleLine(){
 }
 function lyricsTick(pos){
   if (!S.lyr.length){ if (S.lyrIdx !== -3){ S.lyrIdx = -3; $('#lyrics2').innerHTML = ''; sampleLine() } return }
+  pos += S.lyrOff || 0;   // per-song sync offset ( [ and ] keys )
   let i = -1; for (let k = 0; k < S.lyr.length; k++){ if (S.lyr[k].t <= pos + .12) i = k; else break }
   if (i !== S.lyrIdx){ S.lyrIdx = i; if (i >= 0) renderLine2(i); else { $('#lyrics2').innerHTML = ''; sampleLine() } }
   if (i < 0) return; const L = S.lyr[i], end = S.lyr[i + 1] ? S.lyr[i + 1].t : L.t + 5;
@@ -2227,7 +2228,7 @@ $('#clock').addEventListener('click', e => { if (!e.target.closest('#clockSvg, #
 $('#lyrics2').addEventListener('click', e => { if (!app.classList.contains('editing')) return; e.stopPropagation(); openEditor('lyrics') });
 $('#clock').addEventListener('dblclick', e => e.stopPropagation());
 const SHORTCUTS = [['Ctrl Alt Space', 'Search from anywhere'], ['Ctrl Alt H', 'Hide / show all UI from anywhere'], ['/  or  Ctrl K', 'Search'], ['Space', 'Play / pause'], ['← →', 'Previous / next'], ['↑ ↓', 'Volume'],
-  ['P', 'Player bar'], ['S', 'Search field'], ['C', 'Cover flow'], ['Q', 'Playlist'], ['K', 'Clock'], ['L', 'Full-lyrics view'], ['H', 'All UI'], ['A', 'Ambient light'], ['M', 'Music-video wallpaper'], ['D', 'Dim wallpaper'], ['R', 'Repeat / loop'], ['E', 'Edit clock & lyrics (font, colour, glass)']];
+  ['P', 'Player bar'], ['S', 'Search field'], ['C', 'Cover flow'], ['Q', 'Playlist'], ['K', 'Clock'], ['L', 'Full-lyrics view'], ['[  ]', 'Lyrics later / earlier 0.5 s'], ['H', 'All UI'], ['A', 'Ambient light'], ['M', 'Music-video wallpaper'], ['D', 'Dim wallpaper'], ['R', 'Repeat / loop'], ['E', 'Edit clock & lyrics (font, colour, glass)']];
 function setBare(on){ app.classList.toggle('bare', on); closeMenus(); if (on){ closeSearch(); toast('UI hidden — click the eye, press H or double-click to show') } }
 $('#eyeBtn').onclick = e => { e.stopPropagation(); setLyricsMode(!app.classList.contains('lyricsmode')) };
 $('#focusBtn').onclick = e => { e.stopPropagation(); setBare(true) };
@@ -2247,6 +2248,7 @@ document.addEventListener('keydown', e => {
   if (e.target.closest && e.target.closest('input, textarea, select')) return;
   if (e.key === '/'){ e.preventDefault(); openSearch() }
   else if (e.key === ' '){ e.preventDefault(); togglePlay() }
+  else if (e.key === '[' || e.key === ']'){ if (S.track){ S.lyrOff = Math.round(((S.lyrOff || 0) + (e.key === ']' ? .5 : -.5)) * 10) / 10; const m = store.get('lyroff', {}) || {}; m[S.track.title + '|' + S.track.artist] = S.lyrOff; store.set('lyroff', m); toast(`Lyrics ${S.lyrOff === 0 ? 'in sync' : (S.lyrOff > 0 ? S.lyrOff + 's earlier' : -S.lyrOff + 's later')}`) } }
   else if (e.key === 'ArrowRight') next(); else if (e.key === 'ArrowLeft') prev();
   else if (e.key === 'ArrowUp' || e.key === 'ArrowDown'){ e.preventDefault(); (async () => { let v = S.vol; if (sysVol()){ try { v = (await invoke('get_volume'))[0] } catch(err){} } setVolume(v + (e.key === 'ArrowUp' ? .05 : -.05)); toast(`Volume ${Math.round(clamp(v + (e.key === 'ArrowUp' ? .05 : -.05), 0, 1) * 100)}%`) })() }
   else if (e.key === 'Escape'){ if (app.classList.contains('editing')){ closeEditor(); return } closeMenus(); closeSearch() }
