@@ -73,8 +73,14 @@ APPEARANCE (nút ⫶)
 - Nhiều màn hình (khay hệ thống → "Fill other displays"): các màn hình còn lại hiện cùng giao diện
   (đồng hồ, lyrics, cover flow, playlist, ambient, nền) theo đúng cài đặt của màn chính, không có
   nút bấm và không phát tiếng. Đổi cài đặt ở màn chính là màn phụ đổi theo ngay. Bỏ chọn để tắt.
-- Background: "Music video / cover" (MV hoặc bìa album làm nền) hoặc "Desktop wallpaper"
-  (giữ hình nền Windows của từng màn hình, giao diện vẫn nằm trên). Thanh Blur làm mờ hình nền.
+- Background (nền phía sau):
+  · Music video / cover: MV của bài đang phát (chạy khớp), không có MV thì bìa album.
+  · My video: gõ tìm một video YouTube bất kỳ, chọn là nó chạy nền (tắt tiếng, lặp lại).
+  · Surprise me: tự chọn video quay thành phố, thiên nhiên, dạo phố góc nhìn thứ nhất… hợp với
+    bài và playlist đang nghe; "New video each song" đổi video mỗi bài, "Another one" đổi ngay.
+  · Desktop wallpaper: giữ hình nền Windows của từng màn hình, giao diện vẫn nằm trên.
+  Thanh Blur làm mờ nền (Desktop wallpaper / My video / Surprise me). Nút ◎ bật/tắt video nền.
+  Phụ đề và ô "video tiếp theo" của YouTube luôn được ẩn; lyrics do app hiển thị.
 - Clock: bật/tắt; 7 kiểu Tall, Outline, Thin, Rounded, Serif, Bold, Mono;
   vị trí Top / Top left / Top right / Bottom left / Bottom right.
 - Lyrics: Style Player (karaoke) hoặc YouTube captions (phụ đề nền đen);
