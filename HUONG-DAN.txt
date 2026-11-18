@@ -107,8 +107,8 @@ H Toàn bộ UI   A Ambient    M MV làm nền   D Làm tối    R Repeat/Loop  
 
 CHẾ ĐỘ ĐẶT TRÊN DESKTOP (chuột phải biểu tượng khay)
 - Mặc định: bấm trực tiếp được mọi nút, che icon desktop.
-  Khi bấm Win + D (hoặc bất kỳ nút "về desktop" nào của Windows), Wallplayer tự hiện lên
-  thay cho desktop trống; mở ứng dụng khác thì nó lại nằm dưới như cũ.
+  Khi bấm Win + D, nút Show desktop ở góc taskbar hoặc Win + M (không còn cửa sổ nào hiện),
+  Wallplayer tự hiện lên thay cho desktop trống; mở lại ứng dụng thì nó nằm dưới như cũ.
 - "Behind desktop icons": nằm sau icon như hình nền thật; dùng Ctrl+Alt+Space để tương tác.
 - "Start with Windows": tự chạy khi mở máy.
 
@@ -117,3 +117,7 @@ GIỚI HẠN ĐÃ BIẾT
 - Google có thể chặn đăng nhập trong cửa sổ nhúng ở một số tài khoản.
 - Genius, YouTube và dịch máy dùng API không chính thức: có thể đổi bất cứ lúc nào.
 - Cần Microsoft Edge WebView2 Runtime (có sẵn trên Windows 11 và hầu hết Windows 10).
+
+CUON NGANG: cac hang Top Results, hang mau trong bang chinh sua va playlist o giua deu cuon duoc bang con lan chuot (hoac vuot ngang tren touchpad) va keo-tha chuot de cuon.
+
+KIEM TRA CHUC NANG: bam Ctrl+Shift+D (hoac Appearance > Self-test) de xem tung chuc nang Windows/YouTube co chay khong (am luong, Win+D, mau video, CC, chat luong video). Neu co muc loi, chup man hinh bang nay gui lai de sua.

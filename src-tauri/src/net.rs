@@ -781,5 +781,75 @@ pub async fn yt_captions(video_id: &str) -> Result<Vec<Cue>, String> {
             return Ok(out);
         }
     }
-    Ok(vec![])
+    // YouTube now hides the plain timedtext files behind a proof-of-origin token (empty reply),
+    // so fall back to the same "Show transcript" data the YouTube website itself uses.
+    yt_transcript(video_id).await
+}
+
+fn find_key<'a>(v: &'a Value, key: &str) -> Option<&'a Value> {
+    match v {
+        Value::Object(m) => {
+            if let Some(x) = m.get(key) {
+                return Some(x);
+            }
+            m.values().find_map(|x| find_key(x, key))
+        }
+        Value::Array(a) => a.iter().find_map(|x| find_key(x, key)),
+        _ => None,
+    }
+}
+
+async fn yt_transcript(video_id: &str) -> Result<Vec<Cue>, String> {
+    let ctx = json!({"client": {"clientName": "WEB", "clientVersion": "2.20250925.01.00", "hl": "en", "gl": "US"}});
+    let post = |url: &str, body: Value| {
+        client()
+            .post(url)
+            .header("Origin", "https://www.youtube.com")
+            .header("X-Youtube-Client-Name", "1")
+            .header("X-Youtube-Client-Version", "2.20250925.01.00")
+            .json(&body)
+            .send()
+    };
+    let next: Value = post("https://www.youtube.com/youtubei/v1/next?prettyPrint=false", json!({"context": ctx, "videoId": video_id}))
+        .await
+        .map_err(|e| format!("next: {e}"))?
+        .json()
+        .await
+        .map_err(|e| format!("next json: {e}"))?;
+    let params = find_key(&next, "getTranscriptEndpoint")
+        .and_then(|e| e.get("params"))
+        .and_then(|p| p.as_str())
+        .ok_or_else(|| "this video has no transcript".to_string())?
+        .to_string();
+    let tr: Value = post("https://www.youtube.com/youtubei/v1/get_transcript?prettyPrint=false", json!({"context": ctx, "params": params}))
+        .await
+        .map_err(|e| format!("transcript: {e}"))?
+        .json()
+        .await
+        .map_err(|e| format!("transcript json: {e}"))?;
+    let segs = find_key(&tr, "initialSegments").and_then(|s| s.as_array()).cloned().unwrap_or_default();
+    let mut out: Vec<Cue> = Vec::new();
+    for sg in segs {
+        let Some(r) = sg.get("transcriptSegmentRenderer") else { continue };
+        let t = r
+            .get("startMs")
+            .and_then(|m| m.as_str().and_then(|x| x.parse::<f64>().ok()).or_else(|| m.as_f64()))
+            .unwrap_or(0.0)
+            / 1000.0;
+        let text: String = r
+            .pointer("/snippet/runs")
+            .and_then(|x| x.as_array())
+            .map(|a| a.iter().filter_map(|x| x.get("text").and_then(|t| t.as_str())).collect::<Vec<_>>().join(""))
+            .unwrap_or_default();
+        let text = text.replace('\n', " ").split_whitespace().collect::<Vec<_>>().join(" ");
+        if text.is_empty() || out.last().map(|l| l.text == text).unwrap_or(false) {
+            continue;
+        }
+        out.push(Cue { t, text });
+    }
+    if out.is_empty() {
+        Err("transcript is empty".into())
+    } else {
+        Ok(out)
+    }
 }

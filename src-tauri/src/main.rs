@@ -181,6 +181,11 @@ async fn screen_colors() -> Result<Vec<[u8; 3]>, String> {
 }
 
 #[tauri::command]
+fn debug_state() -> String {
+    desktop::debug_state()
+}
+
+#[tauri::command]
 fn reveal_taskbar(app: AppHandle) {
     let h = *app.state::<AppState>().hwnd.lock().unwrap();
     desktop::reveal_taskbar(h);
@@ -396,6 +401,7 @@ fn main() {
             screen_colors,
             desktop_wallpaper,
             yt_captions,
+            debug_state,
             get_volume,
             set_volume,
             set_mute,

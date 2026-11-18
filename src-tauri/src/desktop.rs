@@ -414,39 +414,75 @@ unsafe fn class_of(h: HWND) -> String {
     String::from_utf16_lossy(&b[..n.min(64)])
 }
 
-/// "Show desktop" (Win+D, the taskbar corner, Win+M ...) makes Windows focus
-/// the desktop itself. In Desktop mode the skin then rises above the empty
-/// desktop instead of leaving the plain desktop on show, and drops back to the
-/// bottom as soon as any real app window takes the focus again.
+unsafe extern "system" fn count_cb(w: HWND, lp: LPARAM) -> BOOL {
+    use windows::Win32::Graphics::Dwm::{DwmGetWindowAttribute, DWMWA_CLOAKED};
+    let st = &mut *(lp.0 as *mut (HWND, u32));
+    if w == st.0 || !IsWindowVisible(w).as_bool() || IsIconic(w).as_bool() {
+        return TRUE;
+    }
+    let ex = GetWindowLongPtrW(w, GWL_EXSTYLE) as u32;
+    if ex & WS_EX_TOOLWINDOW.0 != 0 && ex & WS_EX_APPWINDOW.0 == 0 {
+        return TRUE;
+    }
+    let mut cloaked = 0u32;
+    let _ = DwmGetWindowAttribute(w, DWMWA_CLOAKED, &mut cloaked as *mut u32 as *mut _, 4);
+    if cloaked != 0 {
+        return TRUE;
+    }
+    let cls = class_of(w);
+    if matches!(
+        cls.as_str(),
+        "Progman" | "WorkerW" | "Shell_TrayWnd" | "Shell_SecondaryTrayWnd" | "Windows.UI.Core.CoreWindow" | "XamlExplorerHostIslandWindow"
+            | "TopLevelWindowForOverflowXamlIsland" | "NotifyIconOverflowWindow" | "ApplicationFrameWindow" | "Button"
+    ) {
+        // ApplicationFrameWindow also hosts cloaked UWP shells; real UWP apps are caught below by size/title
+        if cls != "ApplicationFrameWindow" {
+            return TRUE;
+        }
+    }
+    let mut r = RECT::default();
+    if GetWindowRect(w, &mut r).is_err() || (r.right - r.left) < 120 || (r.bottom - r.top) < 80 {
+        return TRUE;
+    }
+    if GetWindowTextLengthW(w) == 0 {
+        return TRUE;
+    }
+    st.1 += 1;
+    TRUE
+}
+
+/// Any real, visible, non-minimised application window on screen?
+unsafe fn apps_visible(own: HWND) -> bool {
+    let mut st: (HWND, u32) = (own, 0);
+    let _ = EnumWindows(Some(count_cb), LPARAM(&mut st as *mut _ as isize));
+    st.1 > 0
+}
+
+/// "Show desktop" (Win+D, the taskbar corner button, Win+M ...) leaves no app
+/// window on screen. In Desktop mode the skin then rises above the plain
+/// desktop, and drops back to the bottom as soon as an app window is visible
+/// again. (Watching the foreground window is not enough: after a click on the
+/// taskbar the focus sits on the taskbar, not on the desktop.)
 pub fn spawn_watcher(raw: isize) {
     std::thread::spawn(move || unsafe {
         let h = hwnd(raw);
+        let mut quiet = 0u32;
         loop {
-            std::thread::sleep(std::time::Duration::from_millis(120));
+            std::thread::sleep(std::time::Duration::from_millis(150));
             if MODE.load(Ordering::Relaxed) != Mode::Desktop as u8 {
                 FRONT.store(false, Ordering::Relaxed);
                 continue;
             }
-            let fg = GetForegroundWindow();
-            if fg.is_invalid() {
-                continue;
-            }
-            let cls = class_of(fg);
-            let on_desktop = cls == "Progman" || cls == "WorkerW";
-            let neutral = fg == h
-                || is_mirror(fg)
-                || matches!(
-                    cls.as_str(),
-                    "Shell_TrayWnd"
-                        | "Shell_SecondaryTrayWnd"
-                        | "TopLevelWindowForOverflowXamlIsland"
-                        | "XamlExplorerHostIslandWindow"
-                        | "Windows.UI.Core.CoreWindow"
-                        | "NotifyIconOverflowWindow"
-                );
-            if on_desktop {
+            // (mirror windows are tool windows, so apps_visible() ignores them too)
+            if !apps_visible(h) {
+                // wait ~300 ms so window animations / alt-tab flicker do not toggle us
+                quiet += 1;
+                if quiet < 2 {
+                    continue;
+                }
                 let (mx, my, sw, sh) = target_rect();
-                if !FRONT.swap(true, Ordering::Relaxed) || IsIconic(h).as_bool() || !IsWindowVisible(h).as_bool() {
+                let first = !FRONT.swap(true, Ordering::Relaxed);
+                if first || IsIconic(h).as_bool() || !IsWindowVisible(h).as_bool() {
                     if IsIconic(h).as_bool() {
                         let _ = ShowWindow(h, SW_SHOWNOACTIVATE);
                     }
@@ -457,10 +493,13 @@ pub fn spawn_watcher(raw: isize) {
                         let _ = SetWindowPos(mh, HWND_TOP, x, y, w, hh - 1, SWP_NOACTIVATE | SWP_SHOWWINDOW);
                     }
                 }
-            } else if !neutral && FRONT.swap(false, Ordering::Relaxed) {
-                let _ = SetWindowPos(h, HWND_BOTTOM, 0, 0, 0, 0, SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOSIZE);
-                for m in mirror_handles() {
-                    let _ = SetWindowPos(hwnd(m), HWND_BOTTOM, 0, 0, 0, 0, SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOSIZE);
+            } else {
+                quiet = 0;
+                if FRONT.swap(false, Ordering::Relaxed) {
+                    let _ = SetWindowPos(h, HWND_BOTTOM, 0, 0, 0, 0, SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOSIZE);
+                    for m in mirror_handles() {
+                        let _ = SetWindowPos(hwnd(m), HWND_BOTTOM, 0, 0, 0, 0, SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOSIZE);
+                    }
                 }
             }
         }
@@ -472,6 +511,10 @@ pub fn spawn_watcher(raw: isize) {
 /// tiny bitmap and two quiet zones, away from the UI and the edge light,
 /// are averaged: left and right of the middle. Returns [left, right] as RGB.
 pub fn screen_colors() -> Option<[[u8; 3]; 2]> {
+    // an app window is covering the screen: its colours are not the video's
+    if unsafe { apps_visible(HWND::default()) } {
+        return None;
+    }
     use windows::Win32::Graphics::Gdi::{
         CreateCompatibleBitmap, CreateCompatibleDC, DeleteDC, DeleteObject, GetDC, GetDIBits, ReleaseDC,
         SelectObject, SetStretchBltMode, StretchBlt, BITMAPINFO, BITMAPINFOHEADER, BI_RGB, DIB_RGB_COLORS,
@@ -586,4 +629,31 @@ pub fn wallpaper_for(raw: isize) -> Option<String> {
         }
         None
     }
+}
+
+/// Self-test text: which windows count as "apps on screen" (these stop the skin from
+/// rising on Win+D), and whether the skin is currently in front.
+pub fn debug_state() -> String {
+    unsafe extern "system" fn cb(w: HWND, lp: LPARAM) -> BOOL {
+        let v = &mut *(lp.0 as *mut Vec<String>);
+        let mut st: (HWND, u32) = (HWND::default(), 0);
+        let _ = count_cb(w, LPARAM(&mut st as *mut _ as isize));
+        if st.1 > 0 {
+            let mut buf = [0u16; 120];
+            let n = GetWindowTextW(w, &mut buf);
+            v.push(format!("{} [{}]", String::from_utf16_lossy(&buf[..n as usize]), class_of(w)));
+        }
+        TRUE
+    }
+    let mut v: Vec<String> = Vec::new();
+    unsafe {
+        let _ = EnumWindows(Some(cb), LPARAM(&mut v as *mut _ as isize));
+    }
+    format!(
+        "mode={} front={} blocking_windows={}{}",
+        MODE.load(Ordering::Relaxed),
+        FRONT.load(Ordering::Relaxed),
+        v.len(),
+        if v.is_empty() { String::new() } else { format!(" → {}", v.join(" | ")) }
+    )
 }
