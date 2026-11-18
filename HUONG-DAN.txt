@@ -72,7 +72,8 @@ APPEARANCE (nút ⫶)
 - Lyrics: Style Player (karaoke) hoặc YouTube captions (phụ đề nền đen);
   Effect Stack / Line / Bounce / Typewriter / Glow; vị trí Center / Left / Right / Bottom
   (Left/Right/Bottom hiện cả ở giao diện thường); 5 font, 3 cỡ chữ, chữ thường / Hoa đầu / IN HOA.
-- Ambient light: bật/tắt; Effect Comet (chạy thuận kim đồng hồ) / Pulse (cả viền đập theo nhịp)
+- Ambient light: bật/tắt; Colour from = Album cover (màu bìa) hoặc Live video (màu thật của video đang
+  chiếu trên hình nền, đổi theo từng cảnh); Effect Comet (chạy thuận kim đồng hồ) / Pulse (cả viền đập theo nhịp)
   / Spectrum (cột sóng nhạc quanh viền) / Rainbow / Aurora; Intensity (độ sáng), Blend (độ loang).
 - Layout: bật/tắt Player bar, Search field, Cover flow, Playlist.
 

@@ -381,3 +381,65 @@ pub fn spawn_watcher(raw: isize) {
         }
     });
 }
+
+/// Average colours of the picture currently shown on the target monitor
+/// (the playing music video / video wallpaper). The screen is shrunk to a
+/// tiny bitmap and two quiet zones, away from the UI and the edge light,
+/// are averaged: left and right of the middle. Returns [left, right] as RGB.
+pub fn screen_colors() -> Option<[[u8; 3]; 2]> {
+    use windows::Win32::Graphics::Gdi::{
+        CreateCompatibleBitmap, CreateCompatibleDC, DeleteDC, DeleteObject, GetDC, GetDIBits, ReleaseDC,
+        SelectObject, SetStretchBltMode, StretchBlt, BITMAPINFO, BITMAPINFOHEADER, BI_RGB, DIB_RGB_COLORS,
+        HALFTONE, SRCCOPY,
+    };
+    unsafe {
+        let (mx, my, sw, sh) = target_rect();
+        let (tw, th) = (64i32, 36i32);
+        let sdc = GetDC(HWND::default());
+        if sdc.is_invalid() {
+            return None;
+        }
+        let mdc = CreateCompatibleDC(sdc);
+        let bmp = CreateCompatibleBitmap(sdc, tw, th);
+        let old = SelectObject(mdc, bmp);
+        SetStretchBltMode(mdc, HALFTONE);
+        let ok = StretchBlt(mdc, 0, 0, tw, th, sdc, mx, my, sw, sh, SRCCOPY).as_bool();
+        let mut out = None;
+        if ok {
+            let mut bi = BITMAPINFO::default();
+            bi.bmiHeader = BITMAPINFOHEADER {
+                biSize: std::mem::size_of::<BITMAPINFOHEADER>() as u32,
+                biWidth: tw,
+                biHeight: -th,
+                biPlanes: 1,
+                biBitCount: 32,
+                biCompression: BI_RGB.0,
+                ..Default::default()
+            };
+            let mut px = vec![0u8; (tw * th * 4) as usize];
+            let n = GetDIBits(mdc, bmp, 0, th as u32, Some(px.as_mut_ptr() as *mut _), &mut bi, DIB_RGB_COLORS);
+            if n > 0 {
+                let zone = |x0: i32, x1: i32, y0: i32, y1: i32| -> [u8; 3] {
+                    let (mut r, mut g, mut b, mut c) = (0u32, 0u32, 0u32, 0u32);
+                    for y in y0..y1 {
+                        for x in x0..x1 {
+                            let i = ((y * tw + x) * 4) as usize;
+                            b += px[i] as u32;
+                            g += px[i + 1] as u32;
+                            r += px[i + 2] as u32;
+                            c += 1;
+                        }
+                    }
+                    let c = c.max(1);
+                    [(r / c) as u8, (g / c) as u8, (b / c) as u8]
+                };
+                out = Some([zone(12, 22, 8, 22), zone(42, 52, 8, 22)]);
+            }
+        }
+        SelectObject(mdc, old);
+        let _ = DeleteObject(bmp);
+        let _ = DeleteDC(mdc);
+        ReleaseDC(HWND::default(), sdc);
+        out
+    }
+}

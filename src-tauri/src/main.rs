@@ -135,6 +135,13 @@ async fn set_mute(on: bool) -> Result<(), String> {
 }
 
 #[tauri::command]
+async fn screen_colors() -> Result<Vec<[u8; 3]>, String> {
+    tauri::async_runtime::spawn_blocking(|| desktop::screen_colors().map(|c| c.to_vec()).ok_or_else(|| "capture failed".to_string()))
+        .await
+        .map_err(|e| e.to_string())?
+}
+
+#[tauri::command]
 fn reveal_taskbar(app: AppHandle) {
     let h = *app.state::<AppState>().hwnd.lock().unwrap();
     desktop::reveal_taskbar(h);
@@ -320,6 +327,7 @@ fn main() {
             peek,
             open_external,
             reveal_taskbar,
+            screen_colors,
             get_volume,
             set_volume,
             set_mute,

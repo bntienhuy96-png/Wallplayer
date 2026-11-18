@@ -631,7 +631,7 @@ const S = {
   acc: null, mvKey: '', tgtA: [255, 255, 255], tgtB: [255, 255, 255],
   repeat: store.get('repeat', 'off'), qLabel: '', lyrSource: '', lyrTr: {}, trCache: {},
   sub: store.get('sub', {l1: 'orig', l2: 'vi'}),
-  look: Object.assign({clock: true, ck: 'tall', ly: 'rounded', lys: 'm', lc: 'lower', ambK: 1, ambW: 1.35, theme: 'accent', pickIdx: 0, ckpos: 'top', lypos: 'center', lyst: 'player', lfx: 'stack', afx: 'comet', ckwt: {}, lysz: 0}, store.get('look', {})),
+  look: Object.assign({clock: true, ck: 'tall', ly: 'rounded', lys: 'm', lc: 'lower', ambK: 1, ambW: 1.35, theme: 'accent', pickIdx: 0, ckpos: 'top', lypos: 'center', lyst: 'player', lfx: 'stack', afx: 'comet', acol: 'art', ckwt: {}, lysz: 0}, store.get('look', {})),
   pal: null,
   qOff: store.get('qOff', false),
   hide: Object.assign({bar: false, search: false, flow: false}, store.get('hide', {}))
@@ -921,6 +921,7 @@ const CK_POS = [['top', 'Top'], ['tl', 'Top left'], ['tr', 'Top right'], ['bl', 
 const LY_POS = [['center', 'Center'], ['left', 'Left'], ['right', 'Right'], ['bottom', 'Bottom']];
 const LY_ST = [['player', 'Player'], ['yt', 'YouTube captions']];
 const LY_FX = [['stack', 'Stack'], ['line', 'Line'], ['bounce', 'Bounce'], ['type', 'Typewriter'], ['glow', 'Glow']];
+const AMB_COL = [['art', 'Album cover'], ['video', 'Live video']];
 const AMB_FX = [['comet', 'Comet'], ['pulse', 'Pulse'], ['bars', 'Spectrum'], ['rainbow', 'Rainbow'], ['aurora', 'Aurora']];
 function applyLook(){
   const L = S.look; app.className = app.className.replace(/\b(ckpos|lypos|lyst|lfx|ck|ly|lys|lc)-\S+/g, '').replace(/\s+/g, ' ').trim();
@@ -948,6 +949,7 @@ function renderAppPop(){
     <div class="lrow"><span>Size</span>${chips('lys', LY_SIZES)}</div><div class="lrow"><span>Case</span>${chips('lc', LY_CASE)}</div>
     <div class="msep"></div><div class="mh">Ambient light</div>
     <div class="lrow"><span>Edge light</span><button class="tg ${S.ambOn ? 'on' : ''}" data-t="amb"></button></div>
+    <div class="lnote">Colour from</div>${chips('acol', AMB_COL)}
     <div class="lnote">Effect</div>${chips('afx', AMB_FX)}
     <div class="lrow"><span>Intensity</span><input type="range" min="0.4" max="1.8" step="0.05" value="${L.ambK}" data-r="ambK"></div>
     <div class="lrow"><span>Blend</span><input type="range" min="0.6" max="2.2" step="0.05" value="${L.ambW}" data-r="ambW"></div>
@@ -1704,6 +1706,29 @@ function setLyricsMode(on){ app.classList.toggle('lyricsmode', on); $('#eyeBtn')
   $('#eyeBtn').title = on ? 'Show cover flow & playlist' : 'Full lyrics — hide cover flow & playlist'; store.set('lyricsMode', on); if (on && !S.lyrOn){ S.lyrOn = true; applyToggles() } }
 function applyHide(){ for (const k of ['bar', 'search', 'flow']) app.classList.toggle('hide-' + k, !!S.hide[k]); store.set('hide', S.hide) }
 function togglePart(k, label){ S.hide[k] = !S.hide[k]; applyHide(); toast(`${label} ${S.hide[k] ? 'hidden' : 'shown'}`) }
+/* ambient colour from the video that is playing right now (not the thumbnail) */
+const vivid = c => { const [h, s, l] = rgb2hsl(...c); return hsl2rgb(h, s < .08 ? s : clamp(s * 1.25 + .08, 0, 1), clamp(l, .38, .66)) };
+const vidCanvas = document.createElement('canvas'); vidCanvas.width = 32; vidCanvas.height = 18;
+function localVideoColors(){   // a wallpaper video file: readable directly
+  const v = $('#customVid'); if (!app.classList.contains('hasCustom') || !v.classList.contains('on') || v.readyState < 2) return null;
+  try { const x = vidCanvas.getContext('2d', {willReadFrequently: true}); x.drawImage(v, 0, 0, 32, 18); const d = x.getImageData(0, 0, 32, 18).data;
+    const zone = (x0, x1) => { let r = 0, g = 0, b = 0, n = 0; for (let y = 3; y < 12; y++) for (let k = x0; k < x1; k++){ const i = (y * 32 + k) * 4; r += d[i]; g += d[i + 1]; b += d[i + 2]; n++ } return [r / n, g / n, b / n] };
+    return [zone(6, 11), zone(21, 26)] } catch(e){ return null }
+}
+let vidBusy = false;
+async function pollVideoColors(){
+  if (vidBusy) return; if (S.look.acol !== 'video'){ S.vidA = S.vidB = null; return }
+  vidBusy = true;
+  try {
+    let c = localVideoColors();
+    if (!c && T && !document.hidden && (S.mvOn || S.src === 'yt' || S.src === 'sc')){ try { c = await invoke('screen_colors') } catch(e){} }
+    if (c){ const a = vivid(c[0]), b = vivid(c[1]);
+      S.vidA = (S.vidA || a).map((v, i) => v + (a[i] - v) * .5); S.vidB = (S.vidB || b).map((v, i) => v + (b[i] - v) * .5) }
+    else if (!S.mvOn && !app.classList.contains('hasCustom')){ S.vidA = S.vidB = null }
+  } finally { vidBusy = false }
+}
+setInterval(pollVideoColors, 450);
+
 /* ════════════════════ lock-screen style editor ════════════════════ */
 const ED = {target: 'clock'};
 const SWATCHES = ['#ffffff', '#d1d1d6', '#ff3b30', '#ff2d55', '#ff9500', '#ffcc00', '#34c759', '#00c7be', '#5ac8fa', '#007aff', '#5856d6', '#af52de', '#a2845e', '#1c1c1e'];
@@ -1833,7 +1858,7 @@ function frame(now){
   AU.decay(dt);
   S.amb = clamp(.2 + AU.energy * .7 + AU.beat * .4, 0, 1.3);
   document.documentElement.style.setProperty('--amb', S.amb.toFixed(3));
-  if (AMB && S.ambOn && !document.hidden) AMB.render(dt, S.tgtA, S.tgtB);
+  if (AMB && S.ambOn && !document.hidden) AMB.render(dt, S.vidA || S.tgtA, S.vidB || S.tgtB);
   if (S.look.lfx === 'glow') $('#lyrics2').style.setProperty('--beat', AU.beat.toFixed(3));
 }
 setInterval(() => { renderClock(); if (S.src !== 'demo') renderPlay(); mvSync() }, 1000);
