@@ -706,6 +706,219 @@ pub async fn ytm_search(q: &str) -> Result<Vec<Track>, String> {
     Ok(out)
 }
 
+/// One song row (musicResponsiveListItemRenderer) → Track. `hint_*` fill what album / playlist rows leave out.
+fn ytm_track(it: &Value, hint_artist: &str, hint_art: &str) -> Option<Track> {
+    let vid = first_str(it, "videoId")?;
+    let cols = it.get("flexColumns").and_then(|c| c.as_array());
+    let col = |i: usize| {
+        cols.and_then(|c| c.get(i))
+            .and_then(|c| c.get("musicResponsiveListItemFlexColumnRenderer"))
+            .and_then(|c| c.get("text"))
+            .map(runs_text)
+            .unwrap_or_default()
+    };
+    let title = col(0);
+    if title.is_empty() {
+        return None;
+    }
+    let mut parts: Vec<String> = col(1).split(" • ").map(|p| p.trim().to_string()).filter(|p| !p.is_empty()).collect();
+    if parts.first().map(|p| p == "Song" || p == "Video").unwrap_or(false) {
+        parts.remove(0);
+    }
+    let dur = parts
+        .last()
+        .filter(|p| p.contains(':') && p.chars().all(|c| c.is_ascii_digit() || c == ':'))
+        .map(|p| parse_dur(p))
+        .unwrap_or(0);
+    let mut artist = parts.first().cloned().unwrap_or_default();
+    if artist.is_empty() || artist.to_lowercase().contains("plays") || artist.to_lowercase().contains("views") {
+        artist = hint_artist.to_string();
+    }
+    let album = if parts.len() >= 3 { parts[1].clone() } else { String::new() };
+    let art = big_thumb(&last_thumb(it));
+    Some(Track {
+        id: vid.to_string(),
+        title,
+        artist,
+        album,
+        art: if art.is_empty() { hint_art.to_string() } else { art },
+        preview: String::new(),
+        url: format!("https://music.youtube.com/watch?v={vid}"),
+        duration_ms: dur,
+        source: "ytmusic".into(),
+        play: vid.to_string(),
+    })
+}
+
+#[derive(Serialize, Clone, Debug)]
+pub struct Entity {
+    /// artist | album | playlist
+    pub kind: String,
+    /// YouTube Music browseId
+    pub id: String,
+    pub title: String,
+    pub sub: String,
+    pub art: String,
+}
+
+#[derive(Serialize, Clone, Debug, Default)]
+pub struct Rich {
+    pub songs: Vec<Track>,
+    pub artists: Vec<Entity>,
+    pub albums: Vec<Entity>,
+    pub playlists: Vec<Entity>,
+    pub suggestions: Vec<String>,
+}
+
+fn ytm_ctx() -> Value {
+    json!({"client": {"clientName": "WEB_REMIX", "clientVersion": "1.20241111.01.00", "hl": "en", "gl": "US"}})
+}
+
+async fn ytm_post(path: &str, body: Value) -> Result<Value, String> {
+    client()
+        .post(format!("https://music.youtube.com/youtubei/v1/{path}?prettyPrint=false"))
+        .header("Origin", "https://music.youtube.com")
+        .header("Referer", "https://music.youtube.com/")
+        .json(&body)
+        .send()
+        .await
+        .map_err(|e| e.to_string())?
+        .json()
+        .await
+        .map_err(|e| e.to_string())
+}
+
+/// Entity (artist / album / playlist) from a list item or the "top result" card.
+fn ytm_entity(it: &Value, title: String, sub: String) -> Option<Entity> {
+    let be = it.pointer("/navigationEndpoint/browseEndpoint").or_else(|| {
+        let mut v = Vec::new();
+        walk(it, "browseEndpoint", &mut v);
+        v.into_iter().next()
+    })?;
+    let id = be.get("browseId")?.as_str()?.to_string();
+    let page = be
+        .pointer("/browseEndpointContextSupportedConfigs/browseEndpointContextMusicConfig/pageType")
+        .and_then(|p| p.as_str())
+        .unwrap_or("");
+    let kind = if page.contains("ARTIST") {
+        "artist"
+    } else if page.contains("ALBUM") {
+        "album"
+    } else if page.contains("PLAYLIST") {
+        "playlist"
+    } else {
+        return None;
+    };
+    Some(Entity { kind: kind.into(), id, title, sub, art: big_thumb(&last_thumb(it)) })
+}
+
+/// Smart search on YouTube Music: songs, artists, albums, playlists and typing suggestions together.
+pub async fn ytm_rich(q: &str) -> Result<Rich, String> {
+    let v = ytm_post("search", json!({"context": ytm_ctx(), "query": q})).await?;
+    let mut out = Rich::default();
+    // the big "top result" card (usually the artist or the exact song)
+    let mut cards = Vec::new();
+    walk(&v, "musicCardShelfRenderer", &mut cards);
+    for c in cards {
+        let title = c.get("title").map(runs_text).unwrap_or_default();
+        let sub = c.get("subtitle").map(runs_text).unwrap_or_default();
+        if let Some(e) = ytm_entity(c.get("title").unwrap_or(c), title, sub) {
+            let e = Entity { art: big_thumb(&last_thumb(c)), ..e };
+            match e.kind.as_str() {
+                "artist" => out.artists.push(e),
+                "album" => out.albums.push(e),
+                _ => out.playlists.push(e),
+            }
+        }
+    }
+    let mut items = Vec::new();
+    walk(&v, "musicResponsiveListItemRenderer", &mut items);
+    for it in items {
+        if first_str(it, "videoId").is_some() {
+            if let Some(t) = ytm_track(it, "", "") {
+                if !out.songs.iter().any(|s| s.id == t.id) {
+                    out.songs.push(t);
+                }
+            }
+            continue;
+        }
+        let cols = it.get("flexColumns").and_then(|c| c.as_array());
+        let col = |i: usize| {
+            cols.and_then(|c| c.get(i))
+                .and_then(|c| c.get("musicResponsiveListItemFlexColumnRenderer"))
+                .and_then(|c| c.get("text"))
+                .map(runs_text)
+                .unwrap_or_default()
+        };
+        let (title, sub) = (col(0), col(1));
+        if title.is_empty() {
+            continue;
+        }
+        if let Some(e) = ytm_entity(it, title, sub) {
+            let list = match e.kind.as_str() {
+                "artist" => &mut out.artists,
+                "album" => &mut out.albums,
+                _ => &mut out.playlists,
+            };
+            if !list.iter().any(|x| x.id == e.id) {
+                list.push(e);
+            }
+        }
+    }
+    if out.songs.is_empty() {
+        if let Ok(t) = yt_search(q).await {
+            out.songs = t;
+        }
+    }
+    // suggestions while typing (search phrases, artist names…)
+    if let Ok(sv) = ytm_post("music/get_search_suggestions", json!({"context": ytm_ctx(), "input": q})).await {
+        let mut runs = Vec::new();
+        walk(&sv, "searchSuggestionRenderer", &mut runs);
+        for r in runs {
+            let t = r.get("suggestion").map(runs_text).unwrap_or_default();
+            let t = t.trim().to_string();
+            if !t.is_empty() && !t.eq_ignore_ascii_case(q) && !out.suggestions.contains(&t) {
+                out.suggestions.push(t);
+            }
+        }
+        out.suggestions.truncate(8);
+    }
+    Ok(out)
+}
+
+/// The songs inside an artist page, an album or a playlist.
+pub async fn ytm_browse(kind: &str, id: &str, title: &str, art: &str) -> Result<Vec<Track>, String> {
+    let bid = if kind == "playlist" && !id.starts_with("VL") { format!("VL{id}") } else { id.to_string() };
+    let v = ytm_post("browse", json!({"context": ytm_ctx(), "browseId": bid})).await?;
+    let hint_artist = if kind == "artist" { title } else { "" };
+    let mut items = Vec::new();
+    walk(&v, "musicResponsiveListItemRenderer", &mut items);
+    let mut out: Vec<Track> = Vec::new();
+    for it in items {
+        if let Some(t) = ytm_track(it, hint_artist, art) {
+            if !out.iter().any(|x| x.id == t.id) {
+                out.push(t);
+            }
+        }
+    }
+    if kind == "artist" && out.len() < 12 {
+        // the artist page shows only a handful of songs: add the artist's other songs
+        if let Ok(more) = ytm_search(title).await {
+            let key = norm(title);
+            for t in more {
+                if norm(&t.artist).contains(&key) && !out.iter().any(|x| x.id == t.id) {
+                    out.push(t);
+                }
+            }
+        }
+    }
+    if out.is_empty() {
+        Err("nothing playable here".into())
+    } else {
+        Ok(out)
+    }
+}
+
 /// Regular YouTube video search (InnerTube WEB client) – fallback and MV lookup.
 pub async fn yt_search(q: &str) -> Result<Vec<Track>, String> {
     let body = json!({
