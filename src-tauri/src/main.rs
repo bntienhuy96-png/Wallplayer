@@ -330,6 +330,16 @@ async fn radio(source: String, id: String) -> Result<Vec<net::Track>, String> {
 }
 
 #[tauri::command]
+async fn search_rich(query: String) -> Result<net::Rich, String> {
+    net::ytm_rich(&query).await
+}
+
+#[tauri::command]
+async fn browse_entity(kind: String, id: String, title: String, art: String) -> Result<Vec<net::Track>, String> {
+    net::ytm_browse(&kind, &id, &title, &art).await
+}
+
+#[tauri::command]
 async fn account_status(app: AppHandle) -> accounts::Accounts {
     accounts::status(&app).await
 }
@@ -457,6 +467,8 @@ fn main() {
             spotify_connect,
             spotify_play,
             youtube_search,
+            search_rich,
+            browse_entity,
             lyrics,
             lyrics_search,
             fetch_image,

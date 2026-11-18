@@ -36,6 +36,9 @@ SEARCH
 - Hết playlist: app tự thêm bài tương tự (radio của YouTube Music / SoundCloud) để nhạc chạy liên tục.
   Tắt/bật ở ··· → "Keep playing similar songs". Nút ↻ cạnh playlist: thay bằng radio của bài đang nghe.
 
+- Tìm thông minh (YouTube Music): vừa gõ vừa có gợi ý cụm từ (bấm để tìm), kết quả gồm Bài hát, Nghệ sĩ,
+  Playlist và Album liên quan. Bấm nghệ sĩ → phát các bài hay nhất của họ; bấm playlist/album → phát cả danh sách.
+
 NỀN TẢNG (search ngay trên nền tảng đã chọn)
 - YouTube Music: bài hát, phát trong hình nền + MV làm nền.
 - YouTube: video/clip, clip phát toàn màn hình làm hình nền.

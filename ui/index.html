@@ -192,7 +192,7 @@ img{display:block}
 #flowStatus .pi{width:1.5rem;height:1.5rem}
 #app.lyricsmode #flowWrap,#app.searching.lyricsmode #flowWrap{opacity:0;pointer-events:none}
 #flowWrap{transition:opacity .45s}
-#app.lyricsmode #queue{opacity:0;pointer-events:none}
+#app.lyricsmode #queue{opacity:0!important;pointer-events:none!important;visibility:hidden;transition:opacity .45s,transform .45s,visibility 0s .45s}
 .fempty{position:absolute;left:50%;top:40%;transform:translateX(-50%);font-size:1.3rem;color:var(--txt2);white-space:nowrap}
 
 /* ───────── search field + player bar (centred, same width) ───────── */
@@ -261,6 +261,8 @@ img{display:block}
 .rlabel{font-size:1.3rem;font-weight:700;margin:0 0 .9rem .2rem;display:flex;align-items:center;gap:.5rem}
 .rlabel .pi{width:1.6rem;height:1.6rem}
 .rlabel small{font-size:1rem;font-weight:500;color:var(--txt3)}
+.rsug{display:flex;gap:.6rem;flex-wrap:wrap;margin:0 0 1.1rem .1rem}.rsug:empty{display:none}.rsug button{padding:.5rem 1.1rem;border-radius:2rem;background:rgba(255,255,255,.1);font-size:1.1rem;font-weight:600;color:var(--txt);transition:.2s}.rsug button:hover{background:rgba(255,255,255,.2)}
+.rc.art .ra{border-radius:50%}.rc.art b,.rc.art span{text-align:center}.rc.busy{opacity:.5;pointer-events:none}
 .rrow{display:flex;gap:1.1rem;overflow-x:auto;scrollbar-width:none;padding-bottom:.3rem;margin-bottom:1.3rem;min-height:2rem}
 .rrow::-webkit-scrollbar{display:none}
 .rrow,.ecolors{cursor:grab}.rrow.dragging,.ecolors.dragging{cursor:grabbing;user-select:none}.rrow img,.ecolors img,#flow img{-webkit-user-drag:none;user-select:none}#flowWrap.dragging,#flowWrap.dragging *{cursor:grabbing!important}#qlist.dragging,#qlist.dragging *{cursor:grabbing!important;user-select:none}
@@ -572,7 +574,7 @@ button.bgv:hover{background:rgba(255,255,255,.08)}
 
   <div id="dock">
     <div id="results" class="glass">
-      <div class="rlabel" id="rTopLabel">Top Results</div><div id="rCta"></div><div class="rrow" id="rTop"></div>
+      <div id="rCta"></div><div class="rsug" id="rSug"></div><div class="rlabel" id="rTopLabel">Top Results</div><div class="rrow" id="rTop"></div><div id="rEnt"></div>
       <div class="rlabel" id="rColLabel" style="display:none">Playlists &amp; albums</div><div class="rrow" id="rCols"></div>
       <div class="rlabel" id="rSongsLabel">Songs</div><div id="rSongs"></div>
     </div>
@@ -1767,13 +1769,19 @@ $('#q').addEventListener('input', () => { clearTimeout(sTimer); const v = $('#q'
   if (!v.trim()){ S.results = []; renderResults(null); return } sTimer = setTimeout(() => doSearch(v), 320) });
 async function doSearch(q){
   q = q.trim(); const seq = ++S.searchSeq; if (!q) return;
-  $('#rTop').innerHTML = '<div class="skel"></div>'.repeat(5); $('#rSongs').innerHTML = ''; $('#rCta').innerHTML = '';
-  const plat = searchPlatform(); let res = [], meta = {source: plat, needs_login: false};
-  if (T){ try { const out = await invoke('search', {platform: plat, query: q}); meta = out; res = (out.tracks || []).map(mapTrack); if (out.error && !res.length) toast(out.error) } catch(e){ toast('Search failed — check your connection') } }
-  else { const k = q.toLowerCase(); res = DEMO.filter(t => (t.title + ' ' + t.artist + ' ' + t.album).toLowerCase().includes(k)); if (!res.length) res = DEMO.slice().sort(() => Math.random() - .5).slice(0, 6) }
-  if (seq !== S.searchSeq) return; S.results = res; S.resSel = -1; S.cols = []; renderResults(res, meta);
-  // playlists & albums arrive a moment later (separate searches)
-  if (T){ try { const cols = await invoke('search_collections', {platform: plat, query: q}); if (seq !== S.searchSeq) return; S.cols = cols || []; renderCols() } catch(e){} }
+  $('#rTop').innerHTML = '<div class="skel"></div>'.repeat(5); $('#rSongs').innerHTML = ''; $('#rCta').innerHTML = ''; $('#rEnt').innerHTML = ''; $('#rSug').innerHTML = '';
+  const plat = searchPlatform(); let res = [], meta = {source: plat, needs_login: false}; S.rich = null;
+  if (T){
+    if (plat === 'ytmusic'){ try { const r = await invoke('search_rich', {query: q}); if (r && r.songs && r.songs.length){ S.rich = r; res = r.songs.map(mapTrack); meta = {source: plat, needs_login: false} } } catch(e){} }
+    if (!res.length){ try { const out = await invoke('search', {platform: plat, query: q}); meta = out; res = (out.tracks || []).map(mapTrack); if (out.error && !res.length) toast(out.error) } catch(e){ toast('Search failed — check your connection') } }
+  } else {
+    const k = q.toLowerCase(); res = DEMO.filter(t => (t.title + ' ' + t.artist + ' ' + t.album).toLowerCase().includes(k)); if (!res.length) res = DEMO.slice().sort(() => Math.random() - .5).slice(0, 6);
+    if (window.__richDemo) S.rich = window.__richDemo(q, res);
+  }
+  if (seq !== S.searchSeq) return; S.results = res; S.resSel = -1; renderResults(res, meta);
+  // playlists & albums for SoundCloud / Spotify (YouTube Music brings its own above)
+  S.cols = []; renderCols();
+  if (T && !S.rich){ try { const cols = await invoke('search_collections', {platform: plat, query: q}); if (seq !== S.searchSeq) return; S.cols = cols || []; renderCols() } catch(e){} }
 }
 const colHTML = (c, i) => `<div class="rc col" data-c="${i}"><div class="ra"><img src="${esc(c.art || '')}" alt="" loading="lazy"><span class="pl">${I.play}</span></div><b>${esc(c.title)}</b><span>${c.kind === 'album' ? 'Album' : 'Playlist'}${c.sub ? ' · ' + esc(c.sub.replace(/^(Album|Playlist|EP|Single)\s*•\s*/i, '')) : ''}</span></div>`;
 function renderCols(){
@@ -1829,16 +1837,42 @@ function renderResults(res, meta){
     const base = (S.history.length ? S.history : S.queue).slice(0, 10); S.results = base; cta.innerHTML = '';
     $('#rTopLabel').innerHTML = base.length ? 'Recently played' : `Search ${esc(platById(searchPlatform()).name)}`;
     top.innerHTML = base.length ? base.map(cardHTML).join('') : `<div class="rempty">Type a song, artist or album</div>`;
-    $('#rSongsLabel').style.display = 'none'; songs.innerHTML = ''; S.cols = []; renderCols(); return;
+    $('#rSongsLabel').style.display = 'none'; songs.innerHTML = ''; $('#rEnt').innerHTML = ''; $('#rSug').innerHTML = ''; S.cols = []; renderCols(); return;
   }
   renderCols();
   const src = platById(meta && meta.source || searchPlatform());
   $('#rTopLabel').innerHTML = `Top Results <small>·</small> ${src.icon}<small>${esc(src.name)}</small>`;
   cta.innerHTML = meta && meta.needs_login ? `<div class="rcta">${platById('spotify').icon}<span>Connect your Spotify account to search Spotify. Showing the Apple Music catalogue for now.</span><button class="abtn pri" data-acc="1">Connect</button></div>` : '';
   top.innerHTML = res.slice(0, 8).map(cardHTML).join('') || '<div class="rempty">Nothing found</div>';
+  renderRich();
   $('#rSongsLabel').style.display = res.length ? '' : 'none';
   songs.innerHTML = res.slice(0, 25).map((t, i) => `<div class="srow" data-i="${i}"><img src="${esc(t.art || '')}" alt="" loading="lazy"><div class="tx"><b>${esc(t.title)}</b><span>${esc(t.artist)}${t.album ? ' · ' + esc(t.album) : ''}</span></div><em>${fmtDur(t.duration)}</em>${qaHTML(i)}</div>`).join('');
 }
+const ENT_LABEL = {artist: 'Artists', playlist: 'Playlists', album: 'Albums'}, ENT_ONE = {artist: 'Artist', playlist: 'Playlist', album: 'Album'};
+function renderRich(){
+  const r = S.rich, sug = $('#rSug'), ent = $('#rEnt');
+  if (!r){ sug.innerHTML = ''; ent.innerHTML = ''; return }
+  sug.innerHTML = (r.suggestions || []).slice(0, 6).map(t => `<button data-s="${esc(t)}">${esc(t)}</button>`).join('');
+  S.ents = [];
+  ent.innerHTML = ['artists', 'playlists', 'albums'].map(k => {
+    const list = (r[k] || []).slice(0, 10); if (!list.length) return '';
+    const cards = list.map(e => { const j = S.ents.push(e) - 1; return `<div class="rc ent ${e.kind === 'artist' ? 'art' : ''}" data-e="${j}"><div class="ra"><img src="${esc(e.art || '')}" alt="" loading="lazy"><span class="pl">${I.play}</span></div><b>${esc(e.title)}</b><span>${esc(e.sub || ENT_ONE[e.kind])}</span></div>` }).join('');
+    return `<div class="rlabel">${ENT_LABEL[list[0].kind]}</div><div class="rrow">${cards}</div>`;
+  }).join('');
+}
+async function openEntity(j, el){
+  const e = (S.ents || [])[j]; if (!e) return; if (el) el.classList.add('busy');
+  try {
+    let list;
+    if (T) list = (await invoke('browse_entity', {kind: e.kind, id: e.id, title: e.title, art: e.art || ''})).map(mapTrack);
+    else list = (window.__browseDemo ? window.__browseDemo(e) : []);
+    if (!list.length) throw 0;
+    S.qLabel = e.kind === 'artist' ? `Best of ${e.title}` : e.title; closeSearch(); playTrack(list[0], list);
+  } catch(err){ toast("Couldn't open this one — try another") }
+  if (el) el.classList.remove('busy');
+}
+$('#rEnt').addEventListener('click', e => { const c = e.target.closest('.ent'); if (c){ e.stopPropagation(); openEntity(+c.dataset.e, c) } });
+$('#rSug').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; e.stopPropagation(); $('#q').value = b.dataset.s; $('#q').focus(); doSearch(b.dataset.s) });
 const qaHTML = i => `<span class="qa"><button class="b sm" data-qn="${i}" title="Play next">${I.playNext}</button><button class="b sm" data-qa="${i}" title="Add to playlist">${I.addQ}</button></span>`;
 const cardHTML = (t, i) => `<div class="rc" data-i="${i}"><div class="ra"><img src="${esc(t.art || '')}" alt="" loading="lazy"><span class="pl">${I.play}</span>${qaHTML(i)}</div><b>${esc(t.title)}</b><span>Song · ${esc(t.artist)}</span></div>`;
 function chooseResult(i){ const t = S.results[i]; if (!t) return; const list = S.results.slice(); S.qLabel = `Songs like ${t.title}`; closeSearch(); playTrack(t, list) }
