@@ -1,0 +1,36 @@
+name: Build Windows
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - name: Build
+        working-directory: src-tauri
+        run: cargo build --release
+
+      - name: Package
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force dist/Wallplayer | Out-Null
+          Copy-Item src-tauri/target/release/wallplayer.exe dist/Wallplayer/Wallplayer.exe
+          $dll = Get-ChildItem src-tauri/target/release -Recurse -Filter WebView2Loader.dll -ErrorAction SilentlyContinue | Select-Object -First 1
+          if ($dll) { Copy-Item $dll.FullName dist/Wallplayer/ }
+          (Get-Content HUONG-DAN.txt) | Set-Content -Encoding utf8 dist/Wallplayer/HUONG-DAN.txt
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Wallplayer-Windows-x64
+          path: dist/Wallplayer
