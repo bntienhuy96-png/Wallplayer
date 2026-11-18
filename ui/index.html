@@ -191,8 +191,6 @@ img{display:block}
 #flowStatus .pi{width:1.5rem;height:1.5rem}
 #app.lyricsmode #flowWrap,#app.searching.lyricsmode #flowWrap{opacity:0;pointer-events:none}
 #flowWrap{transition:opacity .45s}
-#app.lyricsmode #queue,#app.lyricsmode #queue *{opacity:0!important;pointer-events:none!important;visibility:hidden!important}
-#app.lyricsmode #queue{display:none!important}
 .fempty{position:absolute;left:50%;top:40%;transform:translateX(-50%);font-size:1.3rem;color:var(--txt2);white-space:nowrap}
 
 /* ───────── search field + player bar (centred, same width) ───────── */
@@ -239,7 +237,7 @@ img{display:block}
 #app.hide-flow #flowWrap{opacity:0!important;pointer-events:none}
 /* hidden parts must not catch clicks (cover-flow cards re-enable pointer events on themselves) */
 #app.bare .widget,#app.bare .widget *,#app.bare #dock *,#app.hide-flow #flowWrap *,#app.hide-bar #bar *,#app.hide-search #searchBox *,
-#app.lyricsmode #flowWrap *,#app.lyricsmode #queue *,#app.searching #flowWrap *,#queue.off,#queue.off *,
+#app.lyricsmode #flowWrap *,#app.searching #flowWrap *,#queue.off,#queue.off *,
 #app.editing #flowWrap *,#app.editing #queue *,#app.editing #dock *{pointer-events:none!important}
 #app.bare .widget,#app.hide-flow #flowWrap,#app.lyricsmode #flowWrap,#app.searching #flowWrap,#app.editing #flowWrap{visibility:hidden;transition:opacity .45s,visibility 0s .45s}
 .sw{display:flex;flex-wrap:wrap;gap:.6rem;padding:.3rem .8rem .7rem}
@@ -2058,7 +2056,7 @@ $('#volPop').addEventListener('click', e => e.stopPropagation());
 $('#volBtn').onclick = e => { e.stopPropagation(); toggleMute() };
 $('#volBtn').addEventListener('wheel', async e => { e.preventDefault(); let v = S.vol; if (sysVol()){ try { v = (await invoke('get_volume'))[0] } catch(err){} } setVolume(v - Math.sign(e.deltaY) * .05); openVol() }, {passive: false});
 function setLyricsMode(on){ app.classList.toggle('lyricsmode', on); $('#eyeBtn').innerHTML = on ? I.eyeOff : I.eye; $('#eyeBtn').classList.toggle('on', on); $('#lyrBtn').classList.toggle('on', on);
-  $('#eyeBtn').title = on ? 'Show cover flow & playlist' : 'Full lyrics — hide cover flow & playlist'; store.set('lyricsMode', on); if (on && !S.lyrOn){ S.lyrOn = true; applyToggles() } }
+  $('#eyeBtn').title = on ? 'Show cover flow' : 'Full lyrics — hide cover flow'; store.set('lyricsMode', on); if (on && !S.lyrOn){ S.lyrOn = true; applyToggles() } }
 function applyHide(){ for (const k of ['bar', 'search', 'flow']) app.classList.toggle('hide-' + k, !!S.hide[k]); store.set('hide', S.hide) }
 function togglePart(k, label){ S.hide[k] = !S.hide[k]; applyHide(); toast(`${label} ${S.hide[k] ? 'hidden' : 'shown'}`) }
 /* ambient colour from the video that is playing right now (not the thumbnail) */
