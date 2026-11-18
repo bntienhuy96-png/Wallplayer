@@ -191,7 +191,8 @@ img{display:block}
 #flowStatus .pi{width:1.5rem;height:1.5rem}
 #app.lyricsmode #flowWrap,#app.searching.lyricsmode #flowWrap{opacity:0;pointer-events:none}
 #flowWrap{transition:opacity .45s}
-#app.lyricsmode #queue{opacity:0!important;pointer-events:none!important;visibility:hidden;transition:opacity .45s,transform .45s,visibility 0s .45s}
+#app.lyricsmode #queue,#app.lyricsmode #queue *{opacity:0!important;pointer-events:none!important;visibility:hidden!important}
+#app.lyricsmode #queue{display:none!important}
 .fempty{position:absolute;left:50%;top:40%;transform:translateX(-50%);font-size:1.3rem;color:var(--txt2);white-space:nowrap}
 
 /* ───────── search field + player bar (centred, same width) ───────── */
