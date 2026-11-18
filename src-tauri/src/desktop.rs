@@ -45,6 +45,55 @@ impl Mode {
 /// e.g. after Win+D / "show desktop".
 static FRONT: AtomicBool = AtomicBool::new(false);
 static MODE: AtomicU8 = AtomicU8::new(Mode::Desktop as u8);
+/// Desktop icons (incl. Recycle Bin) are hidden while this is true; the watcher keeps it that way.
+static ICONS_HIDE: AtomicBool = AtomicBool::new(false);
+
+/// The desktop's icon list (SysListView32) lives in SHELLDLL_DefView, under Progman or a WorkerW.
+unsafe fn find_icons() -> Option<HWND> {
+    unsafe extern "system" fn cb(top: HWND, lp: LPARAM) -> BOOL {
+        if let Ok(dv) = FindWindowExW(top, HWND::default(), w!("SHELLDLL_DefView"), PCWSTR::null()) {
+            if !dv.is_invalid() {
+                if let Ok(lv) = FindWindowExW(dv, HWND::default(), w!("SysListView32"), PCWSTR::null()) {
+                    if !lv.is_invalid() {
+                        *(lp.0 as *mut HWND) = lv;
+                        return BOOL(0);
+                    }
+                }
+            }
+        }
+        TRUE
+    }
+    if let Ok(pm) = FindWindowW(w!("Progman"), PCWSTR::null()) {
+        if let Ok(dv) = FindWindowExW(pm, HWND::default(), w!("SHELLDLL_DefView"), PCWSTR::null()) {
+            if let Ok(lv) = FindWindowExW(dv, HWND::default(), w!("SysListView32"), PCWSTR::null()) {
+                if !lv.is_invalid() {
+                    return Some(lv);
+                }
+            }
+        }
+    }
+    let mut lv = HWND::default();
+    let _ = EnumWindows(Some(cb), LPARAM(&mut lv as *mut HWND as isize));
+    if lv.is_invalid() { None } else { Some(lv) }
+}
+
+fn apply_icons() {
+    unsafe {
+        if let Some(lv) = find_icons() {
+            let want_hidden = ICONS_HIDE.load(Ordering::Relaxed);
+            if IsWindowVisible(lv).as_bool() == want_hidden {
+                let _ = ShowWindow(lv, if want_hidden { SW_HIDE } else { SW_SHOWNA });
+            }
+        }
+    }
+}
+
+/// Hide / show every icon on the desktop (files, shortcuts, Recycle Bin).
+pub fn set_icons_hidden(hide: bool) {
+    ICONS_HIDE.store(hide, Ordering::Relaxed);
+    apply_icons();
+}
+
 pub fn is_wallpaper() -> bool {
     MODE.load(Ordering::Relaxed) == Mode::Wallpaper as u8
 }
@@ -394,8 +443,13 @@ pub fn spawn_watcher(raw: isize) {
     std::thread::spawn(move || unsafe {
         let h = hwnd(raw);
         let mut quiet = 0u32;
+        let mut tick = 0u32;
         loop {
             std::thread::sleep(std::time::Duration::from_millis(150));
+            tick += 1;
+            if tick % 14 == 0 && ICONS_HIDE.load(Ordering::Relaxed) {
+                apply_icons();   // explorer restarts / refreshes can bring them back
+            }
             if MODE.load(Ordering::Relaxed) != Mode::Desktop as u8 {
                 FRONT.store(false, Ordering::Relaxed);
                 continue;

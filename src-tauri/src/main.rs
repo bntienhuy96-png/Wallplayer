@@ -298,9 +298,14 @@ async fn fetch_image(url: String) -> Result<String, String> {
     net::fetch_image(&url).await
 }
 
+fn quit(app: &AppHandle) {
+    desktop::set_icons_hidden(false);   // give the desktop icons back
+    app.exit(0);
+}
+
 #[tauri::command]
 fn quit_app(app: AppHandle) {
-    app.exit(0);
+    quit(&app);
 }
 
 // ───────────────────────── main ─────────────────────────
@@ -367,6 +372,7 @@ fn main() {
             // settings
             let s = settings::load(&handle);
             let wall_on = s.wallpaper_mode;
+            let hide_on = s.hide_icons;
             desktop::set_target(&s.monitor);
             *app.state::<AppState>().settings.lock().unwrap() = s;
 
@@ -380,6 +386,7 @@ fn main() {
                 deskmouse::start(handle.clone());
             }
             apply_mode(&handle);
+            desktop::set_icons_hidden(hide_on);
 
             // leave peek when focus goes elsewhere
             let h2 = handle.clone();
@@ -403,14 +410,16 @@ fn main() {
                 settings::autostart_enabled(),
                 None::<&str>,
             )?;
+            let icons_i = CheckMenuItem::with_id(app, "icons", "Hide desktop icons", true, hide_on, None::<&str>)?;
             let display_i = MenuItem::with_id(app, "display", "Move to next display", true, None::<&str>)?;
             let reload_i = MenuItem::with_id(app, "reload", "Reload skin", true, None::<&str>)?;
             let quit_i = MenuItem::with_id(app, "quit", "Quit Wallplayer", true, None::<&str>)?;
             let sep = PredefinedMenuItem::separator(app)?;
-            let menu = Menu::with_items(app, &[&search_i, &wall_i, &display_i, &auto_i, &sep, &reload_i, &quit_i])?;
+            let menu = Menu::with_items(app, &[&search_i, &wall_i, &icons_i, &display_i, &auto_i, &sep, &reload_i, &quit_i])?;
             *app.state::<AppState>().wall_item.lock().unwrap() = Some(wall_i.clone());
 
             let auto_c = auto_i.clone();
+            let icons_c = icons_i.clone();
             let mut tray = TrayIconBuilder::with_id("wallplayer")
                 .tooltip("Wallplayer")
                 .menu(&menu)
@@ -441,7 +450,18 @@ fn main() {
                             let _ = w.eval("location.reload()");
                         }
                     }
-                    "quit" => app.exit(0),
+                    "quit" => quit(app),
+                    "icons" => {
+                        let on = {
+                            let st = app.state::<AppState>();
+                            let mut s = st.settings.lock().unwrap();
+                            s.hide_icons = !s.hide_icons;
+                            settings::save(app, &s);
+                            s.hide_icons
+                        };
+                        desktop::set_icons_hidden(on);
+                        let _ = icons_c.set_checked(on);
+                    }
                     _ => {}
                 })
                 .on_tray_icon_event(|tray, ev| {

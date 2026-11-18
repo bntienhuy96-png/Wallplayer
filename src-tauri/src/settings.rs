@@ -13,6 +13,9 @@ pub struct Settings {
     /// settings layout version (2 = Wallpaper Engine style placement is the default)
     #[serde(default)]
     pub mode_ver: u8,
+    /// hide all desktop icons (incl. Recycle Bin) while Wallplayer runs; default on
+    #[serde(default = "yes")]
+    pub hide_icons: bool,
     #[serde(default)]
     pub spotify_client_id: String,
     #[serde(default)]
@@ -20,6 +23,10 @@ pub struct Settings {
     /// monitor device name ("" = primary)
     #[serde(default)]
     pub monitor: String,
+}
+
+fn yes() -> bool {
+    true
 }
 
 fn path(app: &AppHandle) -> Option<PathBuf> {
@@ -37,7 +44,7 @@ pub fn load(app: &AppHandle) -> Settings {
             }
             s
         })
-        .unwrap_or_else(|| Settings { wallpaper_mode: true, mode_ver: 2, ..Default::default() })
+        .unwrap_or_else(|| Settings { wallpaper_mode: true, mode_ver: 2, hide_icons: true, ..Default::default() })
 }
 
 pub fn save(app: &AppHandle, s: &Settings) {
