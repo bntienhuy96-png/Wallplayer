@@ -94,6 +94,9 @@ pub fn set_icons_hidden(hide: bool) {
     apply_icons();
 }
 
+/// Raw handle of the skin's own window.
+pub static MAIN: std::sync::atomic::AtomicIsize = std::sync::atomic::AtomicIsize::new(0);
+
 pub fn is_wallpaper() -> bool {
     MODE.load(Ordering::Relaxed) == Mode::Wallpaper as u8
 }
@@ -168,6 +171,7 @@ pub fn set_app_id() {
 
 /// Hide from Alt+Tab and hook z-order changes.
 pub fn install(raw: isize) {
+    MAIN.store(raw, Ordering::Relaxed);
     unsafe {
         let h = hwnd(raw);
         let ex = GetWindowLongPtrW(h, GWL_EXSTYLE);
