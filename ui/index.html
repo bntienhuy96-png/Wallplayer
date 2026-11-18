@@ -244,7 +244,7 @@ img{display:block}
 .rlabel small{font-size:1rem;font-weight:500;color:var(--txt3)}
 .rrow{display:flex;gap:1.1rem;overflow-x:auto;scrollbar-width:none;padding-bottom:.3rem;margin-bottom:1.3rem;min-height:2rem}
 .rrow::-webkit-scrollbar{display:none}
-.rrow,.ecolors{cursor:grab}.rrow.dragging,.ecolors.dragging{cursor:grabbing;user-select:none}.rrow img,.ecolors img,#flow img{-webkit-user-drag:none;user-select:none}#flowWrap.dragging,#flowWrap.dragging *{cursor:grabbing!important}
+.rrow,.ecolors{cursor:grab}.rrow.dragging,.ecolors.dragging{cursor:grabbing;user-select:none}.rrow img,.ecolors img,#flow img{-webkit-user-drag:none;user-select:none}#flowWrap.dragging,#flowWrap.dragging *{cursor:grabbing!important}#qlist.dragging,#qlist.dragging *{cursor:grabbing!important;user-select:none}
 .rc{flex:none;width:10.2rem;cursor:pointer}
 .rc .ra{position:relative;width:10.2rem;height:10.2rem;border-radius:1.1rem;overflow:hidden;background:rgba(255,255,255,.08);box-shadow:0 .5rem 1.4rem rgba(0,0,0,.3)}
 .rc .ra img{width:100%;height:100%;object-fit:cover;transition:transform .35s}
@@ -447,6 +447,7 @@ img{display:block}
 .tg.on::after{transform:translateX(1.5rem)}
 .chips{display:flex;flex-wrap:wrap;gap:.5rem;padding:.3rem .8rem .6rem}
 .lrow .chips{padding:0}
+.chip.wide{width:100%;text-align:left;padding:.6rem 1rem}
 .dd{width:100%;padding:.55rem .9rem;border-radius:1.2rem;background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.14);font:600 1.12rem system-ui;outline:none;cursor:pointer;appearance:none;-webkit-appearance:none;background-image:linear-gradient(45deg,transparent 50%,#fff 50%),linear-gradient(135deg,#fff 50%,transparent 50%);background-position:calc(100% - 1.3rem) 55%,calc(100% - .95rem) 55%;background-size:.4rem .4rem;background-repeat:no-repeat}.dd option{background:#1c1c20;color:#fff}
 .chip{padding:.45rem .95rem;border-radius:1.2rem;background:rgba(255,255,255,.1);font-size:1.12rem;font-weight:600;color:#fff;border:1px solid transparent;transition:background .15s}
 .chip:hover{background:rgba(255,255,255,.18)}
@@ -992,31 +993,33 @@ function renderAppPop(){
   const theme = `<div class="mh">Theme color</div>${chips('theme', [['accent', 'Accent'], ['dominant', 'Dominant'], ['secondary', 'Secondary']])}
     <div class="sw">${P ? P.swatches.map((w, i) => `<button class="swc ${w === picked ? 'on' : ''}" data-sw="${i}" style="--c:rgb(${w.rgb.join(',')})" title="rgb(${w.rgb.join(', ')})"><i></i><small>${Math.round(w.pct * 100)}%</small><em>${role(w)}</em></button>`).join('') : '<div class="lnote">Play a song to read its cover colours</div>'}</div>
     <div class="msep"></div><div class="mh">Display</div><div class="chips" id="monList"><span class="lnote">${T ? 'Looking for displays…' : 'This screen'}</span></div><div class="msep"></div>`;
+  const editBtn = t => `<button class="chip on wide" data-edit="${t}">Font, colour &amp; glass…</button>`;
   $('#appPop').innerHTML = theme + `<div class="mh">Clock</div>
-    <div class="lrow"><span>Show clock</span><button class="tg ${L.clock ? 'on' : ''}" data-t="clock"></button></div>${chips('ck', CK_STYLES, true)}
-    <div class="chips"><button class="chip on" data-edit="clock">Font, colour &amp; glass…</button></div>
+    <div class="lrow"><span>Show clock</span><button class="tg ${L.clock ? 'on' : ''}" data-t="clock"></button></div>
     <div class="lnote">Position</div>${chips('ckpos', CK_POS)}
+    <div class="chips">${editBtn('clock')}</div>
     <div class="msep"></div><div class="mh">Lyrics</div>
     <div class="lnote">Style</div>${chips('lyst', LY_ST)}
     <div class="lnote">Effect</div>${chips('lfx', LY_FX)}
     <div class="lnote">Position</div>${chips('lypos', LY_POS)}
-    <div class="lnote">Font</div>${chips('ly', LY_STYLES, true)}
-    <div class="chips"><button class="chip on" data-edit="lyrics">Font, colour &amp; glass…</button></div>
-    <div class="lrow"><span>Size</span>${chips('lys', LY_SIZES)}</div><div class="lrow"><span>Case</span>${chips('lc', LY_CASE)}</div>
+    <div class="lrow"><span>Case</span>${chips('lc', LY_CASE)}</div>
+    <div class="chips">${editBtn('lyrics')}</div>
     <div class="msep"></div><div class="mh">Ambient light</div>
     <div class="lrow"><span>Edge light</span><button class="tg ${S.ambOn ? 'on' : ''}" data-t="amb"></button></div>
-    <div class="lnote">Video quality (YouTube)</div>${chips('vq', VQ)}<div class="lnote"><button class="chip" id="selfTestBtn">Self-test (Ctrl+Shift+D)</button></div>
     <div class="lnote">Colour from</div>${chips('acol', AMB_COL)}
     <div class="lnote">Effect</div>${chips('afx', AMB_FX)}
     <div class="lrow"><span>Intensity</span><input type="range" min="0.4" max="1.8" step="0.05" value="${L.ambK}" data-r="ambK"></div>
     <div class="lrow"><span>Blend</span><input type="range" min="0.6" max="2.2" step="0.05" value="${L.ambW}" data-r="ambW"></div>
+    <div class="msep"></div><div class="mh">Video</div>
+    <div class="lnote">Quality (YouTube)</div>${chips('vq', VQ)}
     <div class="msep"></div><div class="mh">Layout</div>
     <div class="lrow"><span>Player bar</span><button class="tg ${S.hide.bar ? '' : 'on'}" data-h="bar"></button></div>
     <div class="lrow"><span>Search field</span><button class="tg ${S.hide.search ? '' : 'on'}" data-h="search"></button></div>
     <div class="lrow"><span>Cover flow</span><button class="tg ${S.hide.flow ? '' : 'on'}" data-h="flow"></button></div>
     <div class="lrow"><span>Playlist</span><button class="tg ${S.qOff ? '' : 'on'}" data-h="queue"></button></div>
     <div class="msep"></div><div class="mh">Keyboard shortcuts</div>
-    <div class="keys">${SHORTCUTS.map(([k, d]) => `<kbd>${esc(k)}</kbd><span>${esc(d)}</span>`).join('')}</div>`;
+    <div class="keys">${SHORTCUTS.map(([k, d]) => `<kbd>${esc(k)}</kbd><span>${esc(d)}</span>`).join('')}</div>
+    <div class="msep"></div><div class="chips"><button class="chip" id="selfTestBtn">Self-test (Ctrl+Shift+D)</button></div>`;
 }
 
 /* ════════════════════ lyrics ════════════════════ */
@@ -1544,6 +1547,17 @@ function dragScroll(el){
     addEventListener('pointermove', mv); addEventListener('pointerup', up); addEventListener('pointercancel', up);
   });
 }
+function dragScrollY(el){
+  el.addEventListener('dragstart', e => e.preventDefault());
+  el.addEventListener('pointerdown', e => {
+    if (e.button !== 0 || el.scrollHeight <= el.clientHeight) return;
+    const y0 = e.clientY, s0 = el.scrollTop; let moved = false;
+    const mv = ev => { const dy = ev.clientY - y0; if (!moved && Math.abs(dy) < 6) return; moved = true; el.classList.add('dragging'); el.scrollTop = s0 - dy };
+    const up = () => { removeEventListener('pointermove', mv); removeEventListener('pointerup', up); removeEventListener('pointercancel', up); el.classList.remove('dragging'); if (moved) dragMoved = performance.now() };
+    addEventListener('pointermove', mv); addEventListener('pointerup', up); addEventListener('pointercancel', up);
+  });
+}
+dragScrollY($('#qlist'));
 function watchDragScroll(root){ root.querySelectorAll('.rrow,.ecolors').forEach(el => { if (!el._ds){ el._ds = 1; dragScroll(el) } }) }
 watchDragScroll(document);
 new MutationObserver(() => watchDragScroll(document)).observe(document.body, {childList: true, subtree: true});
@@ -1740,8 +1754,8 @@ $('#appPop').addEventListener('input', e => { const r = e.target.closest('[data-
 const VM = {el: null, down: null};
 const vmPath = el => { const a = []; for (let n = el; n; n = n.parentElement) a.push(n); return a };
 function vmFire(type, el, x, y, extra){
-  if (!el) return; const P = type.startsWith('pointer') && window.PointerEvent ? PointerEvent : (type === 'wheel' ? WheelEvent : MouseEvent);
-  el.dispatchEvent(new P(type, Object.assign({bubbles: type !== 'mouseenter' && type !== 'mouseleave', cancelable: true, clientX: x, clientY: y, view: window, button: 0, buttons: VM.down ? 1 : 0, pointerId: 1, pointerType: 'mouse', isPrimary: true}, extra || {})));
+  if (!el) return true; const P = type.startsWith('pointer') && window.PointerEvent ? PointerEvent : (type === 'wheel' ? WheelEvent : MouseEvent);
+  return el.dispatchEvent(new P(type, Object.assign({bubbles: type !== 'mouseenter' && type !== 'mouseleave', cancelable: true, clientX: x, clientY: y, view: window, button: 0, buttons: VM.down ? 1 : 0, pointerId: 1, pointerType: 'mouse', isPrimary: true}, extra || {})));
 }
 function vmHover(x, y){
   const el = document.elementFromPoint(x, y), prev = VM.el;
@@ -1760,7 +1774,12 @@ function deskMouse(m){
   if (k === 'leave'){ vmHover(-1, -1); return }
   if (k === 'move'){ const el = vmHover(x, y); if (VM.down && VM.down.type === 'range') vmRange(VM.down, x);
     vmFire('pointermove', VM.down || el || document.body, x, y); vmFire('mousemove', VM.down || el || document.body, x, y); return }
-  if (k === 'wheel'){ const el = document.elementFromPoint(x, y); if (el) vmFire('wheel', el, x, y, {deltaY: -m.d, deltaMode: 0}); return }
+  if (k === 'wheel'){ const el = document.elementFromPoint(x, y); if (!el) return;
+    if (vmFire('wheel', el, x, y, {deltaY: -m.d, deltaMode: 0})){   // not handled by the page: scroll the nearest scrollable box ourselves
+      for (let n = el; n && n !== document.body; n = n.parentElement){ const cs = getComputedStyle(n);
+        if (/(auto|scroll)/.test(cs.overflowY) && n.scrollHeight > n.clientHeight){ n.scrollTop -= m.d; break }
+        if (/(auto|scroll)/.test(cs.overflowX) && n.scrollWidth > n.clientWidth){ n.scrollLeft -= m.d; break } } }
+    return }
   if (k === 'down'){
     const el = vmHover(x, y); VM.down = el; if (!el) return;
     if (el.closest('input[type=text],input:not([type]),input[type=search],textarea,select,[contenteditable]')){   // needs the keyboard / a real popup: raise the skin for a moment
