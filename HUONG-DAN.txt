@@ -127,3 +127,5 @@ GIỚI HẠN ĐÃ BIẾT
 CUON NGANG: cac hang Top Results, hang mau trong bang chinh sua va playlist o giua deu cuon duoc bang con lan chuot (hoac vuot ngang tren touchpad) va keo-tha chuot de cuon.
 
 KIEM TRA CHUC NANG: bam Ctrl+Shift+D (hoac Appearance > Self-test) de xem tung chuc nang Windows/YouTube co chay khong (am luong, Win+D, mau video, CC, chat luong video). Neu co muc loi, chup man hinh bang nay gui lai de sua.
+
+PLAYLIST BEN TRAI: cuon bang con lan chuot hoac keo len/xuong. Font, mau, co chu, do trong suot, kinh cua dong ho va lyrics chinh tap trung o cua so 'Font, colour & glass...' (bam vao dong ho/lyrics hoac phim E); bang Appearance chi con vi tri, kieu, hieu ung.

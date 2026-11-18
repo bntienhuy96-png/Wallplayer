@@ -99,9 +99,9 @@ unsafe fn over_desktop(pt: POINT, check_icon: bool) -> bool {
     if w.is_invalid() {
         return false;
     }
-    let mut pid = 0u32;
-    GetWindowThreadProcessId(w, Some(&mut pid));
-    if pid as isize == OWN_PID.load(Ordering::Relaxed) {
+    // only the skin itself (its web view) counts as "us"; our tray menu, login windows etc. keep their own clicks
+    let main = HWND(desktop::MAIN.load(Ordering::Relaxed) as *mut core::ffi::c_void);
+    if !main.is_invalid() && (w == main || IsChild(main, w).as_bool()) {
         return true;
     }
     match class_of(w).as_str() {
