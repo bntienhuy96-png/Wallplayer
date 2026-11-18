@@ -95,8 +95,8 @@ H Toàn bộ UI   A Ambient    M MV làm nền   D Làm tối    R Repeat/Loop  
 
 CHẾ ĐỘ ĐẶT TRÊN DESKTOP (chuột phải biểu tượng khay)
 - Mặc định: bấm trực tiếp được mọi nút, che icon desktop.
-  Khi bấm Win + D (hoặc bất kỳ nút "về desktop" nào của Windows), Wallplayer tự hiện lên
-  thay cho desktop trống; mở ứng dụng khác thì nó lại nằm dưới như cũ.
+  Khi bấm Win + D, nút Show desktop ở góc taskbar hoặc Win + M (không còn cửa sổ nào hiện),
+  Wallplayer tự hiện lên thay cho desktop trống; mở lại ứng dụng thì nó nằm dưới như cũ.
 - "Behind desktop icons": nằm sau icon như hình nền thật; dùng Ctrl+Alt+Space để tương tác.
 - "Start with Windows": tự chạy khi mở máy.
 
