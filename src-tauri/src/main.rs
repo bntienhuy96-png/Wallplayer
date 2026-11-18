@@ -5,6 +5,7 @@ mod audio;
 mod deskmouse;
 mod desktop;
 mod media;
+mod mirror;
 mod net;
 mod settings;
 mod volume;
@@ -22,6 +23,7 @@ pub(crate) struct AppState {
     peek: Mutex<bool>,
     hwnd: Mutex<isize>,
     wall_item: Mutex<Option<CheckMenuItem<tauri::Wry>>>,
+    pub(crate) mirrors_installed: Mutex<Vec<isize>>,
 }
 
 #[derive(Serialize, Clone)]
@@ -57,6 +59,10 @@ fn apply_mode(app: &AppHandle) {
     if let Err(e) = desktop::set_mode(h, mode) {
         let _ = desktop::set_mode(h, desktop::Mode::Desktop);
         let _ = app.emit("toast", format!("Couldn't go behind icons: {e}"));
+    }
+    // Peek only lifts the main window; mirrors stay where they are.
+    if !peek {
+        desktop::place_mirrors(desktop::current_mode());
     }
     if peek {
         if let Some(w) = app.get_webview_window("main") {
@@ -135,6 +141,39 @@ async fn set_mute(on: bool) -> Result<(), String> {
     tauri::async_runtime::spawn_blocking(move || volume::mute(on)).await.map_err(|e| e.to_string())?
 }
 
+#[derive(Serialize)]
+struct Wallpaper {
+    path: String,
+    /// data: URL, only when the path differs from `known`
+    data: Option<String>,
+}
+
+/// The Windows wallpaper of the monitor the calling window is on.
+#[tauri::command]
+async fn desktop_wallpaper(window: tauri::WebviewWindow, known: Option<String>) -> Result<Option<Wallpaper>, String> {
+    let raw = window.hwnd().map(|h| h.0 as isize).map_err(|e| e.to_string())?;
+    tauri::async_runtime::spawn_blocking(move || {
+        let Some(path) = desktop::wallpaper_for(raw) else { return Ok(None) };
+        if known.as_deref() == Some(path.as_str()) {
+            return Ok(Some(Wallpaper { path, data: None }));
+        }
+        let bytes = std::fs::read(&path).map_err(|e| e.to_string())?;
+        let ext = path.rsplit('.').next().unwrap_or("").to_ascii_lowercase();
+        let mime = match ext.as_str() {
+            "png" => "image/png",
+            "bmp" | "dib" => "image/bmp",
+            "gif" => "image/gif",
+            "webp" => "image/webp",
+            _ => "image/jpeg",
+        };
+        use base64::Engine;
+        let b64 = base64::engine::general_purpose::STANDARD.encode(bytes);
+        Ok(Some(Wallpaper { path, data: Some(format!("data:{mime};base64,{b64}")) }))
+    })
+    .await
+    .map_err(|e| e.to_string())?
+}
+
 #[tauri::command]
 async fn screen_colors() -> Result<Vec<[u8; 3]>, String> {
     tauri::async_runtime::spawn_blocking(|| desktop::screen_colors().map(|c| c.to_vec()).ok_or_else(|| "capture failed".to_string()))
@@ -174,6 +213,27 @@ fn set_monitor_inner(app: &AppHandle, id: String) {
     }
     desktop::set_target(&id);
     apply_mode(app);
+    mirror::sync(app);
+}
+
+fn set_mirror_inner(app: &AppHandle, on: bool) {
+    {
+        let st = app.state::<AppState>();
+        let mut s = st.settings.lock().unwrap();
+        s.no_mirror = !on;
+        settings::save(app, &s);
+    }
+    mirror::sync(app);
+}
+
+#[tauri::command]
+fn get_mirror(app: AppHandle) -> bool {
+    !app.state::<AppState>().settings.lock().unwrap().no_mirror
+}
+
+#[tauri::command]
+fn set_mirror(app: AppHandle, on: bool) {
+    set_mirror_inner(&app, on);
 }
 
 #[tauri::command]
@@ -336,6 +396,7 @@ fn main() {
             peek: Mutex::new(false),
             hwnd: Mutex::new(0),
             wall_item: Mutex::new(None),
+            mirrors_installed: Mutex::new(Vec::new()),
         })
         .invoke_handler(tauri::generate_handler![
             get_state,
@@ -344,6 +405,7 @@ fn main() {
             open_external,
             reveal_taskbar,
             screen_colors,
+            desktop_wallpaper,
             yt_captions,
             debug_state,
             get_volume,
@@ -351,6 +413,8 @@ fn main() {
             set_mute,
             list_monitors,
             set_monitor,
+            get_mirror,
+            set_mirror,
             media_control,
             search,
             account_status,
@@ -412,10 +476,13 @@ fn main() {
             )?;
             let icons_i = CheckMenuItem::with_id(app, "icons", "Hide desktop icons", true, hide_on, None::<&str>)?;
             let display_i = MenuItem::with_id(app, "display", "Move to next display", true, None::<&str>)?;
+            let mirror_on = !app.state::<AppState>().settings.lock().unwrap().no_mirror;
+            let mirror_i = CheckMenuItem::with_id(app, "mirror", "Fill other displays", true, mirror_on, None::<&str>)?;
             let reload_i = MenuItem::with_id(app, "reload", "Reload skin", true, None::<&str>)?;
             let quit_i = MenuItem::with_id(app, "quit", "Quit Wallplayer", true, None::<&str>)?;
             let sep = PredefinedMenuItem::separator(app)?;
-            let menu = Menu::with_items(app, &[&search_i, &wall_i, &icons_i, &display_i, &auto_i, &sep, &reload_i, &quit_i])?;
+            let menu = Menu::with_items(app, &[&search_i, &wall_i, &icons_i, &display_i, &mirror_i, &auto_i, &sep, &reload_i, &quit_i])?;
+            let mirror_c = mirror_i.clone();
             *app.state::<AppState>().wall_item.lock().unwrap() = Some(wall_i.clone());
 
             let auto_c = auto_i.clone();
@@ -445,9 +512,17 @@ fn main() {
                             let _ = app.emit("monitor-changed", ());
                         }
                     }
+                    "mirror" => {
+                        let on = app.state::<AppState>().settings.lock().unwrap().no_mirror;
+                        set_mirror_inner(app, on);
+                        let _ = mirror_c.set_checked(on);
+                        let _ = app.emit("mirror-changed", on);
+                    }
                     "reload" => {
-                        if let Some(w) = app.get_webview_window("main") {
-                            let _ = w.eval("location.reload()");
+                        for (label, w) in app.webview_windows() {
+                            if label == "main" || label.starts_with("mirror-") {
+                                let _ = w.eval("location.reload()");
+                            }
                         }
                     }
                     "quit" => quit(app),
@@ -485,6 +560,22 @@ fn main() {
                     eprintln!("hotkey: {e}");
                 }
             }
+
+            // companion windows on the other monitors; re-check when monitors come and go
+            mirror::sync(&handle);
+            let h3 = handle.clone();
+            std::thread::spawn(move || {
+                let key = || desktop::monitors().iter().map(|m| format!("{}@{},{},{}x{}", m.id, m.x, m.y, m.w, m.h)).collect::<Vec<_>>().join("|");
+                let mut last = key();
+                loop {
+                    std::thread::sleep(std::time::Duration::from_secs(3));
+                    let now = key();
+                    if now != last {
+                        last = now;
+                        mirror::sync(&h3);
+                    }
+                }
+            });
 
             // native feeds
             media::spawn(handle.clone());

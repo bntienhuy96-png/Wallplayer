@@ -139,6 +139,18 @@ pub fn set_target(id: &str) {
     *TARGET.lock().unwrap() = id.to_string();
 }
 
+/// Device name of the monitor the main skin is on (chosen one, else primary).
+pub fn target_id() -> String {
+    let want = TARGET.lock().unwrap().clone();
+    let list = monitors();
+    list.iter()
+        .find(|m| !want.is_empty() && m.id == want)
+        .or_else(|| list.iter().find(|m| m.primary))
+        .or_else(|| list.first())
+        .map(|m| m.id.clone())
+        .unwrap_or_default()
+}
+
 /// Rect of the chosen monitor (falls back to the primary one).
 pub fn target_rect() -> (i32, i32, i32, i32) {
     let want = TARGET.lock().unwrap().clone();
@@ -152,6 +164,38 @@ pub fn target_rect() -> (i32, i32, i32, i32) {
         Some(m) => (m.x, m.y, m.w, m.h),
         None => unsafe { (0, 0, GetSystemMetrics(SM_CXSCREEN), GetSystemMetrics(SM_CYSCREEN)) },
     }
+}
+
+/// Companion windows on the other monitors: (hwnd, monitor device name).
+static MIRRORS: Mutex<Vec<(isize, String)>> = Mutex::new(Vec::new());
+
+pub fn add_mirror(raw: isize, monitor: &str) {
+    let mut v = MIRRORS.lock().unwrap();
+    v.retain(|(h, _)| *h != raw);
+    v.push((raw, monitor.to_string()));
+}
+
+pub fn remove_mirror(raw: isize) {
+    MIRRORS.lock().unwrap().retain(|(h, _)| *h != raw);
+}
+
+fn mirror_handles() -> Vec<isize> {
+    MIRRORS.lock().unwrap().iter().map(|(h, _)| *h).collect()
+}
+
+/// Rect a given window should cover: its own monitor for a mirror, else the target.
+fn rect_for(h: HWND) -> (i32, i32, i32, i32) {
+    let mon = MIRRORS.lock().unwrap().iter().find(|(m, _)| *m == h.0 as isize).map(|(_, id)| id.clone());
+    if let Some(id) = mon {
+        if let Some(m) = monitors().into_iter().find(|m| m.id == id) {
+            return (m.x, m.y, m.w, m.h);
+        }
+    }
+    target_rect()
+}
+
+fn is_mirror(h: HWND) -> bool {
+    MIRRORS.lock().unwrap().iter().any(|(m, _)| *m == h.0 as isize)
 }
 
 pub const APP_ID: &str = "com.tan.wallplayer";
@@ -202,14 +246,12 @@ unsafe extern "system" fn subclass_proc(
         }
         // Resolution / monitor change: refit.
         WM_DISPLAYCHANGE => {
-            let m = Mode::from_u8(MODE.load(Ordering::Relaxed));
-            let _ = place(h, m);
+            let _ = place(h, mode_for(h));
         }
         // Moving to a monitor with another scale: let the window handle it, then refit.
         WM_DPICHANGED => {
             let r = DefSubclassProc(h, msg, wp, lp);
-            let m = Mode::from_u8(MODE.load(Ordering::Relaxed));
-            let _ = place(h, m);
+            let _ = place(h, mode_for(h));
             return r;
         }
         _ => {}
@@ -217,16 +259,50 @@ unsafe extern "system" fn subclass_proc(
     DefSubclassProc(h, msg, wp, lp)
 }
 
+/// Mode a window should be in: the main window's mode, Peek → Desktop for mirrors.
+fn mode_for(h: HWND) -> Mode {
+    let m = Mode::from_u8(MODE.load(Ordering::Relaxed));
+    if m == Mode::Peek && is_mirror(h) {
+        Mode::Desktop
+    } else {
+        m
+    }
+}
+
 pub fn set_mode(raw: isize, mode: Mode) -> Result<(), String> {
     unsafe { place(hwnd(raw), mode) }
 }
 
+/// Place every mirror window in the given mode (Peek is never used for them).
+pub fn place_mirrors(mode: Mode) {
+    let mode = if mode == Mode::Peek { Mode::Desktop } else { mode };
+    for raw in mirror_handles() {
+        unsafe {
+            if place(hwnd(raw), mode).is_err() {
+                let _ = place(hwnd(raw), Mode::Desktop);
+            }
+        }
+    }
+}
+
+/// Current placement mode of the main skin.
+pub fn current_mode() -> Mode {
+    Mode::from_u8(MODE.load(Ordering::Relaxed))
+}
+
 unsafe fn place(h: HWND, mode: Mode) -> Result<(), String> {
-    let (mx, my, sw, sh) = target_rect();
+    let (mx, my, sw, sh) = rect_for(h);
+    // Mirrors follow the main window's mode; only the main window sets it.
+    let mirror = is_mirror(h);
+    let store_mode = |m: Mode| {
+        if !mirror {
+            MODE.store(m as u8, Ordering::SeqCst);
+        }
+    };
 
     if mode == Mode::Wallpaper {
         let worker = find_worker().ok_or_else(|| "desktop layer (WorkerW) not found".to_string())?;
-        MODE.store(mode as u8, Ordering::SeqCst);
+        store_mode(mode);
         let style = GetWindowLongPtrW(h, GWL_STYLE);
         SetWindowLongPtrW(
             h,
@@ -238,7 +314,7 @@ unsafe fn place(h: HWND, mode: Mode) -> Result<(), String> {
             // roll back
             let style = GetWindowLongPtrW(h, GWL_STYLE);
             SetWindowLongPtrW(h, GWL_STYLE, (style & !(WS_CHILD.0 as isize)) | WS_POPUP.0 as isize);
-            MODE.store(Mode::Desktop as u8, Ordering::SeqCst);
+            store_mode(Mode::Desktop);
             return Err("could not attach to desktop layer".into());
         }
         // WorkerW spans the whole virtual screen; the primary monitor sits at
@@ -261,7 +337,7 @@ unsafe fn place(h: HWND, mode: Mode) -> Result<(), String> {
     // Detach from WorkerW if needed.
     let is_child = GetParent(h).map(|p| !p.is_invalid()).unwrap_or(false)
         && (GetWindowLongPtrW(h, GWL_STYLE) & WS_CHILD.0 as isize) != 0;
-    MODE.store(mode as u8, Ordering::SeqCst);
+    store_mode(mode);
     if is_child {
         let _ = SetParent(h, HWND::default());
         let style = GetWindowLongPtrW(h, GWL_STYLE);
@@ -458,6 +534,7 @@ pub fn spawn_watcher(raw: isize) {
                 FRONT.store(false, Ordering::Relaxed);
                 continue;
             }
+            // (mirror windows are tool windows, so apps_visible() ignores them too)
             if !apps_visible(h) {
                 // wait ~300 ms so window animations / alt-tab flicker do not toggle us
                 quiet += 1;
@@ -471,11 +548,19 @@ pub fn spawn_watcher(raw: isize) {
                         let _ = ShowWindow(h, SW_SHOWNOACTIVATE);
                     }
                     let _ = SetWindowPos(h, HWND_TOP, mx, my, sw, sh - 1, SWP_NOACTIVATE | SWP_SHOWWINDOW);
+                    for m in mirror_handles() {
+                        let mh = hwnd(m);
+                        let (x, y, w, hh) = rect_for(mh);
+                        let _ = SetWindowPos(mh, HWND_TOP, x, y, w, hh - 1, SWP_NOACTIVATE | SWP_SHOWWINDOW);
+                    }
                 }
             } else {
                 quiet = 0;
                 if FRONT.swap(false, Ordering::Relaxed) {
                     let _ = SetWindowPos(h, HWND_BOTTOM, 0, 0, 0, 0, SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOSIZE);
+                    for m in mirror_handles() {
+                        let _ = SetWindowPos(hwnd(m), HWND_BOTTOM, 0, 0, 0, 0, SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOSIZE);
+                    }
                 }
             }
         }
@@ -545,6 +630,65 @@ pub fn screen_colors() -> Option<[[u8; 3]; 2]> {
         let _ = DeleteDC(mdc);
         ReleaseDC(HWND::default(), sdc);
         out
+    }
+}
+
+/// Path of the Windows wallpaper shown on the monitor a window is on
+/// (per-monitor wallpapers included). None for a solid colour.
+pub fn wallpaper_for(raw: isize) -> Option<String> {
+    use windows::Win32::System::Com::{CoCreateInstance, CoInitializeEx, CoTaskMemFree, CLSCTX_ALL, COINIT_APARTMENTTHREADED};
+    use windows::Win32::UI::Shell::{DesktopWallpaper, IDesktopWallpaper};
+    unsafe {
+        let mon = MonitorFromWindow(hwnd(raw), MONITOR_DEFAULTTONEAREST);
+        let mut mi = MONITORINFO { cbSize: std::mem::size_of::<MONITORINFO>() as u32, ..Default::default() };
+        let _ = GetMonitorInfoW(mon, &mut mi);
+        let r = mi.rcMonitor;
+
+        let _ = CoInitializeEx(None, COINIT_APARTMENTTHREADED);
+        if let Ok(dw) = CoCreateInstance::<_, IDesktopWallpaper>(&DesktopWallpaper, None, CLSCTX_ALL) {
+            let n = dw.GetMonitorDevicePathCount().unwrap_or(0);
+            let mut first: Option<String> = None;
+            for i in 0..n {
+                let Ok(id) = dw.GetMonitorDevicePathAt(i) else { continue };
+                let same = dw
+                    .GetMonitorRECT(PCWSTR(id.0))
+                    .map(|x| x.left == r.left && x.top == r.top && x.right == r.right && x.bottom == r.bottom)
+                    .unwrap_or(false);
+                let path = dw.GetWallpaper(PCWSTR(id.0)).ok().map(|p| {
+                    let s = p.to_string().unwrap_or_default();
+                    CoTaskMemFree(Some(p.0 as *const _));
+                    s
+                });
+                CoTaskMemFree(Some(id.0 as *const _));
+                if let Some(p) = path.filter(|p| !p.is_empty()) {
+                    if same {
+                        return Some(p);
+                    }
+                    first.get_or_insert(p);
+                }
+            }
+            if first.is_some() {
+                return first;
+            }
+        }
+
+        // Fallback: the single wallpaper of the whole desktop.
+        let mut buf = [0u16; 520];
+        if SystemParametersInfoW(
+            SPI_GETDESKWALLPAPER,
+            buf.len() as u32,
+            Some(buf.as_mut_ptr() as *mut _),
+            SYSTEM_PARAMETERS_INFO_UPDATE_FLAGS(0),
+        )
+        .is_ok()
+        {
+            let n = buf.iter().position(|c| *c == 0).unwrap_or(buf.len());
+            let s = String::from_utf16_lossy(&buf[..n]);
+            if !s.is_empty() {
+                return Some(s);
+            }
+        }
+        None
     }
 }
 

@@ -23,7 +23,13 @@ body{height:100vh;overflow:hidden;background:#000;color:#fff;-webkit-font-smooth
 button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 img{display:block}
 #app{position:fixed;left:0;top:0;width:var(--W);height:var(--H);overflow:hidden;background:#07070a}
-@media (max-aspect-ratio:5/4){:root{--H:calc(100vw * 9 / 16)}#app{top:calc(50vh - var(--H) / 2)}#rotateHint{display:block!important}}
+/* portrait screens (a vertical monitor): fill the whole screen, no letterbox */
+@media (max-aspect-ratio:5/4){html{font-size:calc(var(--W) / 112)}
+  /* stacked top to bottom: clock · cover flow · playlist (flat) · search + player */
+  #app #flowWrap{top:31%;height:24%}
+  #app #queue{left:50%!important;top:59%!important;width:56rem;height:21%!important;transform:translateX(-50%)}
+  #app #queue.off{transform:translateX(-50%) translateY(1rem)}
+  #app #dock{top:auto;bottom:5%}}
 #rotateHint{display:none;position:fixed;left:0;right:0;bottom:6vh;text-align:center;font:500 13px Inter,system-ui;color:rgba(255,255,255,.45)}
 
 /* ───────── wallpaper ───────── */
@@ -35,11 +41,23 @@ img{display:block}
 .custom.on{opacity:1}
 #ytWrap{position:absolute;inset:0;overflow:hidden;opacity:0;transition:opacity 1.2s ease;pointer-events:none}
 #ytWrap.on{opacity:1}
+/* hide YouTube's own "more videos" / end-screen tiles: the video fades to the cover behind it */
+#ytWrap.yt-hide,#ytWrap.yt-end,#ytAudioWrap.yt-hide{opacity:0!important;transition:opacity .25s ease!important}
 #ytWrap iframe,#ytHost{position:absolute;left:50%;top:50%;border:0;pointer-events:none;
   width:calc(max(var(--W), calc(var(--H) * 16 / 9)) * var(--vk,1));height:calc(max(var(--H), calc(var(--W) * 9 / 16)) * var(--vk,1));transform:translate(-50%,-50%) scale(calc(1.2 / var(--vk,1)))}
 .shade{background:radial-gradient(120% 90% at 50% 45%,transparent 45%,rgba(0,0,0,.45) 100%),linear-gradient(to bottom,rgba(0,0,0,.18),transparent 25%,transparent 60%,rgba(0,0,0,.35));transition:background .6s}
 #app.dim .shade{background:rgba(0,0,0,.5)}
 #app.hasCustom #fx,#app.mv #fx{opacity:.25}
+/* Background → Desktop wallpaper: the Windows wallpaper of this monitor, optionally blurred */
+#deskImg{object-fit:cover;width:100%;height:100%;opacity:0;transition:opacity .8s,filter .3s,transform .3s}
+#app.deskbg #deskImg.ok{opacity:1}
+#app.deskbg #fx{opacity:0}
+#app.clip #deskImg,#app.clip-mirror #deskImg{opacity:0!important}
+
+/* mirror (another monitor): same scene, no controls */
+#app.mirror #dock,#app.mirror .menu,#app.mirror #toast,#app.mirror #dropHint,#app.mirror #flowStatus,
+#app.mirror #editSheet,#app.mirror #restoreBtn{display:none!important}
+#app.mirror,#app.mirror *{pointer-events:none!important}
 
 /* ───────── ambient light ───────── */
 #ambient{position:absolute;inset:0;pointer-events:none;z-index:2}
@@ -437,6 +455,16 @@ img{display:block}
 .lrow select option{background:#26262c}
 .lrow input[type=range]{width:18rem;accent-color:rgb(var(--accent))}
 .lnote{font-size:1rem;color:var(--txt3);padding:.3rem .8rem .5rem}
+.bgq{padding:.2rem .8rem .5rem}
+.bgq input{width:100%;padding:.65rem .9rem;border-radius:1rem;border:1px solid var(--brd);background:rgba(255,255,255,.08);color:#fff;font:inherit;font-size:1.1rem;outline:none;user-select:text}
+.bgq input:focus{border-color:rgba(var(--accent),.7)}
+.bgv{display:flex;align-items:center;gap:.8rem;width:calc(100% - 1rem);margin:.15rem .5rem;padding:.4rem;border-radius:1rem;text-align:left}
+button.bgv:hover{background:rgba(255,255,255,.08)}
+.bgv.cur{background:rgba(var(--accent),.18)}
+.bgv img{width:6.4rem;height:3.6rem;border-radius:.6rem;object-fit:cover;flex:none;background:rgba(255,255,255,.08)}
+.bgv span{min-width:0;display:flex;flex-direction:column;gap:.15rem}
+.bgv b{font-size:1.05rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bgv small{font-size:.9rem;color:var(--txt3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #lyrPop .mi .lv{flex:1;min-width:0}
 #lyrPop .mi .lv b{display:block;font-size:1.15rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #lyrPop .mi .lv small{display:block;font-size:.98rem;font-weight:500;color:var(--txt2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -507,6 +535,7 @@ img{display:block}
     <img id="customImg" class="wl custom" alt="">
     <video id="customVid" class="wl custom" muted loop playsinline autoplay></video>
     <div id="ytWrap"><div id="ytHost"></div></div>
+    <img id="deskImg" class="wl" alt="">
     <div class="wl shade"></div>
   </div>
   <div id="ambient"><i class="amb top"></i><i class="amb bottom"></i><i class="amb left"></i><i class="amb right"></i></div>
@@ -574,9 +603,13 @@ const invoke = (c, a) => T ? T.core.invoke(c, a) : Promise.reject('no-tauri');
 const listen = (e, f) => T ? T.event.listen(e, f) : null;
 const $ = s => document.querySelector(s);
 const app = $('#app');
+// Mirror = this page running on another monitor as a display-only copy of the main window.
+// It reads the same saved settings and follows what the main window plays; it never saves.
+const MIRROR = !!window.__WP_MIRROR__ || new URLSearchParams(location.search).has('mirror');
+if (MIRROR) app.classList.add('mirror');
 const store = {
   get(k, d){ try{ const v = localStorage.getItem('wp.'+k); return v == null ? d : JSON.parse(v) }catch(e){ return d } },
-  set(k, v){ try{ localStorage.setItem('wp.'+k, JSON.stringify(v)) }catch(e){} }
+  set(k, v){ if (MIRROR) return; try{ localStorage.setItem('wp.'+k, JSON.stringify(v)) }catch(e){} }
 };
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -664,7 +697,7 @@ const S = {
   acc: null, mvKey: '', tgtA: [255, 255, 255], tgtB: [255, 255, 255],
   repeat: store.get('repeat', 'off'), qLabel: '', lyrSource: '', lyrTr: {}, trCache: {},
   sub: store.get('sub', {l1: 'orig', l2: 'vi'}),
-  look: Object.assign({clock: true, ck: 'tall', ly: 'rounded', lys: 'm', lc: 'lower', ambK: 1, ambW: 1.35, theme: 'accent', pickIdx: 0, ckpos: 'top', lypos: 'center', lyst: 'player', lfx: 'stack', afx: 'comet', acol: 'art', vq: 'auto', ckwt: {}, lysz: 0}, store.get('look', {})),
+  look: Object.assign({clock: true, ck: 'tall', ly: 'rounded', lys: 'm', lc: 'lower', ambK: 1, ambW: 1.35, theme: 'accent', pickIdx: 0, ckpos: 'top', lypos: 'center', lyst: 'player', lfx: 'stack', afx: 'comet', acol: 'art', vq: 'auto', ckwt: {}, lysz: 0, bg: 'auto', wpBlur: 0, bgEach: true, bgVid: null}, store.get('look', {})),
   pal: null,
   qOff: store.get('qOff', false),
   hide: Object.assign({bar: false, search: false, flow: false}, store.get('hide', {}))
@@ -818,7 +851,7 @@ function applyCustom(blob){
   if (!blob) return; const url = URL.createObjectURL(blob); app.classList.add('hasCustom');
   if (blob.type.startsWith('video')){ vid.src = url; vid.play().catch(() => {}); vid.classList.add('on') } else { img.src = url; img.classList.add('on') }
 }
-async function setCustomWallpaper(file){ if (!file || !/^(image|video)\//.test(file.type)) return toast('Use an image or a video file'); applyCustom(file); await IDB.put('wall', file); toast('Wallpaper set') }
+async function setCustomWallpaper(file){ if (!file || !/^(image|video)\//.test(file.type)) return toast('Use an image or a video file'); applyCustom(file); await IDB.put('wall', file); T && T.event.emit('wall-changed', {}).catch(() => {}); toast('Wallpaper set') }
 
 /* ════════════════════ clock ════════════════════ */
 const DIG = {   // centre-lines in a 44×200 cell (x 4…40, y 4…196); drawn as solid round strokes
@@ -978,6 +1011,92 @@ addEventListener('resize', () => applyVqSize());
 const reapplyQuality = () => { applyVqSize(); for (const pl of [YTV, YTA]){ if (pl === YTA && !app.classList.contains('clip')) continue; applyQuality(pl); setTimeout(() => applyQuality(pl), 900) } };
 const AMB_COL = [['art', 'Album cover'], ['video', 'Live video']];
 const AMB_FX = [['comet', 'Comet'], ['pulse', 'Pulse'], ['bars', 'Spectrum'], ['rainbow', 'Rainbow'], ['aurora', 'Aurora']];
+const BG_MODES = [['auto', 'Music video / cover'], ['video', 'My video'], ['surprise', 'Surprise me'], ['desktop', 'Desktop wallpaper']];
+const bgVid = () => S.look.bg === 'video' || S.look.bg === 'surprise';   // a looping video, not tied to the song
+const BGQ = {q: '', res: [], busy: false};   // My video: search box state in Appearance
+
+/* Background → Surprise me: muted city / nature / first-person walk videos picked to fit the music */
+const SURPRISE = {
+  night:  ['tokyo night walk 4K no talking', 'rainy night city walk 4K POV', 'neon city night drive 4K', 'seoul night walk 4K ambience', 'hong kong night walk 4K'],
+  chill:  ['rain on window city view 4K', 'paris morning walk 4K', 'kyoto walk 4K ambience', 'cozy street walk 4K no talking', 'amsterdam canal walk 4K'],
+  nature: ['forest walk 4K POV nature', 'mountain lake 4K static shot', 'misty forest 4K', 'waterfall 4K static', 'green meadow wind 4K'],
+  summer: ['beach walk 4K POV sunset', 'tropical island drone 4K', 'summer city walk 4K', 'ocean waves 4K static', 'santorini walk 4K'],
+  energy: ['new york city walk 4K', 'shibuya crossing 4K', 'city timelapse 4K', 'las vegas night walk 4K', 'night highway drive 4K POV'],
+  snow:   ['snow walk 4K POV', 'winter city walk snow 4K', 'snowy forest 4K static', 'snowfall at night city 4K']
+};
+const MOOD_WORDS = [
+  ['night', /night|midnight|moon|dark|neon|tokyo|city|club|lonely|alone|3am|dream/],
+  ['summer', /summer|beach|sun|ocean|island|tropic|wave|sea|vacation|hot|palm|sunset/],
+  ['snow', /snow|winter|christmas|cold|ice|frozen|december/],
+  ['nature', /forest|tree|nature|mountain|river|flower|bloom|garden|bird|wild|green|rain(?!bow)/],
+  ['chill', /lofi|lo-fi|chill|coffee|cafe|sleep|slow|acoustic|piano|morning|sunday|soft|calm/],
+  ['energy', /party|dance|rush|fire|run|fast|remix|edm|hype|wild|loud|rock/]
+];
+function moodOf(t){
+  if (!t) return null;
+  const s = [t.title, t.artist, t.album].filter(Boolean).join(' ').toLowerCase();
+  for (const [m, re] of MOOD_WORDS) if (re.test(s)) return m;
+  return null;
+}
+let energyAvg = .35;
+setInterval(() => { if (typeof AU !== 'undefined' && isPlaying()) energyAvg = energyAvg * .97 + (AU.energy || 0) * .03 }, 1000);
+function surpriseMood(){
+  // the song and the next few in the playlist vote; colour and loudness break a tie
+  const list = queueList(), i = Math.max(0, list.findIndex(isCurrent)), votes = {};
+  [S.track, ...list.slice(i + 1, i + 5)].forEach((t, k) => { const m = moodOf(t); if (m) votes[m] = (votes[m] || 0) + (k ? 1 : 2) });
+  const best = Object.entries(votes).sort((a, b) => b[1] - a[1])[0];
+  if (best) return best[0];
+  if (S.pal){ const [h, s, l] = rgb2hsl(...S.pal.accent.rgb);
+    if (l < .3) return 'night';
+    if (h > .2 && h < .45 && s > .25) return 'nature';
+    if ((h < .12 || h > .92) && s > .4) return energyAvg > .5 ? 'energy' : 'summer';
+    if (h > .5 && h < .75) return energyAvg > .5 ? 'night' : 'chill' }
+  return energyAvg > .55 ? 'energy' : 'chill';
+}
+const BGV = {cur: null, mode: null, recent: []};
+async function bgVideo(t, force){
+  if (MIRROR || !T) return;
+  if (!S.mvOn){ YTV.stop(); BGV.cur = null; return }
+  if (S.look.bg === 'video'){
+    const v = S.look.bgVid; if (!v || !v.id){ YTV.stop(); BGV.cur = null; return }
+    if (BGV.cur === v.id && !force && YTV.ids[0] === v.id) return; BGV.cur = v.id; await YTV.load([v.id], 0); return;
+  }
+  if (S.look.bg !== 'surprise' || (BGV.cur && !force && !S.look.bgEach && YTV.ids.includes(BGV.cur))) return;
+  const pick = SURPRISE[surpriseMood()], q = pick[Math.floor(Math.random() * pick.length)];
+  try {
+    const ids = (await invoke('youtube_search', {query: q})).slice(0, 10);
+    const fresh = ids.filter(id => !BGV.recent.includes(id)), pool = (fresh.length ? fresh : ids).sort(() => Math.random() - .5);
+    if (!pool.length) return; BGV.cur = pool[0]; BGV.recent = [pool[0], ...BGV.recent].slice(0, 15);
+    await YTV.load(pool, 30 + Math.random() * 300);   // long videos: start somewhere in the middle
+  } catch(e){}
+}
+
+/* Background → Desktop wallpaper: each window asks for the wallpaper of its own monitor */
+let deskPath = null;
+function blurBg(){
+  const img = $('#deskImg'), b = +S.look.wpBlur || 0, f = b > 0 ? `blur(${b}px)` : 'none';
+  img.style.filter = f;
+  img.style.transform = b > 0 ? `scale(${1 + b / 300})` : 'none';   // hide the soft blurred edge
+  $('#ytWrap').style.filter = bgVid() ? f : 'none';                  // the same blur for My video / Surprise me
+}
+async function applyBg(){
+  const mode = S.look.bg, on = mode === 'desktop', img = $('#deskImg');
+  app.classList.toggle('deskbg', on); blurBg();
+  if (!MIRROR && T && BGV.mode !== mode){
+    BGV.mode = mode; BGV.cur = null; YTV.stop();
+    if (bgVid()) bgVideo(S.track, true);
+    else if (!on && S.track && S.src !== 'demo' && S.src !== 'none' && S.mvOn) mvFor(S.track);
+  }
+  if (!on) return;
+  if (!MIRROR) YTV.stop();
+  if (!T) return;
+  try {
+    const r = await invoke('desktop_wallpaper', {known: deskPath});
+    if (!r){ img.classList.remove('ok'); return }
+    if (r.data){ deskPath = r.path; img.onload = () => img.classList.add('ok'); img.src = r.data }
+  } catch(e){ img.classList.remove('ok') }
+}
+setInterval(() => { if (S.look.bg === 'desktop' && T) applyBg() }, 60000);   // picks up a new wallpaper / slideshow
 function applyLook(){
   const L = S.look; app.className = app.className.replace(/\b(ckpos|lypos|lyst|lfx|ck|ly|lys|lc)-\S+/g, '').replace(/\s+/g, ' ').trim();
   app.classList.add('ck-' + L.ck, 'ly-' + L.ly, 'lys-' + L.lys, 'lc-' + L.lc, 'ckpos-' + L.ckpos, 'lypos-' + L.lypos, 'lyst-' + L.lyst, 'lfx-' + L.lfx); S.lyrIdx = -2; app.classList.toggle('noclock', !L.clock);
@@ -993,8 +1112,19 @@ function renderAppPop(){
   const theme = `<div class="mh">Theme color</div>${chips('theme', [['accent', 'Accent'], ['dominant', 'Dominant'], ['secondary', 'Secondary']])}
     <div class="sw">${P ? P.swatches.map((w, i) => `<button class="swc ${w === picked ? 'on' : ''}" data-sw="${i}" style="--c:rgb(${w.rgb.join(',')})" title="rgb(${w.rgb.join(', ')})"><i></i><small>${Math.round(w.pct * 100)}%</small><em>${role(w)}</em></button>`).join('') : '<div class="lnote">Play a song to read its cover colours</div>'}</div>
     <div class="msep"></div><div class="mh">Display</div><div class="chips" id="monList"><span class="lnote">${T ? 'Looking for displays…' : 'This screen'}</span></div><div class="msep"></div>`;
+  const blurRow = `<div class="lrow"><span>Blur</span><input type="range" min="0" max="40" step="1" value="${L.wpBlur || 0}" data-r="wpBlur"></div>`;
+  const bgExtra = L.bg === 'desktop' ? blurRow + `<div class="lnote">Your Windows wallpaper stays; clock, lyrics and player sit on top.</div>`
+    : L.bg === 'video' ? `<div class="bgq"><input id="bgQ" placeholder="Search YouTube for a background video…" spellcheck="false" autocomplete="off" value="${esc(BGQ.q)}"></div>
+      ${L.bgVid ? `<div class="bgv cur"><img src="${esc(L.bgVid.art || '')}" alt=""><span><b>${esc(L.bgVid.title || '')}</b><small>Playing now · muted · loops</small></span></div>` : '<div class="lnote">Search, then pick a video. It plays muted behind everything.</div>'}
+      ${BGQ.busy ? '<div class="lnote">Searching…</div>' : BGQ.res.map((v, i) => `<button class="bgv" data-bgv="${i}"><img src="${esc(v.art || '')}" alt="" loading="lazy"><span><b>${esc(v.title)}</b><small>${esc(v.artist || '')}</small></span></button>`).join('')}
+      ${blurRow}`
+    : L.bg === 'surprise' ? `<div class="lnote">City, nature and first-person walk videos, picked to fit the songs in your playlist.</div>
+      <div class="lrow"><span>New video each song</span><button class="tg ${L.bgEach ? 'on' : ''}" data-t="bgEach"></button></div>
+      <div class="chips"><button class="chip on" data-bgnext="1">Another one</button></div>${blurRow}`
+    : '';
   const editBtn = t => `<button class="chip on wide" data-edit="${t}">Font, colour &amp; glass…</button>`;
-  $('#appPop').innerHTML = theme + `<div class="mh">Clock</div>
+  $('#appPop').innerHTML = theme + `<div class="mh">Background</div>${chips('bg', BG_MODES)}${bgExtra}
+    <div class="msep"></div><div class="mh">Clock</div>
     <div class="lrow"><span>Show clock</span><button class="tg ${L.clock ? 'on' : ''}" data-t="clock"></button></div>
     <div class="lnote">Position</div>${chips('ckpos', CK_POS)}
     <div class="chips">${editBtn('clock')}</div>
@@ -1037,6 +1167,7 @@ function setLyrics(arr, t, source){
 }
 async function loadLyrics(t){
   const seq = ++S.lyrSeq; setLyrics([]); S.lyrSeq = seq;
+  if (MIRROR) return;   // the main window sends its lyrics
   if (t.demo || !T){ setLyrics(t.lyrics || [], t, 'demo'); return }
   if (t.source === 'youtube' && t.play){   // YouTube clip: its own CC (hidden by YouTube) becomes the lyrics
     try { const cc = await invoke('yt_captions', {videoId: t.play}); if (seq !== S.lyrSeq) return; if (cc && cc.length){ setLyrics(cc.map(c => ({t: c.t, text: c.text})), t, 'YouTube CC'); return } } catch(e){}
@@ -1251,7 +1382,7 @@ function makeYT(hostId, audio){
     p: null, ready: null, ids: [], i: 0, start: 0, seq: 0,
     async ensure(){ if (this.ready) return this.ready; const ok = await loadYTApi(); if (!ok) return false;
       this.ready = new Promise(res => { this.p = new YT.Player(hostId, {width: '100%', height: '100%',
-        playerVars: {autoplay: 1, controls: 0, disablekb: 1, fs: 0, iv_load_policy: 3, modestbranding: 1, playsinline: 1, rel: 0, origin: location.origin},
+        playerVars: {autoplay: 1, cc_load_policy: 0, controls: 0, disablekb: 1, fs: 0, iv_load_policy: 3, modestbranding: 1, playsinline: 1, rel: 0, origin: location.origin},
         events: {onReady: () => res(true), onStateChange: e => this.state(e.data), onError: () => this.err()}}) }); return this.ready },
     async load(ids, start = 0){ const seq = ++this.seq; this.ids = (ids || []).filter(Boolean); this.i = 0; this.start = start;
       if (!this.ids.length) return this.fail(); const ok = await this.ensure(); if (seq !== this.seq) return; if (!ok) return this.fail(); this.cue() },
@@ -1260,15 +1391,20 @@ function makeYT(hostId, audio){
     err(){ this.i++; if (this.i < Math.min(this.ids.length, 7)) this.cue(); else this.fail() },
     fail(){ if (audio){ if (S.src === 'yt'){ S.src = 'none'; renderPlay(); toast("Can't stream that one — try another platform") } } else { $('#ytWrap').classList.remove('on'); app.classList.remove('mv') } },
     state(s){
+      // YouTube draws "more videos" tiles over a paused or finished video: cover the player then
+      if (s === 1){ this.noCC(); setTimeout(() => this.noCC(), 1500) }   // YouTube may switch its own captions on: the app shows the lyrics itself
+      if (s === 2 || s === 0) this.cover(true); else if (s === 1) setTimeout(() => this.playing() && this.cover(false), 350);
       if (audio){ if (s === 1 && app.classList.contains('clip')){ applyQuality(this); setTimeout(() => applyQuality(this), 900) } if (s === 1 || s === 2) renderPlay(); if (s === 0 && S.src === 'yt') onEnded(); return }
       if (s === 1){ $('#ytWrap').classList.add('on'); app.classList.add('mv'); applyQuality(this); setTimeout(() => applyQuality(this), 900) }
       if (s === 0){ try { this.p.seekTo(0); this.p.playVideo() } catch(e){} }
     },
-    stop(){ this.seq++; try { this.p && this.p.stopVideo() } catch(e){} if (!audio){ $('#ytWrap').classList.remove('on'); app.classList.remove('mv') } },
+    stop(){ this.seq++; this.ids = []; try { this.p && this.p.stopVideo() } catch(e){} if (!audio){ $('#ytWrap').classList.remove('on'); app.classList.remove('mv') } },
     time(){ try { return this.p.getCurrentTime() || 0 } catch(e){ return 0 } },
     dur(){ try { return this.p.getDuration() || 0 } catch(e){ return 0 } },
     playing(){ try { return this.p.getPlayerState() === 1 } catch(e){ return false } },
-    play(){ try { this.p.playVideo() } catch(e){} }, pause(){ try { this.p.pauseVideo() } catch(e){} },
+    play(){ try { this.p.playVideo() } catch(e){} }, pause(){ this.cover(true); try { this.p.pauseVideo() } catch(e){} },
+    cover(on){ const w = $(audio ? '#ytAudioWrap' : '#ytWrap'); if (w) w.classList.toggle('yt-hide', on) },
+    noCC(){ try { this.p.unloadModule('captions'); this.p.unloadModule('cc'); this.p.setOption && this.p.setOption('captions', 'track', {}) } catch(e){} },
     seek(s){ try { this.p.seekTo(s, true) } catch(e){} },
     vol(){ try { if (audio){ S.muted ? this.p.mute() : (this.p.unMute(), this.p.setVolume(Math.round(S.vol * 100))) } } catch(e){} }
   };
@@ -1310,6 +1446,7 @@ function pauseSystem(){ if (T && S.sys && S.sys.has && S.sys.playing) invoke('me
 
 /* ════════════════════ track / playback ════════════════════ */
 function getPos(){
+  if (S.src === 'mirror') return MS.pos + (MS.playing ? (performance.now() - MS.at) / 1000 : 0);
   if (S.src === 'demo') return S.demo.pos;
   if (S.src === 'yt') return YTA.time();
   if (S.src === 'sc') return SCW.time();
@@ -1322,6 +1459,7 @@ function getDur(){
   if (S.src === 'system' && S.sys) return S.sys.duration_ms / 1000; return td;
 }
 function isPlaying(){
+  if (S.src === 'mirror') return MS.playing;
   if (S.src === 'demo') return S.demo.playing;
   if (S.src === 'yt') return YTA.playing();
   if (S.src === 'sc') return SCW.playing;
@@ -1462,13 +1600,22 @@ function onMedia(m){
   } else { if (S.track) S.track.duration = m.duration_ms / 1000; renderPlay(); mvSync() }
 }
 async function mvFor(t){
-  if (app.classList.contains('clip')) return;
-  if (!S.mvOn || !T || app.classList.contains('hasCustom')){ YTV.stop(); return }
+  if (app.classList.contains('clip') || MIRROR) return;
+  if (S.look.bg === 'desktop'){ YTV.stop(); return }
+  if (bgVid()) return bgVideo(t, false);
+  if (!S.mvOn || !T || app.classList.contains('hasCustom') || !t){ YTV.stop(); return }
   const key = t.title + '|' + t.artist; S.mvKey = key;
   try { const ids = await invoke('youtube_search', {query: `${t.title} ${t.artist} official music video`}); if (S.mvKey !== key) return; await YTV.load(ids.slice(0, 6), getPos()) } catch(e){}
 }
 function mvSync(){
-  if (!YTV.p || !(S.src === 'system' || S.src === 'yt' || S.src === 'sc') || !$('#ytWrap').classList.contains('on')) return;
+  if (!YTV.p || !$('#ytWrap').classList.contains('on')) return;
+  if (MIRROR){   // follow the main window's video, whatever it is
+    const want = MS.vt + (MS.vpl ? (performance.now() - MS.at) / 1000 : 0);
+    if (!MS.vpl && YTV.playing()) YTV.pause(); if (MS.vpl && !YTV.playing()) YTV.play();
+    if (Math.abs(YTV.time() - want) > 2.5 && YTV.dur() > want) YTV.seek(want); return;
+  }
+  if (bgVid()){ if (!YTV.playing()) YTV.play(); return }   // background video keeps running, not tied to the song
+  if (!(S.src === 'system' || S.src === 'yt' || S.src === 'sc')) return;
   const pl = isPlaying(); if (!pl && YTV.playing()) YTV.pause(); if (pl && !YTV.playing()) YTV.play();
   const pos = getPos(); if (Math.abs(YTV.time() - pos) > 2.5 && YTV.dur() > pos) YTV.seek(pos);
 }
@@ -1696,7 +1843,7 @@ $('#moreMenu').addEventListener('click', async e => {
   if (a === 'open' && S.track) openExternal(platformUrl(effectivePlatform(), S.track));
   if (a === 'mv') toggleMV();
   if (a === 'wall') $('#wpFile').click();
-  if (a === 'unwall'){ applyCustom(null); IDB.del('wall') }
+  if (a === 'unwall'){ applyCustom(null); IDB.del('wall').then(() => T && T.event.emit('wall-changed', {}).catch(() => {})) }
   if (a === 'acc') openAccounts();
   if (a === 'lyr') openLyricsPanel();
   if (a === 'look') openAppPop();
@@ -1742,13 +1889,25 @@ $('#appPop').addEventListener('click', e => {
   e.stopPropagation(); const c = e.target.closest('.chip[data-k]'), tg = e.target.closest('[data-t]'), sw = e.target.closest('[data-sw]'), mon = e.target.closest('[data-mon]');
   if (sw){ S.look.theme = 'manual'; S.look.pickIdx = +sw.dataset.sw; store.set('look', S.look); applyTheme(); renderAppPop(); return }
   if (mon){ invoke('set_monitor', {id: mon.dataset.mon}).then(() => { toast('Moved to ' + mon.textContent); loadMonitors() }).catch(err => toast(String(err))); return }
-  if (c){ S.look[c.dataset.k] = c.dataset.v; if (c.dataset.k === 'lys') S.look.lysz = 0; if (c.dataset.k === 'ck') S.look.clock = true; if (c.dataset.k === 'theme') applyTheme(); applyLook(); renderAppPop() }
-  if (tg){ if (tg.dataset.t === 'clock'){ S.look.clock = !S.look.clock; applyLook() } else { S.ambOn = !S.ambOn; applyToggles() } renderAppPop() }
+  if (c){ S.look[c.dataset.k] = c.dataset.v; if (c.dataset.k === 'lys') S.look.lysz = 0; if (c.dataset.k === 'ck') S.look.clock = true; if (c.dataset.k === 'theme') applyTheme(); applyLook(); if (c.dataset.k === 'bg') applyBg(); renderAppPop() }
+  if (tg){ if (tg.dataset.t === 'clock'){ S.look.clock = !S.look.clock; applyLook() } else if (tg.dataset.t === 'bgEach'){ S.look.bgEach = !S.look.bgEach; store.set('look', S.look) } else { S.ambOn = !S.ambOn; applyToggles() } renderAppPop() }
+  const bv = e.target.closest('[data-bgv]');
+  if (bv){ const v = BGQ.res[+bv.dataset.bgv]; if (v){ S.look.bgVid = {id: v.id, title: v.title, art: v.art}; store.set('look', S.look); BGQ.res = []; bgVideo(S.track, true); renderAppPop() } }
+  if (e.target.closest('[data-bgnext]')){ bgVideo(S.track, true); toast('Finding another one…') }
   const hb = e.target.closest('[data-h]'); if (hb){ if (hb.dataset.h === 'queue'){ S.qOff = !S.qOff; applyToggles() } else { S.hide[hb.dataset.h] = !S.hide[hb.dataset.h]; applyHide() } renderAppPop() }
 });
+// My video: search YouTube from the Appearance panel
+$('#appPop').addEventListener('keydown', async e => {
+  if (e.target.id !== 'bgQ' || e.key !== 'Enter') return;
+  const q = e.target.value.trim(); if (!q) return; BGQ.q = q;
+  if (!T){ toast('Search works in the Windows app'); return }
+  BGQ.busy = true; renderAppPop();
+  try { const r = await invoke('search', {platform: 'youtube', query: q}); BGQ.res = (r.tracks || []).slice(0, 8) } catch(err){ BGQ.res = [] }
+  BGQ.busy = false; if (!BGQ.res.length) toast('No videos found'); renderAppPop(); const inp = $('#bgQ'); if (inp) inp.focus();
+});
+$('#appPop').addEventListener('input', e => { if (e.target.id === 'bgQ'){ BGQ.q = e.target.value; return } const r = e.target.closest('[data-r]'); if (!r) return; S.look[r.dataset.r] = +r.value; store.set('look', S.look); if (r.dataset.r === 'wpBlur') blurBg() });
 $('#appPop').addEventListener('change', e => { const d = e.target.closest('select.dd'); if (!d) return; const k = d.dataset.k; S.look[k] = d.value;
-  if (k === 'lys') S.look.lysz = 0; if (k === 'ck') S.look.clock = true; if (k === 'theme') applyTheme(); applyLook(); renderAppPop() });
-$('#appPop').addEventListener('input', e => { const r = e.target.closest('[data-r]'); if (!r) return; S.look[r.dataset.r] = +r.value; store.set('look', S.look) });
+  if (k === 'lys') S.look.lysz = 0; if (k === 'ck') S.look.clock = true; if (k === 'theme') applyTheme(); applyLook(); if (k === 'bg') applyBg(); renderAppPop() });
 
 /* ════════════════════ desktop mouse (Wallpaper mode): the app is behind the icons, so Windows sends the mouse here as events ════════════════════ */
 const VM = {el: null, down: null};
@@ -2048,13 +2207,66 @@ function frame(now){
   if (AMB && S.ambOn && !document.hidden) AMB.render(dt, S.vidA || S.tgtA, S.vidB || S.tgtB);
   if (S.look.lfx === 'glow') $('#lyrics2').style.setProperty('--beat', AU.beat.toFixed(3));
 }
-setInterval(() => { renderClock(); if (S.src !== 'demo') renderPlay(); mvSync() }, 1000);
+// end screens (suggested-video tiles) sit on the last ~20 s of a music video: fade to the cover there
+function ytEndGuard(){ if (!YTV.p) return; const d = YTV.dur(), t = YTV.time(); $('#ytWrap').classList.toggle('yt-end', d > 40 && d - t < 20) }
+setInterval(() => { renderClock(); if (S.src !== 'demo') renderPlay(); mvSync(); ytEndGuard() }, 1000);
+
+/* ════════════════════ mirror windows (other monitors) ════════════════════ */
+// The other monitors run this same page in mirror mode. They read the same saved
+// settings (clock, lyrics, ambient, layout, background…) and redraw when they change;
+// the main window tells them what plays: track, position, lyrics, playlist, video.
+const MIR = {tk: '', qk: '', lk: -1};
+function mirrorSync(force){
+  if (!T || MIRROR) return;
+  const t = S.track, clip = app.classList.contains('clip');
+  const P = clip ? YTA : YTV;
+  const video = (clip || $('#ytWrap').classList.contains('on')) ? (P.ids[P.i] || null) : null;
+  const m = {pos: getPos(), playing: isPlaying(), video, vt: video ? P.time() : 0, vpl: video ? P.playing() : false, clip, at: Date.now()};
+  const tk = t ? t.title + '|' + t.artist + '|' + (t.art || '').length : '';
+  if (force || tk !== MIR.tk){ MIR.tk = tk; m.track = t ? {...t, lyrics: undefined} : null; m.hasTrack = true }
+  const list = queueList(), qk = list.length + '|' + list.slice(0, 30).map(x => x.title).join('|') + '|' + (t ? t.title : '');
+  if (force || qk !== MIR.qk){ MIR.qk = qk; m.queue = list.slice(0, 30).map(x => ({...x, lyrics: undefined})); m.qIdx = list.findIndex(isCurrent) }
+  if (force || m.hasTrack || S.lyrSeq !== MIR.lk){ MIR.lk = S.lyrSeq; m.lyr = S.lyr; m.lyrSrc = S.lyrSource }
+  T.event.emit('mirror-state', m).catch(() => {});
+}
+setInterval(() => mirrorSync(false), 500);
+
+const MS = {pos: 0, at: 0, playing: false, vid: null, vt: 0, vpl: false};
+function mirrorApply(m){
+  if (!m) return;
+  S.src = 'mirror';
+  MS.pos = m.pos || 0; MS.playing = !!m.playing; MS.at = performance.now() - Math.max(0, Math.min(2000, Date.now() - (m.at || Date.now())));
+  MS.vt = m.vt || 0; MS.vpl = !!m.vpl;
+  if (m.queue){ S.queue = m.queue; S.qKind = 'queue'; S.qIdx = m.qIdx }
+  if (m.hasTrack) setTrack(m.track || null);
+  else if (m.queue){ renderQueue(); renderFlow() }
+  if (m.lyr) setLyrics(m.lyr, S.track, m.lyrSrc);
+  app.classList.toggle('clip-mirror', !!m.clip);
+  const vid = S.look.bg === 'desktop' && !m.clip ? null : (m.video || null);
+  if (vid !== MS.vid){ MS.vid = vid; if (vid) YTV.load([vid], MS.vt); else YTV.stop() }
+  renderPlay();
+}
+// settings changed in the main window → redraw with them
+function mirrorReload(){
+  S.look = Object.assign(S.look, store.get('look', {})); S.hide = Object.assign(S.hide, store.get('hide', {}));
+  for (const k of ['lyrOn', 'ambOn', 'dim', 'mvOn', 'qOff']) S[k] = store.get(k, S[k]);
+  S.sub = store.get('sub', S.sub);
+  applyLook(); applyHide(); applyToggles(); applyTheme(); applyBg(); setLyricsMode(store.get('lyricsMode', false));
+  lastClock = ''; renderClock(); S.lyrIdx = -2; applySubs();
+}
+if (MIRROR) addEventListener('storage', e => { if (e.key && !e.key.startsWith('wp.')) return; clearTimeout(mirrorReload.t); mirrorReload.t = setTimeout(mirrorReload, 60) });
 
 /* ════════════════════ boot ════════════════════ */
 async function boot(){
   applyLook(); applyHide(); renderClock(); renderPlatMenu(); applyToggles(); setLyricsMode(store.get('lyricsMode', false));
-  IDB.get('wall').then(b => b && applyCustom(b));
-  if (T){
+  IDB.get('wall').then(b => b && applyCustom(b)); applyBg();
+  if (T && MIRROR){
+    listen('audio-spectrum', e => AU.feed(e.payload, performance.now()));
+    listen('mirror-state', e => mirrorApply(e.payload));
+    listen('wall-changed', () => IDB.get('wall').then(b => applyCustom(b || null)));
+    setTrack(null); setAccent(null); setWallArt(null);
+    T.event.emit('mirror-hello', {}).catch(() => {});
+  } else if (T){
     listen('media-art', e => { S.sysArt = e.payload || null });
     listen('media', e => onMedia(e.payload));
     listen('audio-spectrum', e => AU.feed(e.payload, performance.now()));
@@ -2066,6 +2278,7 @@ async function boot(){
     listen('accounts-changed', () => refreshAccounts());
     listen('monitor-changed', () => loadMonitors());
     listen('toast', e => toast(e.payload));
+    listen('mirror-hello', () => mirrorSync(true));
     try { S.ui = await invoke('get_state') } catch(e){}
     refreshAccounts();
     S.qKind = 'history'; setTrack(null); setAccent(null); setWallArt(null);

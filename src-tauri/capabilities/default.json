@@ -1,7 +1,7 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
-  "description": "Main wallpaper window",
-  "windows": ["main"],
+  "description": "Main wallpaper window and the mirror windows on other monitors",
+  "windows": ["main", "mirror-*"],
   "permissions": ["core:default"]
 }
