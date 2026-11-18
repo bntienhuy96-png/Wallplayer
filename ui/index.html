@@ -260,6 +260,8 @@ img{display:block}
 .rlabel{font-size:1.3rem;font-weight:700;margin:0 0 .9rem .2rem;display:flex;align-items:center;gap:.5rem}
 .rlabel .pi{width:1.6rem;height:1.6rem}
 .rlabel small{font-size:1rem;font-weight:500;color:var(--txt3)}
+.rtabs{display:flex;gap:.6rem;margin:0 0 1.2rem .1rem}.rtabs:empty{display:none}.rtabs button{padding:.55rem 1.4rem;border-radius:2rem;background:rgba(255,255,255,.08);font-size:1.15rem;font-weight:700;color:var(--txt2);transition:.2s}.rtabs button:hover{background:rgba(255,255,255,.16);color:var(--txt)}.rtabs button.on{background:#fff;color:#111}.rtabs small{opacity:.6;font-weight:600;margin-left:.3rem}
+.rgrid{display:flex;flex-wrap:wrap;gap:1.4rem 1.1rem;margin-bottom:1.3rem}
 .rsug{display:flex;gap:.6rem;flex-wrap:wrap;margin:0 0 1.1rem .1rem}.rsug:empty{display:none}.rsug button{padding:.5rem 1.1rem;border-radius:2rem;background:rgba(255,255,255,.1);font-size:1.1rem;font-weight:600;color:var(--txt);transition:.2s}.rsug button:hover{background:rgba(255,255,255,.2)}
 .rc.art .ra{border-radius:50%}.rc.art b,.rc.art span{text-align:center}.rc.busy{opacity:.5;pointer-events:none}
 .rrow{display:flex;gap:1.1rem;overflow-x:auto;scrollbar-width:none;padding-bottom:.3rem;margin-bottom:1.3rem;min-height:2rem}
@@ -562,7 +564,7 @@ button.bgv:hover{background:rgba(255,255,255,.08)}
 
   <div id="dock">
     <div id="results" class="glass">
-      <div id="rCta"></div><div class="rsug" id="rSug"></div><div class="rlabel" id="rTopLabel">Top Results</div><div class="rrow" id="rTop"></div><div id="rEnt"></div>
+      <div id="rCta"></div><div class="rsug" id="rSug"></div><div class="rtabs" id="rTabs"></div><div class="rlabel" id="rTopLabel">Top Results</div><div class="rrow" id="rTop"></div><div id="rEnt"></div>
       <div class="rlabel" id="rSongsLabel">Songs</div><div id="rSongs"></div>
     </div>
     <div id="searchBox"><span id="sIco"></span><input id="q" placeholder="Search YouTube Music" spellcheck="false" autocomplete="off">
@@ -1739,7 +1741,7 @@ $('#q').addEventListener('input', () => { clearTimeout(sTimer); const v = $('#q'
 async function doSearch(q){
   q = q.trim(); const seq = ++S.searchSeq; if (!q) return;
   $('#rTop').innerHTML = '<div class="skel"></div>'.repeat(5); $('#rSongs').innerHTML = ''; $('#rCta').innerHTML = ''; $('#rEnt').innerHTML = ''; $('#rSug').innerHTML = '';
-  const plat = searchPlatform(); let res = [], meta = {source: plat, needs_login: false}; S.rich = null;
+  const plat = searchPlatform(); let res = [], meta = {source: plat, needs_login: false}; S.rich = null; S.rtab = 'song';
   if (T){
     if (plat === 'ytmusic'){ try { const r = await invoke('search_rich', {query: q}); if (r && r.songs && r.songs.length){ S.rich = r; res = r.songs.map(mapTrack); meta = {source: plat, needs_login: false} } } catch(e){} }
     if (!res.length){ try { const out = await invoke('search', {platform: plat, query: q}); meta = out; res = (out.tracks || []).map(mapTrack); if (out.error && !res.length) toast(out.error) } catch(e){ toast('Search failed — check your connection') } }
@@ -1756,28 +1758,34 @@ function renderResults(res, meta){
     const base = (S.history.length ? S.history : S.queue).slice(0, 10); S.results = base; cta.innerHTML = '';
     $('#rTopLabel').innerHTML = base.length ? 'Recently played' : `Search ${esc(platById(searchPlatform()).name)}`;
     top.innerHTML = base.length ? base.map(cardHTML).join('') : `<div class="rempty">Type a song, artist or album</div>`;
-    $('#rSongsLabel').style.display = 'none'; songs.innerHTML = ''; $('#rEnt').innerHTML = ''; $('#rSug').innerHTML = ''; return;
+    $('#rSongsLabel').style.display = 'none'; songs.innerHTML = ''; $('#rEnt').innerHTML = ''; $('#rSug').innerHTML = ''; $('#rTabs').innerHTML = ''; return;
   }
   const src = platById(meta && meta.source || searchPlatform());
   $('#rTopLabel').innerHTML = `Top Results <small>·</small> ${src.icon}<small>${esc(src.name)}</small>`;
   cta.innerHTML = meta && meta.needs_login ? `<div class="rcta">${platById('spotify').icon}<span>Connect your Spotify account to search Spotify. Showing the Apple Music catalogue for now.</span><button class="abtn pri" data-acc="1">Connect</button></div>` : '';
   top.innerHTML = res.slice(0, 8).map(cardHTML).join('') || '<div class="rempty">Nothing found</div>';
-  renderRich();
   $('#rSongsLabel').style.display = res.length ? '' : 'none';
+  renderRich();
   songs.innerHTML = res.slice(0, 25).map((t, i) => `<div class="srow" data-i="${i}"><img src="${esc(t.art || '')}" alt="" loading="lazy"><div class="tx"><b>${esc(t.title)}</b><span>${esc(t.artist)}${t.album ? ' · ' + esc(t.album) : ''}</span></div><em>${fmtDur(t.duration)}</em></div>`).join('');
 }
 const ENT_LABEL = {artist: 'Artists', playlist: 'Playlists', album: 'Albums'}, ENT_ONE = {artist: 'Artist', playlist: 'Playlist', album: 'Album'};
+S.rtab = 'song';
 function renderRich(){
-  const r = S.rich, sug = $('#rSug'), ent = $('#rEnt');
-  if (!r){ sug.innerHTML = ''; ent.innerHTML = ''; return }
+  const r = S.rich, sug = $('#rSug'), ent = $('#rEnt'), tabs = $('#rTabs');
+  const songsOn = S.rtab === 'song';
+  ['#rTopLabel', '#rTop', '#rSongsLabel', '#rSongs'].forEach(q => { if (!songsOn) $(q).style.display = 'none'; else if (q !== '#rSongsLabel') $(q).style.display = '' });
+  if (!r){ S.rtab = 'song'; sug.innerHTML = ''; ent.innerHTML = ''; tabs.innerHTML = ''; return }
   sug.innerHTML = (r.suggestions || []).slice(0, 6).map(t => `<button data-s="${esc(t)}">${esc(t)}</button>`).join('');
+  const lists = {song: r.songs || [], artist: r.artists || [], playlist: [...(r.playlists || []), ...(r.albums || [])]};
+  const names = {song: 'Songs', artist: 'Singers', playlist: 'Playlists'};
+  tabs.innerHTML = ['song', 'artist', 'playlist'].map(k => `<button data-t="${k}" class="${S.rtab === k ? 'on' : ''}">${names[k]}<small>${lists[k].length || ''}</small></button>`).join('');
   S.ents = [];
-  ent.innerHTML = ['artists', 'playlists', 'albums'].map(k => {
-    const list = (r[k] || []).slice(0, 10); if (!list.length) return '';
-    const cards = list.map(e => { const j = S.ents.push(e) - 1; return `<div class="rc ent ${e.kind === 'artist' ? 'art' : ''}" data-e="${j}"><div class="ra"><img src="${esc(e.art || '')}" alt="" loading="lazy"><span class="pl">${I.play}</span></div><b>${esc(e.title)}</b><span>${esc(e.sub || ENT_ONE[e.kind])}</span></div>` }).join('');
-    return `<div class="rlabel">${ENT_LABEL[list[0].kind]}</div><div class="rrow">${cards}</div>`;
-  }).join('');
+  if (songsOn){ ent.innerHTML = ''; return }
+  const list = lists[S.rtab].slice(0, 30);
+  ent.innerHTML = list.length ? `<div class="rgrid">${list.map(e => { const j = S.ents.push(e) - 1; return `<div class="rc ent ${e.kind === 'artist' ? 'art' : ''}" data-e="${j}"><div class="ra"><img src="${esc(e.art || '')}" alt="" loading="lazy"><span class="pl">${I.play}</span></div><b>${esc(e.title)}</b><span>${esc(e.sub || ENT_ONE[e.kind])}</span></div>` }).join('')}</div>`
+    : `<div class="rempty">No ${names[S.rtab].toLowerCase()} found</div>`;
 }
+$('#rTabs').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; e.stopPropagation(); S.rtab = b.dataset.t; renderRich(); $('#results').scrollTop = 0 });
 async function openEntity(j, el){
   const e = (S.ents || [])[j]; if (!e) return; if (el) el.classList.add('busy');
   try {
@@ -1798,6 +1806,7 @@ $('#rSongs').addEventListener('click', e => { const c = e.target.closest('.srow'
 $('#rCta').addEventListener('click', e => { if (e.target.closest('[data-acc]')){ e.stopPropagation(); openAccounts() } });
 $('#q').addEventListener('keydown', e => {
   if (e.key === 'Escape'){ e.preventDefault(); closeSearch(); return }
+  if (S.rtab !== 'song' && S.rich){ if (e.key === 'Enter'){ e.preventDefault(); const c = document.querySelector('#rEnt .ent'); c && openEntity(+c.dataset.e, c) } return }
   const n = Math.min(S.results.length, 25); if (!n) return;
   if (e.key === 'ArrowDown'){ e.preventDefault(); S.resSel = (S.resSel + 1) % n; hiSel() }
   if (e.key === 'ArrowUp'){ e.preventDefault(); S.resSel = (S.resSel - 1 + n) % n; hiSel() }
