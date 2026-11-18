@@ -41,6 +41,8 @@ img{display:block}
 .custom.on{opacity:1}
 #ytWrap{position:absolute;inset:0;overflow:hidden;opacity:0;transition:opacity 1.2s ease;pointer-events:none}
 #ytWrap.on{opacity:1}
+/* hide YouTube's own "more videos" / end-screen tiles: the video fades to the cover behind it */
+#ytWrap.yt-hide,#ytWrap.yt-end,#ytAudioWrap.yt-hide{opacity:0!important;transition:opacity .25s ease!important}
 #ytWrap iframe,#ytHost{position:absolute;left:50%;top:50%;border:0;pointer-events:none;
   width:max(var(--W), calc(var(--H) * 16 / 9));height:max(var(--H), calc(var(--W) * 9 / 16));transform:translate(-50%,-50%) scale(1.2)}
 .shade{background:radial-gradient(120% 90% at 50% 45%,transparent 45%,rgba(0,0,0,.45) 100%),linear-gradient(to bottom,rgba(0,0,0,.18),transparent 25%,transparent 60%,rgba(0,0,0,.35));transition:background .6s}
@@ -1291,6 +1293,8 @@ function makeYT(hostId, audio){
     err(){ this.i++; if (this.i < Math.min(this.ids.length, 7)) this.cue(); else this.fail() },
     fail(){ if (audio){ if (S.src === 'yt'){ S.src = 'none'; renderPlay(); toast("Can't stream that one — try another platform") } } else { $('#ytWrap').classList.remove('on'); app.classList.remove('mv') } },
     state(s){
+      // YouTube draws "more videos" tiles over a paused or finished video: cover the player then
+      if (s === 2 || s === 0) this.cover(true); else if (s === 1) setTimeout(() => this.playing() && this.cover(false), 350);
       if (audio){ if (s === 1 && app.classList.contains('clip')){ applyQuality(this); setTimeout(() => applyQuality(this), 900) } if (s === 1 || s === 2) renderPlay(); if (s === 0 && S.src === 'yt') onEnded(); return }
       if (s === 1){ $('#ytWrap').classList.add('on'); app.classList.add('mv'); applyQuality(this); setTimeout(() => applyQuality(this), 900) }
       if (s === 0){ try { this.p.seekTo(0); this.p.playVideo() } catch(e){} }
@@ -1299,7 +1303,8 @@ function makeYT(hostId, audio){
     time(){ try { return this.p.getCurrentTime() || 0 } catch(e){ return 0 } },
     dur(){ try { return this.p.getDuration() || 0 } catch(e){ return 0 } },
     playing(){ try { return this.p.getPlayerState() === 1 } catch(e){ return false } },
-    play(){ try { this.p.playVideo() } catch(e){} }, pause(){ try { this.p.pauseVideo() } catch(e){} },
+    play(){ try { this.p.playVideo() } catch(e){} }, pause(){ this.cover(true); try { this.p.pauseVideo() } catch(e){} },
+    cover(on){ const w = $(audio ? '#ytAudioWrap' : '#ytWrap'); if (w) w.classList.toggle('yt-hide', on) },
     seek(s){ try { this.p.seekTo(s, true) } catch(e){} },
     vol(){ try { if (audio){ S.muted ? this.p.mute() : (this.p.unMute(), this.p.setVolume(Math.round(S.vol * 100))) } } catch(e){} }
   };
@@ -1959,7 +1964,9 @@ function frame(now){
   if (AMB && S.ambOn && !document.hidden) AMB.render(dt, S.vidA || S.tgtA, S.vidB || S.tgtB);
   if (S.look.lfx === 'glow') $('#lyrics2').style.setProperty('--beat', AU.beat.toFixed(3));
 }
-setInterval(() => { renderClock(); if (S.src !== 'demo') renderPlay(); mvSync() }, 1000);
+// end screens (suggested-video tiles) sit on the last ~20 s of a music video: fade to the cover there
+function ytEndGuard(){ if (!YTV.p) return; const d = YTV.dur(), t = YTV.time(); $('#ytWrap').classList.toggle('yt-end', d > 40 && d - t < 20) }
+setInterval(() => { renderClock(); if (S.src !== 'demo') renderPlay(); mvSync(); ytEndGuard() }, 1000);
 
 /* ════════════════════ mirror windows (other monitors) ════════════════════ */
 // The other monitors run this same page in mirror mode. They read the same saved
