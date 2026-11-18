@@ -280,7 +280,12 @@ img{display:block}
 .srow b{display:block;font-size:1.2rem;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .srow span{display:block;font-size:1rem;color:var(--txt2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .srow em{font-style:normal;font-size:1rem;color:var(--txt3);flex:none}
-.srow .qa{display:flex;gap:.2rem;flex:none;opacity:0;transition:opacity .15s}
+.srow .qa{display:flex;gap:.2rem;flex:none;opacity:.45;transition:opacity .15s}
+.rc .ra .qa{position:absolute;left:.4rem;top:.4rem;display:flex;gap:.25rem;opacity:0;transition:opacity .15s}
+.rc:hover .ra .qa,.rc.sel .ra .qa{opacity:1}
+.rc .ra .qa .b{width:2.5rem;height:2.5rem;background:rgba(0,0,0,.5);-webkit-backdrop-filter:blur(.8rem);backdrop-filter:blur(.8rem)}
+.rc .ra .qa .b:hover{background:rgba(0,0,0,.72)}
+.rc .ra .qa .ico{width:1.35rem;height:1.35rem}
 .srow:hover .qa,.srow.sel .qa{opacity:1}
 .srow .qa .b{width:2.6rem;height:2.6rem}
 .srow .qa .b:hover{background:rgba(255,255,255,.14)}
@@ -1829,11 +1834,15 @@ function renderResults(res, meta){
   cta.innerHTML = meta && meta.needs_login ? `<div class="rcta">${platById('spotify').icon}<span>Connect your Spotify account to search Spotify. Showing the Apple Music catalogue for now.</span><button class="abtn pri" data-acc="1">Connect</button></div>` : '';
   top.innerHTML = res.slice(0, 8).map(cardHTML).join('') || '<div class="rempty">Nothing found</div>';
   $('#rSongsLabel').style.display = res.length ? '' : 'none';
-  songs.innerHTML = res.slice(0, 25).map((t, i) => `<div class="srow" data-i="${i}"><img src="${esc(t.art || '')}" alt="" loading="lazy"><div class="tx"><b>${esc(t.title)}</b><span>${esc(t.artist)}${t.album ? ' · ' + esc(t.album) : ''}</span></div><em>${fmtDur(t.duration)}</em>${S.track ? `<span class="qa"><button class="b sm" data-qn="${i}" title="Play next">${I.playNext}</button><button class="b sm" data-qa="${i}" title="Add to playlist">${I.addQ}</button></span>` : ''}</div>`).join('');
+  songs.innerHTML = res.slice(0, 25).map((t, i) => `<div class="srow" data-i="${i}"><img src="${esc(t.art || '')}" alt="" loading="lazy"><div class="tx"><b>${esc(t.title)}</b><span>${esc(t.artist)}${t.album ? ' · ' + esc(t.album) : ''}</span></div><em>${fmtDur(t.duration)}</em>${qaHTML(i)}</div>`).join('');
 }
-const cardHTML = (t, i) => `<div class="rc" data-i="${i}"><div class="ra"><img src="${esc(t.art || '')}" alt="" loading="lazy"><span class="pl">${I.play}</span></div><b>${esc(t.title)}</b><span>Song · ${esc(t.artist)}</span></div>`;
+const qaHTML = i => `<span class="qa"><button class="b sm" data-qn="${i}" title="Play next">${I.playNext}</button><button class="b sm" data-qa="${i}" title="Add to playlist">${I.addQ}</button></span>`;
+const cardHTML = (t, i) => `<div class="rc" data-i="${i}"><div class="ra"><img src="${esc(t.art || '')}" alt="" loading="lazy"><span class="pl">${I.play}</span>${qaHTML(i)}</div><b>${esc(t.title)}</b><span>Song · ${esc(t.artist)}</span></div>`;
 function chooseResult(i){ const t = S.results[i]; if (!t) return; const list = S.results.slice(); S.qLabel = `Songs like ${t.title}`; closeSearch(); playTrack(t, list) }
-$('#rTop').addEventListener('click', e => { const c = e.target.closest('.rc'); if (c) chooseResult(+c.dataset.i) });
+$('#rTop').addEventListener('click', e => {
+  const qn = e.target.closest('[data-qn]'), qa = e.target.closest('[data-qa]');
+  if (qn || qa){ e.stopPropagation(); queueAdd(S.results[+(qn || qa).dataset[qn ? 'qn' : 'qa']], !!qn); return }
+  const c = e.target.closest('.rc'); if (c) chooseResult(+c.dataset.i) });
 $('#rSongs').addEventListener('click', e => {
   const qn = e.target.closest('[data-qn]'), qa = e.target.closest('[data-qa]');
   if (qn || qa){ e.stopPropagation(); queueAdd(S.results[+(qn || qa).dataset[qn ? 'qn' : 'qa']], !!qn); return }   // search stays open: add more
