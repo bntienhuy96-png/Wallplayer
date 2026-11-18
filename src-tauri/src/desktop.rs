@@ -7,7 +7,7 @@
 //!                 behind the desktop icons like a real wallpaper.
 //! * `Peek`      – temporarily top-most + focused (global hotkey search).
 
-use std::sync::atomic::{AtomicU8, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU8, Ordering};
 use std::sync::Mutex;
 
 use serde::Serialize;
@@ -41,6 +41,9 @@ impl Mode {
     }
 }
 
+/// True while the skin is deliberately raised above the (empty) desktop,
+/// e.g. after Win+D / "show desktop".
+static FRONT: AtomicBool = AtomicBool::new(false);
 static MODE: AtomicU8 = AtomicU8::new(Mode::Desktop as u8);
 /// Device name of the monitor to cover ("" = primary).
 static TARGET: Mutex<String> = Mutex::new(String::new());
@@ -133,7 +136,7 @@ unsafe extern "system" fn subclass_proc(
         // Keep the window glued to the bottom of the z-order in Desktop mode,
         // even when the user clicks it.
         WM_WINDOWPOSCHANGING => {
-            if MODE.load(Ordering::Relaxed) == Mode::Desktop as u8 {
+            if MODE.load(Ordering::Relaxed) == Mode::Desktop as u8 && !FRONT.load(Ordering::Relaxed) {
                 let p = lp.0 as *mut WINDOWPOS;
                 if !p.is_null() {
                     (*p).hwndInsertAfter = HWND_BOTTOM;
@@ -327,4 +330,54 @@ pub fn reveal_taskbar(raw: isize) {
             let _ = SetForegroundWindow(tray);
         }
     }
+}
+
+unsafe fn class_of(h: HWND) -> String {
+    let mut b = [0u16; 64];
+    let n = GetClassNameW(h, &mut b) as usize;
+    String::from_utf16_lossy(&b[..n.min(64)])
+}
+
+/// "Show desktop" (Win+D, the taskbar corner, Win+M ...) makes Windows focus
+/// the desktop itself. In Desktop mode the skin then rises above the empty
+/// desktop instead of leaving the plain desktop on show, and drops back to the
+/// bottom as soon as any real app window takes the focus again.
+pub fn spawn_watcher(raw: isize) {
+    std::thread::spawn(move || unsafe {
+        let h = hwnd(raw);
+        loop {
+            std::thread::sleep(std::time::Duration::from_millis(120));
+            if MODE.load(Ordering::Relaxed) != Mode::Desktop as u8 {
+                FRONT.store(false, Ordering::Relaxed);
+                continue;
+            }
+            let fg = GetForegroundWindow();
+            if fg.is_invalid() {
+                continue;
+            }
+            let cls = class_of(fg);
+            let on_desktop = cls == "Progman" || cls == "WorkerW";
+            let neutral = fg == h
+                || matches!(
+                    cls.as_str(),
+                    "Shell_TrayWnd"
+                        | "Shell_SecondaryTrayWnd"
+                        | "TopLevelWindowForOverflowXamlIsland"
+                        | "XamlExplorerHostIslandWindow"
+                        | "Windows.UI.Core.CoreWindow"
+                        | "NotifyIconOverflowWindow"
+                );
+            if on_desktop {
+                let (mx, my, sw, sh) = target_rect();
+                if !FRONT.swap(true, Ordering::Relaxed) || IsIconic(h).as_bool() || !IsWindowVisible(h).as_bool() {
+                    if IsIconic(h).as_bool() {
+                        let _ = ShowWindow(h, SW_SHOWNOACTIVATE);
+                    }
+                    let _ = SetWindowPos(h, HWND_TOP, mx, my, sw, sh - 1, SWP_NOACTIVATE | SWP_SHOWWINDOW);
+                }
+            } else if !neutral && FRONT.swap(false, Ordering::Relaxed) {
+                let _ = SetWindowPos(h, HWND_BOTTOM, 0, 0, 0, 0, SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOSIZE);
+            }
+        }
+    });
 }

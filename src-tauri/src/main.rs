@@ -355,6 +355,7 @@ fn main() {
             *app.state::<AppState>().hwnd.lock().unwrap() = raw;
             if raw != 0 {
                 desktop::install(raw);
+                desktop::spawn_watcher(raw);
             }
             apply_mode(&handle);
 
