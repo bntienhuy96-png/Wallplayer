@@ -1479,7 +1479,9 @@ const SCW = {
   vol(){ this.w && this.w.setVolume(S.muted ? 0 : Math.round(S.vol * 100)) }
 };
 function stopInternal(){ YTA.stop(); SCW.stop(); app.classList.remove('clip') }
-function pauseSystem(){ if (T && S.sys && S.sys.has && S.sys.playing) invoke('media_control', {action: 'pause'}).catch(() => {}) }
+/* when a song ends on its own and the queue moves on, don't pause whatever else the user started meanwhile (e.g. a browser video) */
+let autoAdvanceAt = 0;
+function pauseSystem(){ if (Date.now() - autoAdvanceAt < 15000) return; if (T && S.sys && S.sys.has && S.sys.playing) invoke('media_control', {action: 'pause'}).catch(() => {}) }
 
 /* ════════════════════ track / playback ════════════════════ */
 function getPos(){
@@ -1557,7 +1559,7 @@ function showDots(){}
 function onEnded(){
   if (S.repeat === 'one'){ seekTo(0); if (S.src === 'yt') YTA.play(); else if (S.src === 'sc') SCW.play(); else if (S.src === 'demo') S.demo.playing = true; return }
   if (S.repeat === 'off' && !S.shuffle && S.qIdx >= S.queue.length - 1){ if (S.src === 'demo'){ S.demo.playing = false; S.demo.pos = 0 } renderPlay(); return }
-  next();
+  autoAdvanceAt = Date.now(); next();
 }
 const mapTrack = r => ({id: r.id, title: r.title, artist: r.artist, album: r.album, art: r.art, url: r.url, duration: (r.duration_ms || 0) / 1000, source: r.source, play: r.play});
 async function resolveAndPlay(t){
