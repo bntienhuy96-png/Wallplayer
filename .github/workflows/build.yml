@@ -5,6 +5,9 @@ on:
     branches: [main, custom]
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: windows-latest
@@ -34,3 +37,14 @@ jobs:
         with:
           name: Wallplayer-Windows-x64
           path: dist/Wallplayer
+
+      - name: Publish release (custom branch)
+        if: github.ref == 'refs/heads/custom'
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          Compress-Archive -Path dist/Wallplayer -DestinationPath Wallplayer-Windows-x64.zip -Force
+          $notes = "Bản build mới nhất của nhánh custom (commit ${{ github.sha }}). Tải Wallplayer-Windows-x64.zip, giải nén, mở Wallplayer.exe. Chi tiết trong HUONG-DAN.txt."
+          gh release delete latest --yes --cleanup-tag 2>$null
+          gh release create latest Wallplayer-Windows-x64.zip --title "Wallplayer - bản mới nhất (custom)" --notes $notes --target ${{ github.sha }} --latest
