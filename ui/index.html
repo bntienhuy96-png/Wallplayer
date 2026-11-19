@@ -1567,7 +1567,9 @@ async function resolveAndPlay(t){
   try { const out = await invoke('search', {platform: plat, query: `${t.title} ${t.artist}`}); const r = (out.tracks || [])[0]; if (r) return playTrack(mapTrack(r)) } catch(e){}
   toast('Not found on ' + platById(plat).name);
 }
+let trackStartAt = 0;   // a song that is still loading must not be replaced by another app's playing media
 async function playTrack(t, list){
+  trackStartAt = Date.now();
   if (list){ S.queue = list.slice(); S.qKind = 'queue'; if (!T && S.queue.length < 6) S.queue = S.queue.concat(DEMO.filter(d => !S.queue.includes(d))) }
   S.qIdx = S.queue.indexOf(t); if (S.qIdx < 0){ S.queue.unshift(t); S.qIdx = 0 }
   showDots(S.queue, S.qIdx);
@@ -1628,6 +1630,7 @@ function onMedia(m){
   S.sys = m; S.sysRecv = Date.now(); S.sysOptimistic = null;
   const internal = S.src === 'yt' || S.src === 'sc';
   if (internal && isPlaying()) return;                 // in-app playback wins
+  if (internal && Date.now() - trackStartAt < 12000) return;   // our next song is still loading
   if (!m.has){ if (S.src === 'system'){ S.src = 'none'; S.sysKey = ''; setTrack(null); YTV.stop() } return }
   if (internal && !m.playing) return;                  // keep the paused in-app track
   if (internal) stopInternal();
