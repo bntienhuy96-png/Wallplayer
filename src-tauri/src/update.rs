@@ -88,12 +88,22 @@ pub fn refresh_tray(app: &AppHandle) {
     let st = status(app);
     let skip = app.state::<AppState>().settings.lock().unwrap().skip_version.clone();
     let waiting = matches!(st.state.as_str(), "available" | "downloading" | "ready") && !st.version.is_empty() && st.version != skip;
-    let label = if waiting { format!("Update available: v{}", st.version) } else { format!("Check for updates   (v{})", current()) };
+    let vi = crate::UI_VI.load(std::sync::atomic::Ordering::Relaxed);
+    let label = match (waiting, vi) {
+        (true, false) => format!("Update available: v{}", st.version),
+        (true, true) => format!("Có bản mới: v{}", st.version),
+        (false, false) => format!("Check for updates   (v{})", current()),
+        (false, true) => format!("Kiểm tra cập nhật   (v{})", current()),
+    };
     if let Some(item) = app.state::<AppState>().update_item.lock().unwrap().as_ref() {
         let _ = item.set_text(label);
     }
     if let Some(tray) = app.tray_by_id("wallplayer") {
-        let tip = if waiting { format!("Wallplayer · update available (v{})", st.version) } else { "Wallplayer".to_string() };
+        let tip = match (waiting, vi) {
+            (true, false) => format!("Wallplayer · update available (v{})", st.version),
+            (true, true) => format!("Wallplayer · có bản mới (v{})", st.version),
+            _ => "Wallplayer".to_string(),
+        };
         let _ = tray.set_tooltip(Some(tip));
     }
 }

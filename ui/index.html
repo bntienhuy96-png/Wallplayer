@@ -660,6 +660,7 @@ button.bgv:hover{background:rgba(255,255,255,.08)}
 </div>
 <div id="rotateHint">Desktop skin · best viewed full-screen on a computer</div>
 
+<script src="i18n-vi.js"></script>
 <script>
 "use strict";
 /* ════════════════════ env ════════════════════ */
@@ -668,6 +669,42 @@ const invoke = (c, a) => T ? T.core.invoke(c, a) : Promise.reject('no-tauri');
 const listen = (e, f) => T ? T.event.listen(e, f) : null;
 const $ = s => document.querySelector(s);
 const app = $('#app');
+
+/* ════════════════════ interface language ════════════════════ */
+// English in the code; Vietnamese is swapped in as texts appear (i18n-vi.js). Songs, artists,
+// lyrics and results stay as they are. Default: Vietnamese when Windows is in Vietnamese.
+const I18N = (() => {
+  let saved = null; try { saved = (JSON.parse(localStorage.getItem('wp.look') || '{}') || {}).lang } catch(e){}
+  const lang = saved || (/^vi\b/i.test(navigator.language || '') ? 'vi' : 'en');
+  const V = window.WP_VI || {dict: {}, patterns: []};
+  const NOTR = '#qlist .qm,#flow,#lyrics2,#npTitle,#npSub,#rTop,#rSongs,#rEnt,#rCols,#rSug,#clock,.upNotes,#lyrList .lv,#mvPick .tip,.bgv,#askPill b,#flowLabel,svg,script,style,textarea,.selftest';
+  const tr = t => {
+    if (lang !== 'vi' || !t) return t; const k = t.trim(); if (!k) return t;
+    const v = V.dict[k]; if (v != null) return t.replace(k, v);
+    for (const [re, rp] of V.patterns){ const m = k.match(re); if (m) return t.replace(k, typeof rp === 'function' ? rp(m, tr) : k.replace(re, rp)) }
+    return t;
+  };
+  const skip = el => !el || (el.closest && el.closest(NOTR));
+  const ATTRS = ['title', 'placeholder', 'aria-label'];
+  const doText = n => { if (skip(n.parentElement)) return; const v = tr(n.nodeValue); if (v !== n.nodeValue) n.nodeValue = v };
+  const doAttr = (el, a) => { const o = el.getAttribute(a); if (o == null || skip(el)) return; const v = tr(o); if (v !== o) el.setAttribute(a, v) };
+  const doTree = root => {
+    if (root.nodeType === 3){ doText(root); return } if (root.nodeType !== 1 || skip(root)) return;
+    for (const a of ATTRS) if (root.hasAttribute(a)) doAttr(root, a);
+    root.querySelectorAll('[title],[placeholder],[aria-label]').forEach(el => { for (const a of ATTRS) if (el.hasAttribute(a)) doAttr(el, a) });
+    const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT); let n; while ((n = w.nextNode())) doText(n);
+  };
+  if (lang === 'vi'){
+    document.documentElement.lang = 'vi';
+    doTree(document.body);
+    new MutationObserver(ms => { for (const m of ms){
+      if (m.type === 'childList') m.addedNodes.forEach(doTree);
+      else if (m.type === 'characterData') doText(m.target);
+      else doAttr(m.target, m.attributeName);
+    } }).observe(document.body, {subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ATTRS});
+  }
+  return {lang, tr};
+})();
 // Mirror = this page running on another monitor as a display-only copy of the main window.
 // It reads the same saved settings and follows what the main window plays; it never saves.
 const MIRROR = !!window.__WP_MIRROR__ || new URLSearchParams(location.search).has('mirror');
@@ -999,7 +1036,8 @@ function clockSVG(str, st, w, mode){   // mode: 'solid' | 'rim' | 'mask'
 }
 function renderClock(){
   const d = new Date(); const h = d.getHours() % 12 || 12; const str = `${h}:${String(d.getMinutes()).padStart(2, '0')}`;
-  const ds = d.toLocaleDateString('en-US', {weekday: 'short', month: 'short', day: 'numeric'}).replace(',', '');
+  const ds = I18N.lang === 'vi' ? d.toLocaleDateString('vi-VN', {weekday: 'long', day: 'numeric', month: 'long'}).replace(/^./, c => c.toUpperCase())
+    : d.toLocaleDateString('en-US', {weekday: 'short', month: 'short', day: 'numeric'}).replace(',', '');
   const dateChanged = $('#date').textContent !== ds; if (dateChanged) $('#date').textContent = ds;
   if (!S.look.ckc || !S.look.lyc) for (const k of ['ckc', 'lyc']) S.look[k] = Object.assign({}, INK0, S.look[k] || {});
   const L = S.look, glass = L.ckc.mat === 'glass', w = ckW(L.ck);
@@ -1252,7 +1290,7 @@ function renderAppPop(){
       <div class="chips"><button class="chip on" data-bgnext="1">Another one</button></div>${blurRow}`
     : '';
   const editBtn = t => `<button class="chip on wide" data-edit="${t}">Font, colour &amp; glass…</button>`;
-  $('#appPop').innerHTML = theme + `<div class="mh">Background</div>${chips('bg', BG_MODES)}${bgExtra}
+  $('#appPop').innerHTML = `<div class="mh">Language</div><div class="chips"><button class="chip ${I18N.lang === 'en' ? 'on' : ''}" data-lang="en">English</button><button class="chip ${I18N.lang === 'vi' ? 'on' : ''}" data-lang="vi">Tiếng Việt</button></div><div class="msep"></div>` + theme + `<div class="mh">Background</div>${chips('bg', BG_MODES)}${bgExtra}
     <div class="msep"></div><div class="mh">Clock</div>
     <div class="lrow"><span>Show clock</span><button class="tg ${L.clock ? 'on' : ''}" data-t="clock"></button></div>
     <div class="lnote">Position</div>${chips('ckpos', CK_POS)}
@@ -1868,7 +1906,7 @@ function appName(a){
 function askTwoSources(m){
   const key = (S.track ? S.track.title : '') + '|' + m.app + '|' + m.title; if (S.askKey === key) return; S.askKey = key;
   const box = $('#askPill'), other = appName(m.app);
-  box.innerHTML = `<span>Playing in two places: <b>${esc(S.track ? S.track.title : 'Wallplayer')}</b> here, <b>${esc(m.title)}</b> in ${esc(other)}</span><button class="chip on" data-keep="here">Keep Wallplayer</button><button class="chip" data-keep="other">Keep ${esc(other)}</button>`;
+  box.innerHTML = `<span><span>Playing in two places:</span> <b>${esc(S.track ? S.track.title : 'Wallplayer')}</b> <span>here,</span> <b>${esc(m.title)}</b> <span>in</span> <span>${esc(other)}</span></span><button class="chip on" data-keep="here">Keep Wallplayer</button><button class="chip" data-keep="other">Keep ${esc(other)}</button>`;
   box.classList.add('on'); clearTimeout(askTwoSources.t); askTwoSources.t = setTimeout(() => box.classList.remove('on'), 20000);
 }
 $('#askPill').addEventListener('click', e => {
@@ -2394,6 +2432,9 @@ $('#appPop').addEventListener('click', e => {
   if (e.target.closest('#bindBtn')){ e.stopPropagation(); S.binding ? stopBinding() : startBinding(); return }
   if (e.target.closest('#bindReset')){ e.stopPropagation(); stopBinding(); applySearchKey('Ctrl+Alt+Space'); return }
   if (e.target.closest('#upCheck')){ e.stopPropagation(); closeMenus(); openUpdates(); return }
+  const lg = e.target.closest('[data-lang]');
+  if (lg){ e.stopPropagation(); if (lg.dataset.lang === I18N.lang) return; S.look.lang = lg.dataset.lang; store.set('look', S.look);
+    if (T) invoke('set_ui_lang', {lang: S.look.lang}).catch(() => {}); setTimeout(() => location.reload(), 120); return }
   if (e.target.closest('#privBtn')){ e.stopPropagation(); openExternal('https://github.com/lehuynhtan17/Wallplayer/blob/main/PRIVACY.md'); return }
   if (e.target.closest('#upNotes')){ e.stopPropagation(); openExternal(UP.url || upPage(UP.current)); return }
   if (e.target.closest('#selfTestBtn')){ e.stopPropagation(); closeMenus(); selfTest(); return }
@@ -2923,6 +2964,7 @@ function mirrorReload(){
   S.look = Object.assign(S.look, store.get('look', {})); S.hide = Object.assign(S.hide, store.get('hide', {}));
   for (const k of ['lyrOn', 'ambOn', 'dim', 'mvOn', 'qOff']) S[k] = store.get(k, S[k]);
   S.sub = store.get('sub', S.sub);
+  if ((S.look.lang || I18N.lang) !== I18N.lang){ location.reload(); return }   // language changed in the main window
   applyLook(); applyHide(); applyToggles(); applyTheme(); applyBg(); setLyricsMode(store.get('lyricsMode', false)); PW.prefs();
   lastClock = ''; renderClock(); S.lyrIdx = -2; applySubs();
 }
@@ -2943,6 +2985,7 @@ async function boot(){
     listen('media', e => { onMedia(e.payload); wakeLoop() });
     listen('audio-spectrum', e => { AU.feed(e.payload, performance.now()); if (loopTimer && (e.payload[0] || 0) > 1.5e-4) wakeLoop() });
     listen('hotkey-search', () => openSearch());
+    invoke('set_ui_lang', {lang: I18N.lang}).catch(() => {});
     if (LIB.paths.length) invoke('music_allow', {paths: LIB.paths}).catch(() => {});
     listen('tauri://drag-enter', () => app.classList.add('drag')); listen('tauri://drag-leave', () => app.classList.remove('drag'));
     listen('tauri://drag-drop', e => { app.classList.remove('drag'); const ps = (e.payload && e.payload.paths) || []; if (ps.length) dropPaths(ps) });

@@ -27,6 +27,8 @@ pub(crate) struct AppState {
     hwnd: Mutex<isize>,
     wall_item: Mutex<Option<CheckMenuItem<tauri::Wry>>>,
     pub(crate) update_item: Mutex<Option<MenuItem<tauri::Wry>>>,
+    /// tray menu items whose text follows the interface language: (id, set_text)
+    tray_texts: Mutex<Vec<(&'static str, Box<dyn Fn(&str) + Send + Sync>)>>,
     pub(crate) mirrors_installed: Mutex<Vec<isize>>,
 }
 
@@ -418,6 +420,42 @@ async fn fetch_image(url: String) -> Result<String, String> {
     net::fetch_image(&url).await
 }
 
+/// Interface language of the tray menu (the UI tells us which one).
+pub(crate) static UI_VI: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+
+pub(crate) fn tray_label(id: &str) -> String {
+    let vi = UI_VI.load(std::sync::atomic::Ordering::Relaxed);
+    match (id, vi) {
+        ("search", false) => "Search music   Ctrl+Alt+Space",
+        ("search", true) => "Tìm nhạc   Ctrl+Alt+Space",
+        ("wallpaper", false) => "Behind desktop icons",
+        ("wallpaper", true) => "Nằm sau icon desktop",
+        ("icons", false) => "Hide desktop icons",
+        ("icons", true) => "Ẩn icon desktop",
+        ("display", false) => "Move to next display",
+        ("display", true) => "Chuyển sang màn hình kế",
+        ("mirror", false) => "Fill other displays",
+        ("mirror", true) => "Phủ các màn hình khác",
+        ("autostart", false) => "Start with Windows",
+        ("autostart", true) => "Mở cùng Windows",
+        ("reload", false) => "Reload skin",
+        ("reload", true) => "Tải lại giao diện",
+        ("quit", false) => "Quit Wallplayer",
+        ("quit", true) => "Thoát Wallplayer",
+        _ => "",
+    }
+    .to_string()
+}
+
+#[tauri::command]
+fn set_ui_lang(app: AppHandle, lang: String) {
+    UI_VI.store(lang == "vi", std::sync::atomic::Ordering::Relaxed);
+    for (id, set) in app.state::<AppState>().tray_texts.lock().unwrap().iter() {
+        set(&tray_label(id));
+    }
+    update::refresh_tray(&app);
+}
+
 pub(crate) fn quit(app: &AppHandle) {
     desktop::set_icons_hidden(false);   // give the desktop icons back
     app.exit(0);
@@ -596,6 +634,7 @@ fn main() {
             hwnd: Mutex::new(0),
             wall_item: Mutex::new(None),
             update_item: Mutex::new(None),
+            tray_texts: Mutex::new(Vec::new()),
             mirrors_installed: Mutex::new(Vec::new()),
         })
         .invoke_handler(tauri::generate_handler![
@@ -643,6 +682,7 @@ fn main() {
             music_art,
             music_pick_folder,
             set_tray_art,
+            set_ui_lang,
             set_power_prefs,
             update_status,
             update_check,
@@ -708,6 +748,26 @@ fn main() {
             let mirror_c = mirror_i.clone();
             *app.state::<AppState>().wall_item.lock().unwrap() = Some(wall_i.clone());
             *app.state::<AppState>().update_item.lock().unwrap() = Some(update_i.clone());
+            {
+                let st = app.state::<AppState>();
+                let mut tt = st.tray_texts.lock().unwrap();
+                macro_rules! keep {
+                    ($id:expr, $item:expr) => {{
+                        let it = $item.clone();
+                        tt.push(($id, Box::new(move |t: &str| {
+                            let _ = it.set_text(t);
+                        })));
+                    }};
+                }
+                keep!("search", search_i);
+                keep!("wallpaper", wall_i);
+                keep!("icons", icons_i);
+                keep!("display", display_i);
+                keep!("mirror", mirror_i);
+                keep!("autostart", auto_i);
+                keep!("reload", reload_i);
+                keep!("quit", quit_i);
+            }
 
             let auto_c = auto_i.clone();
             let icons_c = icons_i.clone();

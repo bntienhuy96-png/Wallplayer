@@ -114,6 +114,32 @@ NHẸ MÁY (Appearance → Performance)
   Thu nhỏ cửa sổ là chạy lại. Tắt mục này nếu bạn dùng cửa sổ trong suốt và muốn thấy nền chạy phía sau.
 - Dòng "Now: ..." cho biết app đang ở chế độ nào.
 
+NGÔN NGỮ
+- Appearance → đầu bảng: English / Tiếng Việt. Máy để tiếng Việt thì app tự dùng tiếng Việt. Menu icon khay đổi theo.
+
+NHẠC TRÊN MÁY
+- Bấm nút thư mục cạnh tiêu đề playlist bên trái → "Add a folder…" chọn thư mục nhạc (mp3, m4a, flac, wav, ogg…),
+  hoặc kéo thả thư mục / bài hát vào Wallplayer (khi app đang nổi lên: Ctrl+Alt+Space, hoặc chế độ không nằm sau icon).
+- App đọc tên bài, ca sĩ, ảnh bìa trong file (không có thì lấy từ tên file "Ca sĩ - Tên bài"). Thư mục được nhớ:
+  lần sau chỉ cần bấm "Play my music" hoặc "Shuffle". Bấm Remove để bỏ một thư mục.
+- Kéo thả ảnh hoặc video vào app = đặt làm hình nền.
+
+PLAYLIST BÊN TRÁI
+- Rê chuột lên một bài: nút ▶≡ = phát tiếp theo, nút ✕ = xóa khỏi danh sách. Kéo tay cầm ⋮⋮ bên trái để đổi thứ tự.
+
+LỜI BÀI HÁT: CHỈNH GIỜ, TÌM TAY, ĐOẠN NHẠC DẠO
+- Bấm nút lời bài hát trên thanh phát → mục Timing: "This song" chỉnh riêng bài này, "All songs" chỉnh cho mọi bài
+  (+ = lời hiện sớm hơn). Bấm vào số để về 0. App ghi nhớ. Phím [ và ] vẫn dùng được.
+- Mục Other versions có ô gõ: sửa tên bài / ca sĩ rồi Enter để tìm lời khác.
+- Đoạn nhạc dạo hoặc đoạn không lời dài: hiện nốt ♪ với 3 chấm sáng dần tới câu tiếp theo.
+
+VIỀN SÁNG, ICON KHAY, MV
+- Appearance → Ambient light: 11 hiệu ứng (rê chuột lên tên để xem trước), "Where": cả viền / cạnh dưới / cạnh trên /
+  các góc, và "Light on each display" bật tắt viền sáng riêng từng màn hình.
+- Icon khay đổi thành ảnh bìa bài đang phát với vòng tròn đập theo nhạc (Appearance → Layout → "Album cover as the tray icon").
+- Khi MV đang làm hình nền: các chấm nhỏ phía trên ô tìm kiếm = MV của bài và MV khác của cùng ca sĩ, bấm để đổi.
+- Nhạc phát ở 2 nơi cùng lúc (Wallplayer và Spotify / trình duyệt): góc trên hiện câu hỏi giữ bên nào, bên kia sẽ dừng.
+
 CẬP NHẬT (không cần file cài)
 - Mỗi lần mở, Wallplayer kiểm tra ngầm một lần, không hiện gì lên màn hình. Có bản mới thì mục trong menu
   chuột phải biểu tượng khay đổi thành "Update available: vx.y.z".

@@ -27,12 +27,14 @@ Wallplayer lives *behind* your desktop icons, the same way Wallpaper Engine does
 | **Smart search** | Songs, **Singers** and **Playlists** in one box — tabs *All · Songs · Singers · Playlists*, typing suggestions, YouTube Music, SoundCloud and Spotify. |
 | **Continue Playing** | Pick one song and the queue becomes YouTube’s suggestions for it, mixed with picks from your own account. A **History** button flips it to *History Playing* (last 100 songs). |
 | **Synced lyrics** | Found automatically online (LRCLIB, NetEase, Genius), timed to the song, with a second-language subtitle line and per-song offset (`[` `]`). |
-| **Ambient light** | WebGL neon edge that reacts to the system audio — Comet, Pulse, Spectrum, Rainbow, Aurora — coloured from the album art. |
+| **Ambient light** | WebGL neon edge that reacts to the system audio — 11 effects (Comet, Pulse, Spectrum, Rainbow, Aurora, Fire, Lava, Snake, Sparkle, Neon, Wave) on the whole frame, the bottom, the top or the corners, per display — coloured from the album art. The tray icon becomes the album cover with a beating ring. |
 | **Backgrounds** | Music video, your own video, “Surprise me” (no AI-generated clips), or your Windows wallpaper between songs. |
 | **Lock-screen style editor** | Fonts, glass and colours for the clock and lyrics, like the iPhone lock screen. |
 | **Search from anywhere** | The one global shortcut — default `Ctrl + Alt + Space`, rebind it to any key combo **or mouse button**. |
 | **Light on your PC** | Stops drawing when the music stops, rests behind full-screen and maximised windows, gets lighter on battery (Auto / Full / Saver). |
 | **Updates itself** | No installer: one quiet check at start; a new version shows up as *Update available* in the tray menu, with the release notes and *Update* / *Skip*. |
+| **Your own songs** | Add a music folder or drop songs on the window; tags and covers are read from the files. |
+| **Two languages** | English and Vietnamese interface (Appearance → Language). |
 | **Desktop, tidied** | Auto-hides desktop icons (Recycle Bin included) and gives them back when you quit. Multi-monitor and portrait screens supported. |
 
 ## Download

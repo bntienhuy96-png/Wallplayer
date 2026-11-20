@@ -39,19 +39,19 @@ Các lỗi iBaila từng gặp trên PC, dùng làm checklist test:
 
 ## Ưu tiên 4 — Tính năng còn thiếu
 
-- [ ] Queue: xem bài tiếp theo, sắp xếp, xóa
-- [ ] Lyrics: chỉnh lệch giờ bằng menu chuột phải và nhớ lại
-- [ ] Lyrics: nốt nhạc đếm ngược ở đoạn không lời
-- [ ] Lyrics: chọn phiên bản lyrics khác, tìm lyrics bằng tay
-- [ ] Nhạc trên máy: kéo thả thư mục vào playlist
-- [ ] Viền sáng: thêm hiệu ứng (họ 22, mình 5), xem trước khi chọn
-- [ ] Viền sáng: chỉ sáng cạnh dưới / cạnh trên / các góc
-- [ ] Viền sáng: bật tắt riêng từng màn hình
-- [ ] Icon khay đổi thành ảnh bìa, có vòng tròn đập theo nhịp
-- [ ] Nút Like ngay trên player
-- [ ] Chọn MV khác của cùng ca sĩ
-- [ ] 2 nguồn cùng phát thì hỏi muốn nghe nguồn nào
-- [ ] Giao diện tiếng Việt + tiếng Anh
+- [x] Queue: xem bài tiếp theo, sắp xếp, xóa
+- [x] Lyrics: chỉnh lệch giờ bằng menu chuột phải và nhớ lại
+- [x] Lyrics: nốt nhạc đếm ngược ở đoạn không lời
+- [x] Lyrics: chọn phiên bản lyrics khác, tìm lyrics bằng tay
+- [x] Nhạc trên máy: kéo thả thư mục vào playlist
+- [x] Viền sáng: thêm hiệu ứng (họ 22, mình 5), xem trước khi chọn
+- [x] Viền sáng: chỉ sáng cạnh dưới / cạnh trên / các góc
+- [x] Viền sáng: bật tắt riêng từng màn hình
+- [x] Icon khay đổi thành ảnh bìa, có vòng tròn đập theo nhịp
+- [x] Nút Like ngay trên player
+- [x] Chọn MV khác của cùng ca sĩ
+- [x] 2 nguồn cùng phát thì hỏi muốn nghe nguồn nào
+- [x] Giao diện tiếng Việt + tiếng Anh
 
 ## Để sau (khó)
 
