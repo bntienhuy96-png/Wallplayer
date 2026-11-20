@@ -57,7 +57,7 @@ img{display:block}
 #app.clip #deskImg,#app.clip-mirror #deskImg{opacity:0!important}
 
 /* mirror (another monitor): same scene, no controls */
-#app.mirror #dock,#app.mirror .menu,#app.mirror #toast,#app.mirror #upPill,#app.mirror #upCard,#app.mirror #dropHint,#app.mirror #flowStatus,
+#app.mirror #dock,#app.mirror .menu,#app.mirror #toast,#app.mirror #upPill,#app.mirror #askPill,#app.mirror #upCard,#app.mirror #dropHint,#app.mirror #flowStatus,
 #app.mirror #editSheet,#app.mirror #restoreBtn{display:none!important}
 #app.mirror,#app.mirror *{pointer-events:none!important}
 
@@ -535,6 +535,8 @@ button.bgv:hover{background:rgba(255,255,255,.08)}
 #toast.on{opacity:1;transform:translate(-50%,0)}
 #upPill{position:absolute;right:1.6rem;top:1.6rem;display:none;align-items:center;gap:.5rem;padding:.45rem .45rem .45rem 1.2rem;border-radius:2rem;font-size:1.12rem;font-weight:600;z-index:31;white-space:nowrap}
 #upPill.on{display:flex}
+#askPill{position:absolute;left:50%;top:1.6rem;transform:translateX(-50%);display:none;align-items:center;gap:.6rem;padding:.45rem .45rem .45rem 1.3rem;border-radius:2rem;font-size:1.12rem;z-index:32;max-width:92vw}
+#askPill.on{display:flex}#askPill span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}#askPill .chip{flex:none}
 #upCard{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:min(38rem,90vw);max-height:80vh;display:none;flex-direction:column;gap:.7rem;padding:1.6rem 1.8rem;border-radius:1.6rem;z-index:40}
 #upCard.on{display:flex}#upCard h3{margin:0;font-size:1.6rem;font-weight:700}
 #upCard .upNotes{overflow:auto;max-height:42vh;padding:.8rem 1rem;border-radius:1rem;background:rgba(255,255,255,.06);font-size:1.15rem;line-height:1.5}
@@ -649,6 +651,7 @@ button.bgv:hover{background:rgba(255,255,255,.08)}
   <div id="toast" class="glass"></div>
   <div id="upPill" class="glass"><span id="upMsg"></span><button class="chip on" id="upGo"></button><button class="chip" id="upX" title="Hide">✕</button></div>
   <div id="upCard" class="glass"></div>
+  <div id="askPill" class="glass"></div>
   <div id="dropHint">Drop an image or video to set it as wallpaper</div>
   <input type="file" id="wpFile" accept="image/*,video/*" hidden>
 </div>
@@ -1770,10 +1773,28 @@ function seekTo(sec){
 }
 
 /* ════════════════════ system now playing (Windows) ════════════════════ */
+// AUMID / exe name of the other app → a short name for people
+function appName(a){
+  const s = String(a || '').toLowerCase();
+  for (const [k, n] of [['spotify', 'Spotify'], ['msedge', 'Edge'], ['chrome', 'Chrome'], ['firefox', 'Firefox'], ['opera', 'Opera'], ['brave', 'Brave'], ['applemusic', 'Apple Music'], ['itunes', 'iTunes'], ['zunemusic', 'Media Player'], ['vlc', 'VLC'], ['foobar', 'foobar2000'], ['tidal', 'TIDAL'], ['deezer', 'Deezer'], ['amazon', 'Amazon Music']]) if (s.includes(k)) return n;
+  const last = String(a || '').split('!').pop().replace(/\.exe$/i, '').split(/[\\/]/).pop(); return last || 'another app';
+}
+// music playing in two places: ask which one to keep, once per pair of songs
+function askTwoSources(m){
+  const key = (S.track ? S.track.title : '') + '|' + m.app + '|' + m.title; if (S.askKey === key) return; S.askKey = key;
+  const box = $('#askPill'), other = appName(m.app);
+  box.innerHTML = `<span>Playing in two places: <b>${esc(S.track ? S.track.title : 'Wallplayer')}</b> here, <b>${esc(m.title)}</b> in ${esc(other)}</span><button class="chip on" data-keep="here">Keep Wallplayer</button><button class="chip" data-keep="other">Keep ${esc(other)}</button>`;
+  box.classList.add('on'); clearTimeout(askTwoSources.t); askTwoSources.t = setTimeout(() => box.classList.remove('on'), 20000);
+}
+$('#askPill').addEventListener('click', e => {
+  e.stopPropagation(); const b = e.target.closest('[data-keep]'); if (!b) return; $('#askPill').classList.remove('on');
+  if (b.dataset.keep === 'here') invoke('media_control', {action: 'pause'}).catch(() => {});   // pauses the other app's song
+  else { const m = S.sys; stopInternal(); S.src = 'none'; S.sysKey = ''; if (m) onMedia(m) }        // follow the other app from now on
+});
 function onMedia(m){
   S.sys = m; S.sysRecv = Date.now(); S.sysOptimistic = null;
   const internal = S.src === 'yt' || S.src === 'sc';
-  if (internal && isPlaying()) return;                 // in-app playback wins
+  if (internal && isPlaying()){ if (m.has && m.playing && !MIRROR) askTwoSources(m); return }   // in-app playback wins until you choose
   if (!m.has){ if (S.src === 'system'){ S.src = 'none'; S.sysKey = ''; setTrack(null); YTV.stop() } return }
   if (internal && !m.playing) return;                  // keep the paused in-app track
   if (internal) stopInternal();
