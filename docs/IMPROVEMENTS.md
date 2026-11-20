@@ -33,9 +33,9 @@ Các lỗi iBaila từng gặp trên PC, dùng làm checklist test:
 
 ## Ưu tiên 3 — Cài đặt và cập nhật
 
-- [ ] File cài đặt thay cho zip
-- [ ] Tự cập nhật
-- [ ] Ký số file exe để SmartScreen không cảnh báo
+- [x] ~~File cài đặt thay cho zip~~ (giữ bản portable, tự cập nhật thay cho file cài)
+- [x] Tự cập nhật
+- [ ] Ký số file exe để SmartScreen không cảnh báo (đã chuẩn bị SignPath, chờ duyệt)
 
 ## Ưu tiên 4 — Tính năng còn thiếu
 

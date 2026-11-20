@@ -9,6 +9,7 @@ mod mirror;
 mod net;
 mod power;
 mod settings;
+mod update;
 mod volume;
 
 use std::sync::Mutex;
@@ -415,7 +416,7 @@ async fn fetch_image(url: String) -> Result<String, String> {
     net::fetch_image(&url).await
 }
 
-fn quit(app: &AppHandle) {
+pub(crate) fn quit(app: &AppHandle) {
     desktop::set_icons_hidden(false);   // give the desktop icons back
     app.exit(0);
 }
@@ -428,6 +429,37 @@ fn get_power(app: AppHandle, window: tauri::WebviewWindow) -> power::PowerState 
 #[tauri::command]
 fn set_power_prefs(cover_pause: bool, low: bool) {
     power::set_prefs(cover_pause, low);
+}
+
+#[tauri::command]
+fn update_status(app: AppHandle) -> update::UpdateStatus {
+    update::status(&app)
+}
+
+#[tauri::command]
+async fn update_check(app: AppHandle) -> update::UpdateStatus {
+    update::check(app).await
+}
+
+#[tauri::command]
+async fn update_download(app: AppHandle) -> update::UpdateStatus {
+    update::download(app).await
+}
+
+#[tauri::command]
+fn update_set_auto(app: AppHandle, on: bool) -> update::UpdateStatus {
+    {
+        let st = app.state::<AppState>();
+        let mut s = st.settings.lock().unwrap();
+        s.auto_update = on;
+        settings::save(&app, &s);
+    }
+    update::status(&app)
+}
+
+#[tauri::command]
+fn update_restart(app: AppHandle) -> Result<(), String> {
+    update::restart(&app)
 }
 
 #[tauri::command]
@@ -494,6 +526,7 @@ fn capture_mouse_bind(on: bool) {
 // ───────────────────────── main ─────────────────────────
 
 fn main() {
+    update::wait_for_previous();   // started by "Restart to update": let the old one exit first
     desktop::set_app_id();
 
     tauri::Builder::default()
@@ -554,6 +587,11 @@ fn main() {
             translate,
             get_power,
             set_power_prefs,
+            update_status,
+            update_check,
+            update_download,
+            update_set_auto,
+            update_restart,
             quit_app
         ])
         .setup(move |app| {
@@ -605,9 +643,10 @@ fn main() {
             let mirror_on = !app.state::<AppState>().settings.lock().unwrap().no_mirror;
             let mirror_i = CheckMenuItem::with_id(app, "mirror", "Fill other displays", true, mirror_on, None::<&str>)?;
             let reload_i = MenuItem::with_id(app, "reload", "Reload skin", true, None::<&str>)?;
+            let update_i = MenuItem::with_id(app, "update", format!("Check for updates   (v{})", update::current()), true, None::<&str>)?;
             let quit_i = MenuItem::with_id(app, "quit", "Quit Wallplayer", true, None::<&str>)?;
             let sep = PredefinedMenuItem::separator(app)?;
-            let menu = Menu::with_items(app, &[&search_i, &wall_i, &icons_i, &display_i, &mirror_i, &auto_i, &sep, &reload_i, &quit_i])?;
+            let menu = Menu::with_items(app, &[&search_i, &wall_i, &icons_i, &display_i, &mirror_i, &auto_i, &sep, &update_i, &reload_i, &quit_i])?;
             let mirror_c = mirror_i.clone();
             *app.state::<AppState>().wall_item.lock().unwrap() = Some(wall_i.clone());
 
@@ -619,6 +658,11 @@ fn main() {
                 .show_menu_on_left_click(false)
                 .on_menu_event(move |app, ev| match ev.id().as_ref() {
                     "search" => open_search(app),
+                    // bring the skin up and let it check, show the notes and download
+                    "update" => {
+                        set_peek(app, true);
+                        let _ = app.emit_to("main", "update-check-request", ());
+                    }
                     "wallpaper" => {
                         let on = !app.state::<AppState>().settings.lock().unwrap().wallpaper_mode;
                         set_wallpaper_mode_inner(app, on);
@@ -707,6 +751,8 @@ fn main() {
             media::spawn(handle.clone());
             audio::spawn(handle.clone());
             power::spawn(handle.clone());
+            update::mark_started(&handle);
+            update::spawn(handle.clone());
             Ok(())
         })
         .run(tauri::generate_context!())

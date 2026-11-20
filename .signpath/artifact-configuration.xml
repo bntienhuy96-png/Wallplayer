@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!--
+  SignPath artifact configuration for Wallplayer.
+  Paste this into SignPath: Project "Wallplayer" > Artifact configurations > Edit.
+  The GitHub artifact is a zip with a "Wallplayer" folder inside; only our own exe is signed.
+-->
+<artifact-configuration xmlns="http://signpath.io/artifact-configuration/v1">
+  <zip-file>
+    <directory path="Wallplayer">
+      <pe-file path="Wallplayer.exe" product-name="Wallplayer">
+        <authenticode-sign/>
+      </pe-file>
+    </directory>
+  </zip-file>
+</artifact-configuration>

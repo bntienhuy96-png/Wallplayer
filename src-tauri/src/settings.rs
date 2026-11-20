@@ -29,6 +29,12 @@ pub struct Settings {
     /// "Search from anywhere" binding: "Ctrl+Alt+Space", "Mouse:Middle", "Ctrl+Mouse:X1"…
     #[serde(default = "default_search_key")]
     pub search_key: String,
+    /// look for a new version on GitHub once when the app starts; default on
+    #[serde(default = "yes")]
+    pub auto_update: bool,
+    /// version that ran last time (to say "updated" once)
+    #[serde(default)]
+    pub last_version: String,
 }
 
 pub fn default_search_key() -> String {
@@ -54,7 +60,7 @@ pub fn load(app: &AppHandle) -> Settings {
             }
             s
         })
-        .unwrap_or_else(|| Settings { wallpaper_mode: true, mode_ver: 2, hide_icons: true, search_key: default_search_key(), ..Default::default() })
+        .unwrap_or_else(|| Settings { wallpaper_mode: true, mode_ver: 2, hide_icons: true, search_key: default_search_key(), auto_update: true, ..Default::default() })
 }
 
 pub fn save(app: &AppHandle, s: &Settings) {

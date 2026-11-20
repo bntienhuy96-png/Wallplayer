@@ -114,6 +114,25 @@ NHẸ MÁY (Appearance → Performance)
   Thu nhỏ cửa sổ là chạy lại. Tắt mục này nếu bạn dùng cửa sổ trong suốt và muốn thấy nền chạy phía sau.
 - Dòng "Now: ..." cho biết app đang ở chế độ nào.
 
+CẬP NHẬT (không cần file cài)
+- Mỗi lần mở, Wallplayer kiểm tra ngầm một lần. Có bản mới thì góc trên bên phải hiện nhãn nhỏ
+  "Wallplayer x.y.z is available" với Update / Skip. Update = tải về rồi tự mở lại bản mới.
+  Skip = bỏ qua bản đó, không nhắc lại.
+- Muốn xem release notes: chuột phải biểu tượng khay → "Check for updates" (hoặc Appearance → Updates →
+  Check for updates). App hiện ghi chú bản mới và tải luôn; xong bấm Restart now hoặc Later.
+- Tắt việc kiểm tra lúc mở app: Appearance → Updates → "Check when Wallplayer starts".
+- Bản mới thay Wallplayer.exe ngay trong thư mục hiện tại (file cũ thành Wallplayer.exe.old, tự xóa lần sau).
+  Nếu để thư mục trong Program Files thì app không ghi được: hãy để thư mục ở chỗ khác (ví dụ Documents).
+
+GỠ BỎ
+- Chuột phải biểu tượng khay: bỏ tick "Start with Windows", rồi "Quit Wallplayer". Xóa thư mục Wallplayer.
+- Xóa luôn cài đặt và đăng nhập: xóa thư mục com.tan.wallplayer trong %APPDATA% và %LOCALAPPDATA%.
+
+QUYỀN RIÊNG TƯ
+- Không có tài khoản, không thống kê, không gửi gì cho tác giả. Chỉ tự kết nối GitHub một lần khi mở để kiểm tra
+  bản mới (tắt được). Các dịch vụ khác (YouTube, SoundCloud, Spotify, lời bài hát, dịch) chỉ dùng khi bạn dùng
+  tính năng đó. Tắt tìm lời bài hát: Appearance → Lyrics → "Find lyrics online". Chi tiết: PRIVACY.md trên GitHub.
+
 CONTINUE PLAYING (danh sách bên trái)
 - Bấm vào MỘT bài lẻ trong kết quả search → bài phát ngay, danh sách bên trái tự thành "Picked for you": gợi ý của YouTube Music
   cho bài đó, trộn thêm bài từ trang chủ YouTube Music (theo tài khoản bạn đã đăng nhập; chưa đăng nhập thì là gợi ý chung).

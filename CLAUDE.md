@@ -18,7 +18,9 @@ cargo build --release
 File ra: `src-tauri/target/release/wallplayer.exe`. Khi phát hành phải đi kèm `WebView2Loader.dll` cùng thư mục. Cần Rust (MSVC) và Microsoft Edge WebView2 Runtime.
 
 ## Phát hành
-Đóng gói thư mục `Wallplayer/` gồm `Wallplayer.exe`, `WebView2Loader.dll`, `HUONG-DAN.txt` (CRLF) thành `Wallplayer-Windows-x64.zip`, rồi tạo GitHub Release (`gh release create vX.Y.Z <zip>`).
+- Ghi release notes (tiếng Việt, kiểu "Mới / Thay đổi / Sửa") dưới `## x.y.z` trong `CHANGELOG.md`, đổi version ở `src-tauri/Cargo.toml` và `src-tauri/tauri.conf.json` (phải giống nhau), push lên `main`.
+- GitHub Actions (`.github/workflows/build.yml`) build trên Windows; Tấn thử bản build rồi bấm **Run workflow** để phát hành: workflow ký qua SignPath (khi đã có `SIGNPATH_*`), chờ Tấn duyệt, rồi tạo release `Vx.y.z` với zip `Wallplayer-Windows-x64.zip` (thư mục `Wallplayer/` bên trong) và notes từ CHANGELOG. Chi tiết: `docs/SIGNPATH-SETUP.md`.
+- App tự cập nhật từ release mới nhất (`src-tauri/src/update.rs`): tên asset và thư mục trong zip không được đổi. Tag dạng `V1.0.3`.
 
 ## Lưu ý
 - Bản exe cũ được build chéo từ Linux và chưa từng chạy thử trên Windows thật: hãy build và kiểm tra lại trên máy Windows trước khi phát hành.
