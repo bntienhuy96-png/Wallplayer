@@ -105,6 +105,15 @@ APPEARANCE (nút ⫶)
   / Spectrum (cột sóng nhạc quanh viền) / Rainbow / Aurora; Intensity (độ sáng), Blend (độ loang).
 - Layout: bật/tắt Player bar, Search field, Cover flow, Playlist.
 
+NHẸ MÁY (Appearance → Performance)
+- Dừng nhạc: viền sáng và nền chậm dần rồi đứng yên, app thôi vẽ hẳn. Phát lại là chạy tiếp ngay.
+- Power: Auto (mặc định) = tự nhẹ đi khi laptop chạy pin hoặc bật Energy Saver; Full = luôn đẹp nhất;
+  Saver = luôn nhẹ. Khi nhẹ: 30 khung hình/giây, video nền tối đa 720p.
+- "Rest behind full-screen and maximised windows" (mặc định bật): khi game, phim toàn màn hình hoặc một
+  cửa sổ phóng to che kín màn hình, Wallplayer ngừng vẽ và tạm dừng video nền ở màn hình đó (nhạc vẫn phát).
+  Thu nhỏ cửa sổ là chạy lại. Tắt mục này nếu bạn dùng cửa sổ trong suốt và muốn thấy nền chạy phía sau.
+- Dòng "Now: ..." cho biết app đang ở chế độ nào.
+
 CONTINUE PLAYING (danh sách bên trái)
 - Bấm vào MỘT bài lẻ trong kết quả search → bài phát ngay, danh sách bên trái tự thành "Picked for you": gợi ý của YouTube Music
   cho bài đó, trộn thêm bài từ trang chủ YouTube Music (theo tài khoản bạn đã đăng nhập; chưa đăng nhập thì là gợi ý chung).

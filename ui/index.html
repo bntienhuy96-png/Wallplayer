@@ -37,6 +37,9 @@ img{display:block}
 .wart{background-size:cover;background-position:center;filter:blur(4.5rem) saturate(1.6) brightness(.62);transform:scale(1.4);opacity:0;transition:opacity 1.4s ease}
 .wart.on{opacity:1}
 #fx{position:absolute;inset:0;width:100%;height:100%;mix-blend-mode:screen;opacity:.9;transition:opacity 1s}
+/* power: nothing animates where nobody looks (covered), lyric loops hold still at rest */
+#app.asleep *,#app.asleep *::before,#app.asleep *::after{animation-play-state:paused!important}
+#app.rest #lyrics2 *,#app.rest .eq i{animation-play-state:paused}
 .custom{object-fit:cover;width:100%;height:100%;opacity:0;transition:opacity 1s}
 .custom.on{opacity:1}
 #ytWrap{position:absolute;inset:0;overflow:hidden;opacity:0;transition:opacity 1.2s ease;pointer-events:none}
@@ -718,7 +721,7 @@ const S = {
   acc: null, mvKey: '', tgtA: [255, 255, 255], tgtB: [255, 255, 255],
   repeat: store.get('repeat', 'off'), qLabel: '', lyrSource: '', lyrTr: {}, trCache: {},
   sub: store.get('sub', {l1: 'orig', l2: 'vi'}),
-  look: Object.assign({clock: true, ck: 'tall', ly: 'rounded', lys: 'm', lc: 'lower', ambK: 1, ambW: 1.35, theme: 'accent', pickIdx: 0, ckpos: 'top', lypos: 'center', lyst: 'player', lfx: 'stack', afx: 'comet', acol: 'art', vq: 'auto', ckwt: {}, lysz: 0, bg: 'auto', wpBlur: 0, bgEach: true, bgVid: null}, store.get('look', {})),
+  look: Object.assign({clock: true, ck: 'tall', ly: 'rounded', lys: 'm', lc: 'lower', ambK: 1, ambW: 1.35, theme: 'accent', pickIdx: 0, ckpos: 'top', lypos: 'center', lyst: 'player', lfx: 'stack', afx: 'comet', acol: 'art', vq: 'auto', pwr: 'auto', pcov: true, ckwt: {}, lysz: 0, bg: 'auto', wpBlur: 0, bgEach: true, bgVid: null}, store.get('look', {})),
   pal: null,
   qOff: store.get('qOff', false),
   hide: Object.assign({bar: false, search: false, flow: false}, store.get('hide', {}))
@@ -836,14 +839,44 @@ function setAccent(p){
   S.tgtA = a; S.tgtB = a.map((v, i) => Math.round(v * .55 + b[i] * .45));
   FX.setColors(a, b);
 }
+/* ════════════════════ power: rest in silence, lighter on battery, sleep when covered ════════════════════ */
+// rest   = no music and no sound for a moment: the motion eases to a stop, then nothing is drawn
+// asleep = another window covers the screen (or the page is hidden): nothing is drawn, the video pauses
+// low    = on battery / Energy Saver (Auto) or Saver chosen: 30 fps, 720p video, half-rate sound updates
+const PW = {
+  battery: false, saver: false, full: false, max: false,
+  motion: 1, quiet: 0, until: 0, wasLow: null, wasAsleep: false,
+  asleep(){ return document.hidden || (S.look.pcov !== false && (this.full || this.max)) },
+  low(){ const m = S.look.pwr || 'auto'; return m === 'saver' || (m === 'auto' && (this.battery || this.saver)) },
+  // settings / colours changed while resting: draw for a moment so the frozen frame is the new one
+  kick(){ this.until = performance.now() + 1400; if (typeof wakeLoop === 'function') wakeLoop() },
+  set(st){ Object.assign(this, {battery: !!st.battery, saver: !!st.saver, full: !!st.full, max: !!st.max}); this.apply() },
+  apply(){
+    const low = this.low(), asleep = this.asleep();
+    if (low !== this.wasLow){ this.wasLow = low; app.classList.toggle('lowpow', low); if (typeof YTV !== 'undefined') reapplyQuality(); if (T && !MIRROR) invoke('set_power_prefs', {coverPause: S.look.pcov !== false, low}).catch(() => {}) }
+    if (asleep !== this.wasAsleep){ this.wasAsleep = asleep; app.classList.toggle('asleep', asleep); if (!asleep){ this.kick(); if (typeof mvSync === 'function') mvSync() } else if (typeof mvSync === 'function') mvSync() }
+    if ($('#appPop') && $('#appPop').classList.contains('open') && $('#pwrNow')) $('#pwrNow').textContent = pwrNow();
+  },
+  prefs(){ this.wasLow = null; this.apply() }   // apply() then tells the app the new preferences
+};
+function pwrNow(){
+  if (PW.asleep() && !document.hidden) return 'Now: resting, a window covers this screen';
+  if (PW.low()) return S.look.pwr === 'saver' ? 'Now: lighter' : (PW.saver ? 'Now: lighter, Energy Saver is on' : 'Now: lighter, running on battery');
+  return 'Now: full quality';
+}
+document.addEventListener('visibilitychange', () => PW.apply());
+
 /* ════════════════════ wallpaper / fx ════════════════════ */
 const FX = (() => {
   const cv = $('#fx'), x = cv.getContext('2d'); let W = 0, H = 0, c1 = [120, 80, 255], c2 = [255, 80, 160], t = 0, last = 0;
   const stars = Array.from({length: 70}, () => ({x: Math.random(), y: Math.random() * .75, r: Math.random() * 1.4 + .3, p: Math.random() * 6.28, s: .5 + Math.random()}));
   function size(){ const r = app.getBoundingClientRect(); W = cv.width = Math.max(320, Math.round(r.width / 2)); H = cv.height = Math.max(180, Math.round(r.height / 2)) }
   function blob(cx, cy, rad, col, a){ const g = x.createRadialGradient(cx, cy, 0, cx, cy, rad); g.addColorStop(0, `rgba(${col},${a})`); g.addColorStop(1, `rgba(${col},0)`); x.fillStyle = g; x.fillRect(0, 0, W, H) }
-  function draw(now){
-    requestAnimationFrame(draw); if (document.hidden || now - last < 33) return; const dt = Math.min(.1, (now - last) / 1000); last = now; t += dt * (.25 + S.amb * .5);
+  // driven by the main loop: ~30 fps, ~15 fps when lighter; motion eases to 0 at rest
+  function draw(now, motion){
+    if (now - last < (PW.low() ? 66 : 33)) return; const dt = Math.min(.1, (now - last) / 1000); last = now;
+    if (app.classList.contains('deskbg')) return;   // invisible behind the Windows wallpaper
+    t += dt * (.25 + S.amb * .5) * motion;
     x.clearRect(0, 0, W, H); x.globalCompositeOperation = 'lighter'; const k = .14 + Math.min(S.amb, 1) * .12;
     blob(W * (.25 + .12 * Math.sin(t * .7)), H * (.75 + .08 * Math.cos(t * .5)), W * .55, c1, k);
     blob(W * (.75 + .1 * Math.cos(t * .6)), H * (.3 + .1 * Math.sin(t * .8)), W * .5, c2, k * .9);
@@ -851,8 +884,8 @@ const FX = (() => {
     x.globalCompositeOperation = 'source-over';
     for (const s of stars){ const a = (.35 + .65 * Math.abs(Math.sin(t * s.s * 2 + s.p))) * (.4 + S.amb * .6); x.fillStyle = `rgba(255,255,255,${a})`; x.beginPath(); x.arc(s.x * W, s.y * H, s.r, 0, 6.29); x.fill() }
   }
-  addEventListener('resize', size); size(); requestAnimationFrame(draw);
-  return {setColors(a, b){ c1 = a.join(','); c2 = b.join(',') }};
+  addEventListener('resize', () => { size(); PW.kick() }); size();
+  return {draw, setColors(a, b){ c1 = a.join(','); c2 = b.join(','); PW.kick() }};
 })();
 let artFlip = false;
 function setWallArt(url){
@@ -1012,7 +1045,9 @@ const VQ = [['auto', 'Auto'], ['medium', '360p'], ['large', '480p'], ['hd720', '
 const VQ_ORDER = ['tiny', 'small', 'medium', 'large', 'hd720', 'hd1080', 'hd1440', 'hd2160', 'highres'];
 // YouTube treats this as a request, not an order: it picks the closest quality the video really has
 function applyQuality(p){
-  if (!p || !p.p) return; const want = S.look.vq || 'auto';
+  if (!p || !p.p) return; let want = S.look.vq || 'auto';
+  // lighter mode: the wallpaper video stays at 720p at most
+  if (PW.low() && (want === 'auto' || VQ_ORDER.indexOf(want) > VQ_ORDER.indexOf('hd720'))) want = 'hd720';
   try {
     if (want === 'auto'){ p.p.setPlaybackQualityRange && p.p.setPlaybackQualityRange('default', 'default'); p.p.setPlaybackQuality && p.p.setPlaybackQuality('default'); return }
     const have = (p.p.getAvailableQualityLevels && p.p.getAvailableQualityLevels()) || [];
@@ -1032,6 +1067,7 @@ addEventListener('resize', () => applyVqSize());
 const reapplyQuality = () => { applyVqSize(); for (const pl of [YTV, YTA]){ if (pl === YTA && !app.classList.contains('clip')) continue; applyQuality(pl); setTimeout(() => applyQuality(pl), 900) } };
 const AMB_COL = [['art', 'Album cover'], ['video', 'Live video']];
 const AMB_FX = [['comet', 'Comet'], ['pulse', 'Pulse'], ['bars', 'Spectrum'], ['rainbow', 'Rainbow'], ['aurora', 'Aurora']];
+const PWR = [['auto', 'Auto'], ['full', 'Full'], ['saver', 'Saver']];
 const BG_MODES = [['auto', 'Music video / cover'], ['video', 'My video'], ['surprise', 'Surprise me'], ['desktop', 'Desktop wallpaper']];
 const bgVid = () => S.look.bg === 'video' || S.look.bg === 'surprise';   // a looping video, not tied to the song
 const BGQ = {q: '', res: [], busy: false};   // My video: search box state in Appearance
@@ -1136,7 +1172,7 @@ setInterval(() => { if ((S.look.bg === 'desktop' || deskFill()) && T) applyBg() 
 function applyLook(){
   const L = S.look; app.className = app.className.replace(/\b(ckpos|lypos|lyst|lfx|ck|ly|lys|lc)-\S+/g, '').replace(/\s+/g, ' ').trim();
   app.classList.add('ck-' + L.ck, 'ly-' + L.ly, 'lys-' + L.lys, 'lc-' + L.lc, 'ckpos-' + L.ckpos, 'lypos-' + L.lypos, 'lyst-' + L.lyst, 'lfx-' + L.lfx); S.lyrIdx = -2; app.classList.toggle('noclock', !L.clock);
-  store.set('look', L); applyInk(); if (typeof YTV !== 'undefined') reapplyQuality(); if (app.classList.contains('editing')) setTimeout(sampleLine, 30);
+  store.set('look', L); applyInk(); PW.kick(); if (typeof YTV !== 'undefined') reapplyQuality(); if (app.classList.contains('editing')) setTimeout(sampleLine, 30);
 }
 function renderAppPop(){
   const L = S.look; setTimeout(loadMonitors, 0);
@@ -1178,6 +1214,11 @@ function renderAppPop(){
     <div class="lrow"><span>Blend</span><input type="range" min="0.6" max="2.2" step="0.05" value="${L.ambW}" data-r="ambW"></div>
     <div class="msep"></div><div class="mh">Video</div>
     <div class="lnote">Quality (YouTube)</div>${chips('vq', VQ)}
+    <div class="msep"></div><div class="mh">Performance</div>
+    <div class="lnote">Power</div>${chips('pwr', PWR)}
+    <div class="lnote">${{auto: 'Lighter by itself on battery or with Energy Saver on.', full: 'Always full quality, even on battery.', saver: 'Always lighter: 30 fps, video up to 720p.'}[L.pwr || 'auto']}</div>
+    <div class="lrow"><span>Rest behind full-screen and maximised windows</span><button class="tg ${L.pcov !== false ? 'on' : ''}" data-t="pcov"></button></div>
+    <div class="lnote" id="pwrNow">${pwrNow()}</div>
     <div class="msep"></div><div class="mh">Layout</div>
     <div class="lrow"><span>Player bar</span><button class="tg ${S.hide.bar ? '' : 'on'}" data-h="bar"></button></div>
     <div class="lrow"><span>Search field</span><button class="tg ${S.hide.search ? '' : 'on'}" data-h="search"></button></div>
@@ -1388,14 +1429,14 @@ void main(){
   const uRes = U('uRes'), uT = U('uT'), uE = U('uE'), uB = U('uB'), uS = U('uS'), uPh = U('uPh'), uRot = U('uRot'), uK = U('uK'), uW = U('uW'), uMode = U('uMode'), uA = U('uA'), uC = U('uC');
   gl.uniform1i(U('uSpec'), 0);
   function size(){ const r = app.getBoundingClientRect(); cv.width = Math.max(2, Math.round(r.width * .5)); cv.height = Math.max(2, Math.round(r.height * .5)); gl.viewport(0, 0, cv.width, cv.height) }
-  addEventListener('resize', size); size(); host.classList.add('gl');
+  addEventListener('resize', () => { size(); PW.kick() }); size(); host.classList.add('gl');
   let t = 0, ph = 0, rot = 0; const ca = [1, 1, 1], cc = [1, 1, 1];
   return {
-    render(dt, A, C){
-      t += dt;
+    render(dt, A, C, motion = 1){
+      const md = dt * motion; t += md;
       // clockwise: comets speed up with loudness and surge on every kick; the spectrum layout drifts slowly
-      ph += dt * (.1 + AU.energy * .35 + AU.beat * 1.2);
-      rot += dt * (.02 + AU.energy * .06);
+      ph += md * (.1 + AU.energy * .35 + AU.beat * 1.2);
+      rot += md * (.02 + AU.energy * .06);
       const k = Math.min(1, dt * 2.2); for (let i = 0; i < 3; i++){ ca[i] += (A[i] / 255 - ca[i]) * k; cc[i] += (C[i] / 255 - cc[i]) * k }
       for (let i = 0; i < 32; i++) spec[i] = Math.round(clamp(AU.lvl[i], 0, 1) * 255);
       gl.bindTexture(gl.TEXTURE_2D, tex); gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, 32, 1, gl.LUMINANCE, gl.UNSIGNED_BYTE, spec);
@@ -1646,6 +1687,8 @@ async function mvFor(t){
 }
 function mvSync(){
   if (!YTV.p || !$('#ytWrap').classList.contains('on')) return;
+  // covered by another window: pause the wallpaper video (it is the music only in clip mode)
+  if (PW.asleep() && !app.classList.contains('clip')){ if (YTV.playing()) YTV.pause(); return }
   if (MIRROR){   // follow the main window's video, whatever it is
     const want = MS.vt + (MS.vpl ? (performance.now() - MS.at) / 1000 : 0);
     if (!MS.vpl && YTV.playing()) YTV.pause(); if (MS.vpl && !YTV.playing()) YTV.play();
@@ -2065,8 +2108,8 @@ $('#appPop').addEventListener('click', e => {
   e.stopPropagation(); const c = e.target.closest('.chip[data-k]'), tg = e.target.closest('[data-t]'), sw = e.target.closest('[data-sw]'), mon = e.target.closest('[data-mon]');
   if (sw){ S.look.theme = 'manual'; S.look.pickIdx = +sw.dataset.sw; store.set('look', S.look); applyTheme(); renderAppPop(); return }
   if (mon){ invoke('set_monitor', {id: mon.dataset.mon}).then(() => { toast('Moved to ' + mon.textContent); loadMonitors() }).catch(err => toast(String(err))); return }
-  if (c){ S.look[c.dataset.k] = c.dataset.v; if (c.dataset.k === 'lys') S.look.lysz = 0; if (c.dataset.k === 'ck') S.look.clock = true; if (c.dataset.k === 'theme') applyTheme(); applyLook(); if (c.dataset.k === 'bg') applyBg(); renderAppPop() }
-  if (tg){ if (tg.dataset.t === 'clock'){ S.look.clock = !S.look.clock; applyLook() } else if (tg.dataset.t === 'bgEach'){ S.look.bgEach = !S.look.bgEach; store.set('look', S.look) } else { S.ambOn = !S.ambOn; applyToggles() } renderAppPop() }
+  if (c){ S.look[c.dataset.k] = c.dataset.v; if (c.dataset.k === 'pwr') PW.prefs(); if (c.dataset.k === 'lys') S.look.lysz = 0; if (c.dataset.k === 'ck') S.look.clock = true; if (c.dataset.k === 'theme') applyTheme(); applyLook(); if (c.dataset.k === 'bg') applyBg(); renderAppPop() }
+  if (tg){ if (tg.dataset.t === 'clock'){ S.look.clock = !S.look.clock; applyLook() } else if (tg.dataset.t === 'bgEach'){ S.look.bgEach = !S.look.bgEach; store.set('look', S.look) } else if (tg.dataset.t === 'pcov'){ S.look.pcov = S.look.pcov === false; store.set('look', S.look); PW.prefs() } else { S.ambOn = !S.ambOn; applyToggles() } renderAppPop() }
   const bv = e.target.closest('[data-bgv]');
   if (bv){ const v = BGQ.res[+bv.dataset.bgv]; if (v){ S.look.bgVid = {id: v.id, title: v.title, art: v.art}; store.set('look', S.look); BGQ.res = []; bgVideo(S.track, true); renderAppPop() } }
   if (e.target.closest('[data-bgnext]')){ bgVideo(S.track, true); toast('Finding another one…') }
@@ -2397,9 +2440,14 @@ function runKey(k){
 ['dragleave', 'drop'].forEach(ev => addEventListener(ev, e => { e.preventDefault(); if (ev === 'dragleave' && e.relatedTarget) return; app.classList.remove('drag'); if (ev === 'drop'){ const f = e.dataTransfer.files[0]; if (f) setCustomWallpaper(f) } }));
 
 /* ════════════════════ main loop ════════════════════ */
-let lastT = performance.now();
+// Runs every display frame while something moves. At rest (no music, no sound) it eases the
+// motion to a stop and then only looks around 4× a second; asleep (covered) once a second.
+let lastT = performance.now(); var loopRaf = 0, loopTimer = 0, lastAmb = '';   // var: PW.kick() may run before this line
+function wakeLoop(){ if (loopTimer){ clearTimeout(loopTimer); loopTimer = 0; lastT = performance.now(); loopRaf = requestAnimationFrame(frame) } }
 function frame(now){
-  requestAnimationFrame(frame); const dt = Math.min(.1, (now - lastT) / 1000); lastT = now;
+  loopRaf = 0;
+  if (PW.low() && now - lastT < 30 && !PW.asleep()){ loopRaf = requestAnimationFrame(frame); return }   // ~30 fps when lighter
+  const dt = Math.min(.1, (now - lastT) / 1000); lastT = now;
   if (S.src === 'demo' && S.demo.playing){ S.demo.pos += dt; if (S.demo.pos >= getDur()) onEnded() }
   const pos = getPos(), dur = getDur(), pl = isPlaying();
   $('#prog i').style.width = dur ? (clamp(pos / dur, 0, 1) * 100).toFixed(2) + '%' : '0%';
@@ -2409,9 +2457,22 @@ function frame(now){
   else AU.feed(pl ? synthSpectrum(pos, (S.track && S.track.bpm) || 96) : ZERO33, now);
   AU.decay(dt);
   S.amb = clamp(.2 + AU.energy * .7 + AU.beat * .4, 0, 1.3);
-  document.documentElement.style.setProperty('--amb', S.amb.toFixed(3));
-  if (AMB && S.ambOn && !document.hidden) AMB.render(dt, S.vidA || S.tgtA, S.vidB || S.tgtB);
+  const ambS = S.amb.toFixed(3); if (ambS !== lastAmb){ lastAmb = ambS; document.documentElement.style.setProperty('--amb', ambS) }
+  // rest: nothing plays and the room is quiet for 1.5 s
+  const loud = AU.energy > .03 || AU.beat > .05;
+  PW.quiet = pl || loud ? 0 : PW.quiet + dt;
+  const want = PW.quiet > 1.5 ? 0 : 1;
+  PW.motion += (want - PW.motion) * Math.min(1, dt * (want ? 6 : 2)); if (PW.motion < .01) PW.motion = 0;
+  const rest = PW.motion === 0, asleep = PW.asleep(), kicked = now < PW.until;
+  if (rest !== app.classList.contains('rest')) app.classList.toggle('rest', rest);
+  if (!asleep && (!rest || kicked)){
+    if (AMB && S.ambOn) AMB.render(dt, S.vidA || S.tgtA, S.vidB || S.tgtB, PW.motion);
+    FX.draw(now, PW.motion);
+  }
   if (S.look.lfx === 'glow') $('#lyrics2').style.setProperty('--beat', AU.beat.toFixed(3));
+  if (asleep) loopTimer = setTimeout(() => { loopTimer = 0; loopRaf = requestAnimationFrame(frame) }, 1000);
+  else if (rest && !kicked) loopTimer = setTimeout(() => { loopTimer = 0; loopRaf = requestAnimationFrame(frame) }, 250);
+  else loopRaf = requestAnimationFrame(frame);
 }
 // end screens (suggested-video tiles) sit on the last ~20 s of a music video: fade to the cover there
 function ytEndGuard(){ if (!YTV.p) return; const d = YTV.dur(), t = YTV.time(); $('#ytWrap').classList.toggle('yt-end', d > 40 && d - t < 20) }
@@ -2457,7 +2518,7 @@ function mirrorReload(){
   S.look = Object.assign(S.look, store.get('look', {})); S.hide = Object.assign(S.hide, store.get('hide', {}));
   for (const k of ['lyrOn', 'ambOn', 'dim', 'mvOn', 'qOff']) S[k] = store.get(k, S[k]);
   S.sub = store.get('sub', S.sub);
-  applyLook(); applyHide(); applyToggles(); applyTheme(); applyBg(); setLyricsMode(store.get('lyricsMode', false));
+  applyLook(); applyHide(); applyToggles(); applyTheme(); applyBg(); setLyricsMode(store.get('lyricsMode', false)); PW.prefs();
   lastClock = ''; renderClock(); S.lyrIdx = -2; applySubs();
 }
 if (MIRROR) addEventListener('storage', e => { if (e.key && !e.key.startsWith('wp.')) return; clearTimeout(mirrorReload.t); mirrorReload.t = setTimeout(mirrorReload, 60) });
@@ -2467,15 +2528,15 @@ async function boot(){
   applyLook(); applyHide(); renderClock(); renderPlatMenu(); applyToggles(); setLyricsMode(store.get('lyricsMode', false));
   IDB.get('wall').then(b => b && applyCustom(b)); applyBg();
   if (T && MIRROR){
-    listen('audio-spectrum', e => AU.feed(e.payload, performance.now()));
+    listen('audio-spectrum', e => { AU.feed(e.payload, performance.now()); if (loopTimer && (e.payload[0] || 0) > 1.5e-4) wakeLoop() });
     listen('mirror-state', e => mirrorApply(e.payload));
     listen('wall-changed', () => IDB.get('wall').then(b => applyCustom(b || null)));
     setTrack(null); setAccent(null); setWallArt(null);
     T.event.emit('mirror-hello', {}).catch(() => {});
   } else if (T){
     listen('media-art', e => { S.sysArt = e.payload || null });
-    listen('media', e => onMedia(e.payload));
-    listen('audio-spectrum', e => AU.feed(e.payload, performance.now()));
+    listen('media', e => { onMedia(e.payload); wakeLoop() });
+    listen('audio-spectrum', e => { AU.feed(e.payload, performance.now()); if (loopTimer && (e.payload[0] || 0) > 1.5e-4) wakeLoop() });
     listen('hotkey-search', () => openSearch());
     listen('bind-captured', e => { if (S.binding) applySearchKey(e.payload) });
     invoke('get_search_key').then(k => { S.searchKey = k; if ($('#appPop').classList.contains('open')) renderAppPop() }).catch(() => {});
@@ -2493,7 +2554,9 @@ async function boot(){
     buildDemo(); S.queue = DEMO; S.qKind = 'queue'; S.qIdx = 1; S.src = 'demo'; S.demo = {pos: 31, playing: true};
     setTrack(DEMO[1]); S.history = [];
   }
-  requestAnimationFrame(frame);
+  if (T){ try { PW.set(await invoke('get_power')) } catch(e){} listen('power-state', e => PW.set(e.payload || {})) }
+  PW.prefs();
+  loopRaf = requestAnimationFrame(frame);
 }
 document.fonts && document.fonts.ready.then(() => { lastClock = ''; renderClock(); if (!T && DEMO.length){ const k = S.qIdx; buildDemo(); S.queue = DEMO; const t = DEMO[k]; S.track = t; applyArt(t.art); setLyrics(t.lyrics, t, 'demo'); renderQueue(); renderFlow(true) } });
 boot();

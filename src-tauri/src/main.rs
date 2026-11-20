@@ -7,6 +7,7 @@ mod desktop;
 mod media;
 mod mirror;
 mod net;
+mod power;
 mod settings;
 mod volume;
 
@@ -420,6 +421,16 @@ fn quit(app: &AppHandle) {
 }
 
 #[tauri::command]
+fn get_power(app: AppHandle, window: tauri::WebviewWindow) -> power::PowerState {
+    power::current(&app, window.label())
+}
+
+#[tauri::command]
+fn set_power_prefs(cover_pause: bool, low: bool) {
+    power::set_prefs(cover_pause, low);
+}
+
+#[tauri::command]
 fn quit_app(app: AppHandle) {
     quit(&app);
 }
@@ -541,6 +552,8 @@ fn main() {
             fetch_image,
             lyrics_page,
             translate,
+            get_power,
+            set_power_prefs,
             quit_app
         ])
         .setup(move |app| {
@@ -693,6 +706,7 @@ fn main() {
             // native feeds
             media::spawn(handle.clone());
             audio::spawn(handle.clone());
+            power::spawn(handle.clone());
             Ok(())
         })
         .run(tauri::generate_context!())

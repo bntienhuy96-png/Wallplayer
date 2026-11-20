@@ -14,6 +14,9 @@ use rustfft::num_complex::Complex;
 use rustfft::FftPlanner;
 use tauri::{AppHandle, Emitter};
 
+/// Set while every window is hidden behind another app: skip the analysis.
+pub static PAUSED: AtomicBool = AtomicBool::new(false);
+
 const N: usize = 4096;
 const HOP: usize = 512;
 const BANDS: usize = 32;
@@ -67,12 +70,17 @@ fn run(app: &AppHandle) -> Result<(), String> {
     let mut out = vec![0f32; BANDS + 1];
     let (mut acc, mut nacc) = (0f32, 0usize);
     let mut last_emit = Instant::now();
+    let mut peak = 0f32;
+    let mut sent_silence = false;
 
     let stream = match cfg.sample_format() {
         cpal::SampleFormat::F32 => dev
             .build_input_stream(
                 &cfg.config(),
                 move |data: &[f32], _: &cpal::InputCallbackInfo| {
+                    if PAUSED.load(Ordering::Relaxed) {
+                        return;
+                    }
                     for frame in data.chunks(channels) {
                         let s = frame.iter().sum::<f32>() / channels as f32;
                         ring[wpos] = s;
@@ -80,10 +88,26 @@ fn run(app: &AppHandle) -> Result<(), String> {
                         since += 1;
                         acc += s * s;
                         nacc += 1;
+                        if s.abs() > peak {
+                            peak = s.abs();
+                        }
                         if since < HOP {
                             continue;
                         }
                         since = 0;
+                        // digital silence: nothing to analyse, and one silent frame is enough
+                        if peak < 1e-6 {
+                            if !sent_silence && last_emit.elapsed() >= Duration::from_millis(16) {
+                                out.iter_mut().for_each(|v| *v = 0.0);
+                                let _ = app2.emit("audio-spectrum", &out);
+                                sent_silence = true;
+                                acc = 0.0;
+                                nacc = 0;
+                                last_emit = Instant::now();
+                            }
+                            continue;
+                        }
+                        peak = 0.0;
                         for i in 0..N {
                             buf[i] = Complex { re: ring[(wpos + i) % N] * window[i], im: 0.0 };
                         }
@@ -102,7 +126,10 @@ fn run(app: &AppHandle) -> Result<(), String> {
                                 out[b + 1] = v;
                             }
                         }
-                        if last_emit.elapsed() >= Duration::from_millis(16) {
+                        // lighter mode: 30 updates a second are plenty
+                        let every = if crate::power::LOW.load(Ordering::Relaxed) { 33 } else { 16 };
+                        if last_emit.elapsed() >= Duration::from_millis(every) {
+                            sent_silence = false;
                             out[0] = if nacc > 0 { (acc / nacc as f32).sqrt() } else { 0.0 };
                             let _ = app2.emit("audio-spectrum", &out);
                             out.iter_mut().for_each(|v| *v = 0.0);

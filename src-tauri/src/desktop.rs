@@ -179,6 +179,11 @@ pub fn remove_mirror(raw: isize) {
     MIRRORS.lock().unwrap().retain(|(h, _)| *h != raw);
 }
 
+/// Monitor device name a mirror window is on.
+pub fn mirror_monitor(raw: isize) -> Option<String> {
+    MIRRORS.lock().unwrap().iter().find(|(h, _)| *h == raw).map(|(_, id)| id.clone())
+}
+
 fn mirror_handles() -> Vec<isize> {
     MIRRORS.lock().unwrap().iter().map(|(h, _)| *h).collect()
 }
