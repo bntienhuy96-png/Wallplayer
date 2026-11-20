@@ -274,6 +274,15 @@ img{display:block}
 .keybind{display:flex;gap:.8rem;align-items:center}.kbtn{flex:1;text-align:left;padding:.6rem 1rem;border-radius:.9rem;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.16);font:700 1.1rem Inter,system-ui;color:#fff}.kbtn:hover{background:rgba(255,255,255,.18)}.kbtn.rec{background:rgba(var(--accent),.35);border-color:rgba(var(--accent),.9)}
 .keys kbd{justify-self:start;font:700 .95rem Inter,system-ui;color:#fff;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.18);border-radius:.5rem;padding:.12rem .5rem;min-width:1.9rem;text-align:center}
 #dock{transition:opacity .4s}
+/* choose the video on the desktop: the song's own, or another one by the same artist */
+#mvPick{display:none;justify-content:center;gap:.7rem;margin-bottom:-.2rem;position:relative}
+#mvPick.on{display:flex}
+#mvPick button{width:.9rem;height:.9rem;border-radius:50%;background:rgba(255,255,255,.35);box-shadow:0 0 0 1px rgba(0,0,0,.15);transition:transform .2s,background .2s}
+#mvPick button:hover{transform:scale(1.35);background:rgba(255,255,255,.75)}
+#mvPick button.on{background:#fff;transform:scale(1.25)}
+#mvPick .tip{position:absolute;bottom:1.8rem;left:50%;transform:translateX(-50%);padding:.4rem .9rem;border-radius:1rem;font-size:1.05rem;font-weight:600;white-space:nowrap;max-width:36rem;overflow:hidden;text-overflow:ellipsis;opacity:0;pointer-events:none;transition:opacity .2s}
+#mvPick:hover .tip{opacity:1}
+#app.mirror #mvPick,#app.bare #mvPick,#app.lyricsmode #mvPick,#app.searching #mvPick{display:none!important}
 .rem{font-size:1rem;color:var(--txt3)}
 /* search panel (above the search field) */
 #results{position:absolute;left:0;right:0;bottom:calc(100% + .8rem);max-height:41rem;overflow-y:auto;scrollbar-width:none;border-radius:2.2rem;padding:1.4rem 1.4rem 1rem;background:rgba(24,25,30,.55);
@@ -605,6 +614,7 @@ button.bgv:hover{background:rgba(255,255,255,.08)}
   </div>
 
   <div id="dock">
+    <div id="mvPick"></div>
     <div id="results" class="glass">
       <div id="rCta"></div><div class="rsug" id="rSug"></div><div class="rtabs" id="rTabs"></div><div class="rlabel" id="rTopLabel">Top Results</div><div class="rrow" id="rTop"></div><div id="rEnt"></div>
       <div class="rlabel" id="rColLabel" style="display:none">Playlists &amp; albums</div><div class="rrow" id="rCols"></div>
@@ -1779,9 +1789,32 @@ async function mvFor(t){
   if (S.look.bg === 'desktop'){ YTV.stop(); return }
   if (bgVid()) return bgVideo(t, false);
   if (!S.mvOn || !T || app.classList.contains('hasCustom') || !t){ YTV.stop(); return }
-  const key = t.title + '|' + t.artist; S.mvKey = key;
-  try { const ids = await invoke('youtube_search', {query: `${t.title} ${t.artist} official music video`}); if (S.mvKey !== key) return; await YTV.load(ids.slice(0, 6), getPos()) } catch(e){}
+  const key = t.title + '|' + t.artist; S.mvKey = key; S.mvPick = null; MVP.key = ''; MVP.list = []; renderMvPick();
+  try { const ids = await invoke('youtube_search', {query: `${t.title} ${t.artist} official music video`}); if (S.mvKey !== key) return; await YTV.load(ids.slice(0, 6), getPos()); mvPickLoad(t) } catch(e){}
 }
+// the dots above the player: this song's video, then up to five other videos by the artist
+const MVP = {key: '', list: [], cur: 0};
+async function mvPickLoad(t){
+  if (!T || MIRROR || !t || !t.artist) return; const key = t.title + '|' + t.artist; if (MVP.key === key) return; MVP.key = key;
+  try {
+    const out = await invoke('search', {platform: 'youtube', query: `${t.artist} official music video`}); if (MVP.key !== key) return;
+    const own = YTV.ids[YTV.i] || YTV.ids[0], tl = t.title.toLowerCase();
+    const more = (out.tracks || []).filter(v => v.id && v.id !== own && !(v.title || '').toLowerCase().includes(tl)).slice(0, 5);
+    MVP.list = [{id: own, title: `${t.title} · this song's video`, own: true}, ...more.map(v => ({id: v.id, title: v.title}))]; MVP.cur = 0; renderMvPick();
+  } catch(e){}
+}
+function renderMvPick(){
+  const box = $('#mvPick'), show = MVP.list.length > 1 && S.mvOn && !bgVid() && S.look.bg !== 'desktop' && !app.classList.contains('clip');
+  box.classList.toggle('on', show); if (!show){ box.innerHTML = ''; return }
+  box.innerHTML = MVP.list.map((v, i) => `<button class="${i === MVP.cur ? 'on' : ''}" data-mvp="${i}" aria-label="${esc(v.title)}"></button>`).join('') + `<span class="tip glass">${esc(MVP.list[MVP.cur].title)}</span>`;
+}
+$('#mvPick').addEventListener('pointerover', e => { const b = e.target.closest('[data-mvp]'); if (b) $('#mvPick .tip').textContent = MVP.list[+b.dataset.mvp].title });
+$('#mvPick').addEventListener('pointerout', () => { const tp = $('#mvPick .tip'); if (tp && MVP.list[MVP.cur]) tp.textContent = MVP.list[MVP.cur].title });
+$('#mvPick').addEventListener('click', e => {
+  e.stopPropagation(); const b = e.target.closest('[data-mvp]'); if (!b) return; const i = +b.dataset.mvp, v = MVP.list[i]; if (!v || i === MVP.cur) return;
+  MVP.cur = i; renderMvPick();
+  if (v.own){ S.mvPick = null; YTV.load([v.id], getPos()) } else { S.mvPick = v.id; YTV.load([v.id], 0) }   // another video plays on its own, not kept in time with the song
+});
 function mvSync(){
   if (!YTV.p || !$('#ytWrap').classList.contains('on')) return;
   // covered by another window: pause the wallpaper video (it is the music only in clip mode)
@@ -1791,7 +1824,7 @@ function mvSync(){
     if (!MS.vpl && YTV.playing()) YTV.pause(); if (MS.vpl && !YTV.playing()) YTV.play();
     if (Math.abs(YTV.time() - want) > 2.5 && YTV.dur() > want) YTV.seek(want); return;
   }
-  if (bgVid()){ if (!YTV.playing()) YTV.play(); return }   // background video keeps running, not tied to the song
+  if (bgVid() || S.mvPick){ if (!YTV.playing()) YTV.play(); return }   // background video / another video of the artist keeps running, not tied to the song
   if (!(S.src === 'system' || S.src === 'yt' || S.src === 'sc')) return;
   const pl = isPlaying(); if (!pl && YTV.playing()) YTV.pause(); if (pl && !YTV.playing()) YTV.play();
   const pos = getPos(); if (Math.abs(YTV.time() - pos) > 2.5 && YTV.dur() > pos) YTV.seek(pos);
