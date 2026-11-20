@@ -6,7 +6,7 @@
 
 <p align="center">
   A glass music skin for the Windows desktop — the wallpaper itself becomes the player.<br>
-  <sub>Biến hình nền Windows thành trình phát nhạc: đồng hồ cao, cover flow kính, lyrics đồng bộ, viền sáng nhảy theo nhạc.</sub>
+  <sub>Tall clock · glass cover flow · synced lyrics with translations · an edge light that moves with the music</sub>
 </p>
 
 <p align="center">
@@ -47,7 +47,7 @@ See the [Code signing policy](CODE_SIGNING.md).
 
 1. Unzip `Wallplayer-Windows-x64.zip` and keep the files in the `Wallplayer` folder together.
 2. Run `Wallplayer.exe`. It needs the Microsoft Edge **WebView2 Runtime**, which Windows 11 and most Windows 10 PCs already have.
-3. Press **Ctrl + Alt + Space** and search. Everything else is in the tray icon and the Appearance panel. [`HUONG-DAN.txt`](HUONG-DAN.txt) is the full guide (Vietnamese).
+3. Press **Ctrl + Alt + Space** and search. Everything else is in the tray icon and the Appearance panel. [`GUIDE.txt`](GUIDE.txt) is the full user guide ([Vietnamese](HUONG-DAN.txt)).
 
 > Press **Ctrl + Shift + D** to run the built-in self-test if something Windows-specific misbehaves.
 

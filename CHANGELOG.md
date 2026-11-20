@@ -5,24 +5,25 @@ the section that matches the version in `src-tauri/Cargo.toml`.
 
 ## 1.0.3
 
-### Mới
-- **Tự cập nhật, không cần file cài.** Mỗi lần mở, Wallplayer kiểm tra ngầm một lần. Có bản mới thì menu chuột phải biểu tượng khay hiện *Update available*; bấm vào để xem release notes và chọn *Update* hoặc *Skip*. Tắt kiểm tra lúc mở trong Appearance → Updates.
-- **Nhẹ máy hơn.** Dừng nhạc là viền sáng và nền chậm dần rồi thôi vẽ. Có game, phim toàn màn hình hoặc cửa sổ phóng to che kín màn hình thì Wallplayer nghỉ và tạm dừng video nền. Chạy pin hoặc bật Energy Saver thì tự nhẹ đi (30 khung hình/giây, video tối đa 720p). Chọn Auto, Full hoặc Saver trong Appearance → Performance.
-- **Tắt tìm lời bài hát trên mạng** trong Appearance → Lyrics → *Find lyrics online*.
-- **Giao diện tiếng Việt.** Chọn English hoặc Tiếng Việt ở đầu Appearance; menu icon khay đổi theo. Máy để tiếng Việt thì app tự dùng tiếng Việt.
-- **Nhạc trên máy.** Nút thư mục ở playlist bên trái → *Add a folder…*, hoặc kéo thả thư mục / bài hát vào Wallplayer. Đọc tên bài, ca sĩ, ảnh bìa trong file; lời bài hát và viền sáng chạy như thường. Thư mục được nhớ cho lần sau.
-- **Playlist:** rê chuột lên một bài để *Phát tiếp theo* hoặc xóa; kéo tay cầm ⋮⋮ để sắp xếp.
-- **Lời bài hát:** chỉnh giờ cho bài này hoặc mọi bài ngay trong bảng Lyrics, Wallplayer ghi nhớ; tự gõ để tìm lời; đoạn nhạc dạo dài hiện nốt ♪ và ba chấm đếm ngược tới câu tiếp theo.
-- **Viền sáng:** thêm 6 hiệu ứng (Lửa, Dung nham, Rắn, Lấp lánh, Neon, Sóng); chỉ sáng cả viền, cạnh dưới, cạnh trên hoặc các góc; bật tắt riêng từng màn hình; rê chuột lên tên hiệu ứng để xem trước.
-- **Icon khay** thành ảnh bìa bài đang phát, có vòng tròn đập theo nhạc (tắt được trong Appearance → Layout).
-- **Chọn MV:** các chấm phía trên trình phát để chọn MV của bài hoặc MV khác của cùng ca sĩ.
-- **Nhạc phát ở hai nơi** (ví dụ Wallplayer và Spotify): Wallplayer hỏi bạn giữ bên nào và dừng bên kia.
+### New
+- **Updates without an installer.** Wallplayer quietly checks for a new version once when it starts. When there is one, the tray menu shows *Update available*; click it to read the release notes and choose *Update* or *Skip*. Turn the check off in Appearance → Updates.
+- **Lighter on your computer.** When the music stops, the edge light and background slow down and stop drawing. Behind a full-screen game or film, or a maximised window, Wallplayer rests and pauses the background video. On battery or with Energy Saver it gets lighter by itself (30 fps, video up to 720p). Choose Auto, Full or Saver in Appearance → Performance.
+- **Your own music.** The folder button on the playlist → *Add a folder…*, or drop folders and songs onto Wallplayer. Titles, artists and covers are read from the files; lyrics and the edge light work as usual. Folders are remembered.
+- **Vietnamese interface.** Choose English or Tiếng Việt at the top of Appearance; the tray menu follows. Wallplayer uses Vietnamese when Windows does.
+- **Playlist:** point at a song to play it next or remove it; drag the ⋮⋮ handle to reorder.
+- **Lyrics:** timing for this song or for every song in the Lyrics panel, remembered; type to search for other lyrics; long instrumental parts show a ♪ with dots counting down to the next line.
+- **Edge light:** 6 new effects (Fire, Lava, Snake, Sparkle, Neon, Wave); light the whole frame, the bottom, the top or only the corners; turn it off on any display; point at an effect to preview it.
+- **Tray icon** shows the cover of the song playing, with a ring that beats (Appearance → Layout).
+- **Pick the video:** dots above the search field choose the song's own music video or another one by the same artist.
+- **Music in two places** (Wallplayer and Spotify, for example): Wallplayer asks which one to keep and pauses the other.
+- **Turn off lyrics lookups** in Appearance → Lyrics → *Find lyrics online*.
 
-### Thay đổi
-- Wallplayer giờ là mã nguồn mở, giấy phép MIT.
-- Font chữ đi kèm app, mở app không cần tải font từ Google nữa.
-- Kéo thả ảnh / video vào app để làm hình nền chạy được trên Windows.
-- Phân tích âm thanh bỏ qua những đoạn im lặng.
+### Changed
+- Wallplayer is now open source under the MIT license.
+- Fonts come with the app: it no longer loads them from Google at start.
+- Dropping a picture or video onto Wallplayer to make it the wallpaper works on Windows.
+- The sound analysis skips silence.
+- English user guide (`GUIDE.txt`) next to the Vietnamese one.
 
 ## 1.0.2 and earlier
 

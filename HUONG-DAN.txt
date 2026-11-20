@@ -1,5 +1,6 @@
 WALLPLAYER — Biến hình nền desktop thành trình phát nhạc (Windows 10/11)
 =======================================================================
+(English guide: GUIDE.txt)
 
 CÀI & CHẠY
 1. Giải nén cả thư mục "Wallplayer" (giữ Wallplayer.exe và WebView2Loader.dll cạnh nhau).

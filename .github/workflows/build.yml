@@ -83,8 +83,10 @@ jobs:
           Copy-Item src-tauri/target/release/wallplayer.exe dist/Wallplayer/Wallplayer.exe
           $dll = Get-ChildItem src-tauri/target/release -Recurse -Filter WebView2Loader.dll -ErrorAction SilentlyContinue | Select-Object -First 1
           if ($dll) { Copy-Item $dll.FullName dist/Wallplayer/ }
-          $t = [IO.File]::ReadAllText("$PWD/HUONG-DAN.txt") -replace "`r?`n", "`r`n"
-          [IO.File]::WriteAllText("$PWD/dist/Wallplayer/HUONG-DAN.txt", $t, (New-Object Text.UTF8Encoding $false))
+          foreach ($f in "GUIDE.txt", "HUONG-DAN.txt") {
+            $t = [IO.File]::ReadAllText("$PWD/$f") -replace "`r?`n", "`r`n"
+            [IO.File]::WriteAllText("$PWD/dist/Wallplayer/$f", $t, (New-Object Text.UTF8Encoding $false))
+          }
 
       - name: Upload build
         id: upload

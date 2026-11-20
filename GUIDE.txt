@@ -1,0 +1,177 @@
+WALLPLAYER — your desktop wallpaper, playing (Windows 10 / 11)
+================================================================
+
+GETTING STARTED
+1. Unzip the whole "Wallplayer" folder and keep its files together. Put it somewhere you can write to,
+   such as Documents (not Program Files), so Wallplayer can update itself.
+2. Double-click Wallplayer.exe. If Windows says "Windows protected your PC", click "More info" → "Run anyway".
+3. Wallplayer fills the screen behind every window, like a wallpaper. Its icon is in the tray by the clock.
+4. Move the mouse to the bottom edge of the screen to bring up the taskbar (an auto-hide taskbar too).
+5. Press Ctrl + Alt + Space from anywhere to search for music.
+Wallplayer needs the Microsoft Edge WebView2 Runtime, which Windows 11 and most Windows 10 PCs already have.
+
+THE SCREEN
+- Centre, top to bottom: the clock → the cover flow (the song playing in the middle, the next ones on each
+  side) → the search field → the player bar.
+- Left: the playlist ("Continue Playing").
+- Scroll or drag over the cover flow to browse it; click a card to play it.
+- Rows that are wider than the panel (Top Results, colour swatches, the cover flow) scroll with the mouse
+  wheel, a sideways swipe on a touchpad, or by dragging.
+- Hidden parts (H, the ⤢ button, Full lyrics, Cover flow / Playlist turned off) no longer take clicks, so you
+  cannot change song by clicking an invisible card.
+
+THE PLAYER BAR (left to right)
+Platform · Previous · Play / Pause · Next · Repeat (off → whole list → this song)
+· Cover and title (the progress line below it: click to jump) · ♡ Like · ··· More (Shuffle, open on the
+  platform, music video wallpaper, your own wallpaper, Accounts, Behind desktop icons, Quit)
+· 💬 Lyrics & subtitles · ≡ Playlist · ⫶ Appearance · ☾ Dim wallpaper
+· 🔊 Volume: point at it for the slider, click to mute, scroll to change. Songs playing inside Wallplayer
+  use the player volume; songs playing in Spotify or another app use the Windows volume.
+In the search field: 👁 Full lyrics · ◎ music video wallpaper · ⤢ hide the whole interface.
+
+SEARCH
+- Click the search field (or press Ctrl + Alt + Space): with nothing typed you see "Recently played".
+- Typing shows suggestions (click one to search it) and results in four tabs: All / Songs / Singers /
+  Playlists (playlists and albums from every platform). ↑ ↓ to choose, Enter to play, Esc to close.
+- Click a singer to play their best songs; click a playlist or album to play all of it.
+- Point at a song: ▶≡ "Play next" plays it right after the current song, ≡+ "Add to playlist" adds it at
+  the end. The panel stays open so you can add several songs.
+- When the playlist runs out, Wallplayer adds similar songs (YouTube Music / SoundCloud radio) so the music
+  keeps going. Turn it on or off in ··· → "Keep playing similar songs".
+
+PLATFORMS (search goes to the platform you choose)
+- YouTube Music: songs play inside the wallpaper, with the music video behind them.
+- YouTube: videos and clips; the clip itself plays full-screen as the wallpaper.
+- SoundCloud: plays inside the wallpaper.
+- Spotify: searches Spotify and plays in the Spotify app (needs your account and Premium).
+- Spotify Web Player / Apple Music / Amazon Music: opens the song in your browser or app.
+Songs playing in other apps are still picked up through Windows: cover, lyrics, colours and controls.
+
+ACCOUNTS (platform icon → Accounts…)
+- YouTube / YouTube Music: sign in with Google; with Premium there are no ads.
+- SoundCloud: sign in (Go+ plays full tracks).
+- Spotify: create an app at developer.spotify.com/dashboard, add the Redirect URI
+  http://127.0.0.1:43821/callback, paste its Client ID and click Connect.
+
+THE PLAYLIST (left)
+- Click ONE song in the search results: it plays right away and the playlist becomes "Picked for you":
+  YouTube Music's suggestions for that song, mixed with picks from your account (general picks when you
+  are not signed in).
+- ↻ refreshes the suggestions. The clock button next to it switches to "History Playing": your last 100
+  songs; click one to play it again, click the button again to go back.
+- Point at a song: ▶≡ plays it next, ✕ removes it. Drag the ⋮⋮ handle to change the order.
+- Scroll with the mouse wheel or drag up and down.
+
+YOUR OWN MUSIC (songs on this PC)
+- Click the folder button next to the playlist title → "Add a folder…" and pick a music folder
+  (mp3, m4a, flac, wav, ogg…). Or drop folders or songs onto Wallplayer while it is in front
+  (Ctrl + Alt + Space, or with "Behind desktop icons" off).
+- Titles, artists and covers are read from the files ("Artist - Title" file names work too). Lyrics and
+  the edge light work as usual.
+- Folders are remembered: next time click "Play my music" or "Shuffle". "Remove" forgets a folder.
+- Drop a picture or a video onto Wallplayer to make it the wallpaper.
+
+LYRICS & SUBTITLES (💬 button)
+- Lyrics are found online and timed to the song (LRCLIB, NetEase); otherwise Genius (timing estimated).
+  "Search Google for lyrics" opens your browser.
+- Line 1 / Line 2: choose the languages (Original, Tiếng Việt, English, 日本語, 한국어…). Lines without a
+  translation are machine-translated, keeping their timing.
+- YouTube clips: the video's own captions become the lyrics, in the player's style. Without captions,
+  normal lyrics are used.
+- Timing: "This song" moves the lyrics of this song only, "All songs" moves every song (+ shows the words
+  earlier). Click the number to go back to 0. Wallplayer remembers it. The [ and ] keys also move this song.
+- Other versions: pick another version, or type a title and artist and press Enter to search again.
+- Long instrumental parts show a ♪ with three dots that fill up until the next line.
+- Full lyrics (👁 button or L): hides the cover flow and shows the lyrics large in the centre.
+- Turn off "Find lyrics online" in Appearance → Lyrics if you do not want lyrics looked up.
+
+CLOCK & LYRICS EDITOR (like the iPhone lock screen)
+- Click the clock (or press E, or Appearance → "Font, colour & glass…").
+- At the top choose Clock or Lyrics (or click the outlined clock or lyrics).
+- Font: the "12" / "Aa" tiles. Weight: how bold the clock is. Size: lyrics size.
+- Solid or Glass: solid letters, or glass letters that blur and brighten the wallpaper behind them.
+- Colour: Auto (follows the album), colours taken from the cover, the iPhone palette, or "+" for any
+  colour. The bar below makes it darker or lighter. Opacity; Glass: Clear → Frost → Milky.
+- Done, Esc or a click outside closes it. Everything is saved.
+
+APPEARANCE (⫶ button)
+- Language: English or Tiếng Việt (also the tray menu). Wallplayer uses Vietnamese when Windows does.
+- Theme color: taken from the album cover by how much of it each colour covers: Accent / Dominant /
+  Secondary, or click a swatch. Used by the clock, the edge light and the accents.
+- Display: which screen Wallplayer uses (or tray menu → "Move to next display"). Portrait screens get a
+  vertical layout. Tray menu → "Fill other displays" shows the same skin on the other screens, without
+  controls or sound; they follow the main screen's settings.
+- Background:
+  · Music video / cover: the music video of the song, kept in time; the album cover when there is none.
+    Dots above the search field let you pick the song's own video or another video by the same artist.
+  · My video: search YouTube for any video; it plays muted and loops behind everything.
+  · Surprise me: city, nature and first-person walk videos picked to fit your songs; "New video each
+    song", or "Another one" to change now.
+  · Desktop wallpaper: keeps your Windows wallpaper; the skin sits on top.
+  Blur softens the background. The ◎ button turns the video background on and off.
+- Clock: on / off; 7 styles; position Top / Top left / Top right / Bottom left / Bottom right.
+- Lyrics: Player style (karaoke) or YouTube captions; 13 effects (Stack, Line, Bounce, Typewriter, Glow,
+  Pop, Karaoke fill, Shake, Jiggle, Glitch, Wave, Zoom, Slide); position Center / Left / Right / Bottom;
+  5 fonts, 3 sizes, lower case / Title / UPPER CASE.
+- Ambient light (the edge light): on / off; colour from the album cover or the live video; 11 effects
+  (Comet, Pulse, Spectrum, Rainbow, Aurora, Fire, Lava, Snake, Sparkle, Neon, Wave) — point at one to
+  preview it; Where: whole frame, bottom, top or corners; Light on each display; Intensity and Blend.
+- Video quality (YouTube): Auto, 360p … 4K for the music video and YouTube clips.
+- Performance: Power Auto (lighter on battery or with Energy Saver), Full or Saver (30 fps, video up to
+  720p). "Rest behind full-screen and maximised windows": Wallplayer stops drawing and pauses the
+  background video while a game, a film or a maximised window covers the screen; the music keeps
+  playing. When the music stops, the light slows down and stops drawing. "Now: …" shows the mode.
+- Layout: Player bar, Search field, Cover flow, Playlist, and "Album cover as the tray icon" (the tray icon
+  shows the song's cover with a ring that beats).
+- Updates and Search from anywhere: see below.
+
+UPDATES (no installer)
+- Each time it starts, Wallplayer quietly checks GitHub once. When there is a new version, the tray menu
+  item becomes "Update available: vX.Y.Z".
+- Click it (or "Check for updates" in the tray menu, or Appearance → Updates) to read the release notes
+  and choose Update or Skip. Update downloads it and opens the new version; Skip stops offering that one.
+- Turn off the start-up check in Appearance → Updates → "Check when Wallplayer starts".
+- The new Wallplayer.exe replaces the old one in the same folder (the old file is kept as
+  Wallplayer.exe.old until the next start).
+
+MUSIC IN TWO PLACES
+If Wallplayer and another app (Spotify, a browser…) play at the same time, a question at the top asks
+which one to keep; the other one is paused.
+
+SHORTCUT
+One global shortcut: "Search from anywhere" (Ctrl + Alt + Space by default) opens the search from any app.
+Change it in Appearance → Search from anywhere: click the button, then press a new key combination (with
+Ctrl, Alt or Shift, or F1–F24) or the middle / side mouse buttons (with Ctrl, Alt or Shift if you like).
+Esc cancels, Reset goes back to Ctrl + Alt + Space. The left and right mouse buttons cannot be used.
+When Wallplayer is in front: Space play / pause, ← → previous / next, ↑ ↓ volume, H hide the interface,
+L full lyrics, E editor, [ ] lyrics timing, / search.
+
+ON THE DESKTOP (tray icon, right-click)
+- By default (like Wallpaper Engine) Wallplayer lives in the wallpaper layer, behind the desktop icons, so
+  Win + D, Show desktop and Win + M keep it on screen. The mouse still works on empty desktop space:
+  point, click, drag, scroll. Clicking the search field brings Wallplayer forward so you can type; a click
+  outside sends it back. Single-key shortcuts work only while it is in front (Ctrl + Alt + Space).
+- Untick "Behind desktop icons" to make it a normal window at the bottom: it covers the desktop icons and
+  every button takes clicks directly; after Win + D it tries to come forward (less reliable).
+- "Hide desktop icons" (on by default) hides every desktop icon, Recycle Bin included, while Wallplayer
+  runs and gives them back when you quit. (If Wallplayer was ended from Task Manager and the icons are
+  still hidden: start Wallplayer and untick it, or right-click the desktop → View → Show desktop icons.)
+- "Start with Windows": starts Wallplayer when you sign in.
+
+SELF-TEST
+Press Ctrl + Shift + D (or Appearance → Self-test) to check the Windows and YouTube features one by one
+(volume, Win + D, video colours, captions, video quality). If something fails, send a screenshot of it.
+
+UNINSTALLING
+In the tray menu untick "Start with Windows", then "Quit Wallplayer", and delete the Wallplayer folder.
+To remove settings and sign-ins too, delete the com.tan.wallplayer folders in %APPDATA% and %LOCALAPPDATA%.
+
+PRIVACY
+No account, no analytics, nothing is sent to the authors. On its own Wallplayer only contacts GitHub once
+at start to look for a new version (you can turn it off). Other services (YouTube, SoundCloud, Spotify,
+lyrics, translation) are used only when you use that feature. Details: PRIVACY.md on GitHub.
+
+KNOWN LIMITS
+- Some YouTube videos cannot be embedded; Wallplayer tries another one.
+- Google may refuse sign-in in an embedded window for some accounts.
+- Genius, YouTube and machine translation use unofficial interfaces that may change at any time.

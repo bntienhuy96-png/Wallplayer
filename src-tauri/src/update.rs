@@ -201,7 +201,7 @@ async fn download_and_stage(rel: &Release) -> Result<(), String> {
         }
         let name = f.name().rsplit(['/', '\\']).next().unwrap_or("").to_string();
         let lower = name.to_ascii_lowercase();
-        if !(lower == "wallplayer.exe" || lower == "webview2loader.dll" || lower == "huong-dan.txt") {
+        if !(lower == "wallplayer.exe" || lower == "webview2loader.dll" || lower == "huong-dan.txt" || lower == "guide.txt") {
             continue;
         }
         let mut buf = Vec::with_capacity(f.size() as usize);
@@ -310,7 +310,7 @@ pub fn cleanup() {
         let _ = std::fs::remove_file(side(&me, ".old"));
         let _ = std::fs::remove_file(side(&me, ".new"));
         if let Some(dir) = me.parent() {
-            for n in ["WebView2Loader.dll", "HUONG-DAN.txt"] {
+            for n in ["WebView2Loader.dll", "HUONG-DAN.txt", "GUIDE.txt"] {
                 let p = dir.join(n);
                 let _ = std::fs::remove_file(side(&p, ".old"));
                 let _ = std::fs::remove_file(side(&p, ".new"));
