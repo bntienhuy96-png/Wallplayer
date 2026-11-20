@@ -44,6 +44,8 @@ pub struct PowerState {
     pub full: bool,
     /// a maximised window covers this window's monitor
     pub max: bool,
+    /// device name of this window's monitor (per-display settings)
+    pub monitor: String,
 }
 
 #[derive(Default, Clone, Copy)]
@@ -182,7 +184,7 @@ pub fn spawn(app: AppHandle) {
                 let c = cover.get(&mon).copied().unwrap_or_default();
                 // the search overlay floats above everything: never covered then
                 let lifted = peek && label == "main";
-                let ps = PowerState { battery: bat, saver, full: c.full && !lifted, max: c.max && !lifted };
+                let ps = PowerState { battery: bat, saver, full: c.full && !lifted, max: c.max && !lifted, monitor: mon.clone() };
                 if !(ps.full || ps.max) {
                     all_hidden = false;
                 }
@@ -206,7 +208,7 @@ pub fn current(app: &AppHandle, label: &str) -> PowerState {
     } else {
         app.get_webview_window(label).and_then(|w| w.hwnd().ok()).and_then(|h| desktop::mirror_monitor(h.0 as isize))
     };
-    let c = mon.and_then(|m| cover.get(&m).copied()).unwrap_or_default();
+    let c = mon.as_ref().and_then(|m| cover.get(m).copied()).unwrap_or_default();
     let lifted = label == "main" && desktop::current_mode() == desktop::Mode::Peek;
-    PowerState { battery: bat, saver, full: c.full && !lifted, max: c.max && !lifted }
+    PowerState { battery: bat, saver, full: c.full && !lifted, max: c.max && !lifted, monitor: mon.unwrap_or_default() }
 }

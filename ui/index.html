@@ -874,13 +874,13 @@ function setAccent(p){
 // asleep = another window covers the screen (or the page is hidden): nothing is drawn, the video pauses
 // low    = on battery / Energy Saver (Auto) or Saver chosen: 30 fps, 720p video, half-rate sound updates
 const PW = {
-  battery: false, saver: false, full: false, max: false,
+  battery: false, saver: false, full: false, max: false, monitor: '', preview: false,
   motion: 1, quiet: 0, until: 0, wasLow: null, wasAsleep: false,
   asleep(){ return document.hidden || (S.look.pcov !== false && (this.full || this.max)) },
   low(){ const m = S.look.pwr || 'auto'; return m === 'saver' || (m === 'auto' && (this.battery || this.saver)) },
   // settings / colours changed while resting: draw for a moment so the frozen frame is the new one
   kick(){ this.until = performance.now() + 1400; if (typeof wakeLoop === 'function') wakeLoop() },
-  set(st){ Object.assign(this, {battery: !!st.battery, saver: !!st.saver, full: !!st.full, max: !!st.max}); this.apply() },
+  set(st){ const mon = st.monitor || ''; const moved = mon !== this.monitor; Object.assign(this, {battery: !!st.battery, saver: !!st.saver, full: !!st.full, max: !!st.max, monitor: mon}); if (moved && typeof applyToggles === 'function') applyToggles(); this.apply() },
   apply(){
     const low = this.low(), asleep = this.asleep();
     if (low !== this.wasLow){ this.wasLow = low; app.classList.toggle('lowpow', low); if (typeof YTV !== 'undefined') reapplyQuality(); if (T && !MIRROR) invoke('set_power_prefs', {coverPause: S.look.pcov !== false, low}).catch(() => {}) }
@@ -1105,7 +1105,8 @@ function applyVqSize(){
 addEventListener('resize', () => applyVqSize());
 const reapplyQuality = () => { applyVqSize(); for (const pl of [YTV, YTA]){ if (pl === YTA && !app.classList.contains('clip')) continue; applyQuality(pl); setTimeout(() => applyQuality(pl), 900) } };
 const AMB_COL = [['art', 'Album cover'], ['video', 'Live video']];
-const AMB_FX = [['comet', 'Comet'], ['pulse', 'Pulse'], ['bars', 'Spectrum'], ['rainbow', 'Rainbow'], ['aurora', 'Aurora']];
+const AMB_FX = [['comet', 'Comet'], ['pulse', 'Pulse'], ['bars', 'Spectrum'], ['rainbow', 'Rainbow'], ['aurora', 'Aurora'], ['fire', 'Fire'], ['lava', 'Lava'], ['snake', 'Snake'], ['sparkle', 'Sparkle'], ['neon', 'Neon'], ['wave', 'Wave']];
+const AMB_POS = [['all', 'Whole frame'], ['bottom', 'Bottom'], ['top', 'Top'], ['corners', 'Corners']];
 const PWR = [['auto', 'Auto'], ['full', 'Full'], ['saver', 'Saver']];
 const BG_MODES = [['auto', 'Music video / cover'], ['video', 'My video'], ['surprise', 'Surprise me'], ['desktop', 'Desktop wallpaper']];
 const bgVid = () => S.look.bg === 'video' || S.look.bg === 'surprise';   // a looping video, not tied to the song
@@ -1249,7 +1250,9 @@ function renderAppPop(){
     <div class="msep"></div><div class="mh">Ambient light</div>
     <div class="lrow"><span>Edge light</span><button class="tg ${S.ambOn ? 'on' : ''}" data-t="amb"></button></div>
     <div class="lnote">Colour from</div>${chips('acol', AMB_COL)}
-    <div class="lnote">Effect</div>${chips('afx', AMB_FX)}
+    <div class="lnote">Effect · point at one to preview it</div>${chips('afx', AMB_FX)}
+    <div class="lnote">Where</div>${chips('apos', AMB_POS)}
+    <div id="ambMons"></div>
     <div class="lrow"><span>Intensity</span><input type="range" min="0.4" max="1.8" step="0.05" value="${L.ambK}" data-r="ambK"></div>
     <div class="lrow"><span>Blend</span><input type="range" min="0.6" max="2.2" step="0.05" value="${L.ambW}" data-r="ambW"></div>
     <div class="msep"></div><div class="mh">Video</div>
@@ -1264,6 +1267,7 @@ function renderAppPop(){
     <div class="lrow"><span>Search field</span><button class="tg ${S.hide.search ? '' : 'on'}" data-h="search"></button></div>
     <div class="lrow"><span>Cover flow</span><button class="tg ${S.hide.flow ? '' : 'on'}" data-h="flow"></button></div>
     <div class="lrow"><span>Playlist</span><button class="tg ${S.qOff ? '' : 'on'}" data-h="queue"></button></div>
+    <div class="lrow"><span>Album cover as the tray icon</span><button class="tg ${S.look.trayArt !== false ? 'on' : ''}" data-t="trayart"></button></div>
     <div class="msep"></div><div class="mh">Updates</div>
     <div class="lrow"><span>Check when Wallplayer starts</span><button class="tg ${UP.auto ? 'on' : ''}" data-t="autoup"></button></div>
     <div class="lnote" id="upNow">${upText()}</div>
@@ -1413,7 +1417,7 @@ precision highp float;
 #else
 precision mediump float;
 #endif
-uniform vec2 uRes;uniform float uT,uE,uB,uS,uPh,uRot,uK,uW,uMode;uniform vec3 uA,uC;uniform sampler2D uSpec;
+uniform vec2 uRes;uniform float uT,uE,uB,uS,uPh,uRot,uK,uW,uMode,uPlace;uniform vec3 uA,uC;uniform sampler2D uSpec;
 float h1(float n){return fract(sin(n)*43758.5453);}
 float nz(vec2 x){vec2 p=floor(x),f=fract(x);f=f*f*(3.-2.*f);float n=p.x+p.y*57.;return mix(mix(h1(n),h1(n+1.),f.x),mix(h1(n+57.),h1(n+58.),f.x),f.y);}
 /* s: position around the frame, 0..1, increasing CLOCKWISE (bottom-centre → left → top → right).
@@ -1452,10 +1456,41 @@ vec3 edge(float d,float s,float side){
     float comet=smoothstep(0.,.05,t1)*exp(-max(t1-.05,0.)*4.);
     col=hue(fract(s*2.-uT*.06));
     amp=(.3+spec*.8+comet*(.6+uE)+uB*.55)*side; wc=.0025+spec*.002+uB*.002; wb=.016+spec*.03+comet*.016; wh=.07+uE*.04; hot=.2+comet*.2;
-  } else {                                                   /* AURORA: soft wide waves drifting clockwise */
+  } else if(uMode<4.5){                                      /* AURORA: soft wide waves drifting clockwise */
     float wv=.5+.5*sin(6.2832*(s*2.-uPh*.35))*sin(6.2832*(s*3.+uT*.05));
     amp=(.22+.55*wv+uE*.5+uB*.3)*side; wc=.0012; wb=.04+wv*.03+uE*.03; wh=.13+wv*.06+uE*.06; hot=.1;
     col=mix(uA,uC,wv);
+  } else if(uMode<5.5){                                      /* FIRE: flames rising from the edge, taller when loud */
+    float n1=nz(vec2(s*60.,uT*2.5)),n2=nz(vec2(s*140.,uT*5.));
+    float fh=(.02+.06*n1*n1+.03*n2)*(.6+uE*.9+uB*.6);
+    float ft=clamp(d/max(fh,.001),0.,1.);
+    vec3 fc=mix(mix(vec3(1.,.95,.75),uA,.35),mix(uC,vec3(.85,.2,.02),.5),ft);
+    float body=(1.-smoothstep(0.,1.,ft))*(.7+.5*nz(vec2(s*90.,d*60.-uT*9.)));
+    return (fc*body*1.1+uA*exp(-d/(.05*uW))*.18*(.4+uE))*side*uK*fade;
+  } else if(uMode<6.5){                                      /* LAVA: slow molten blobs along the frame */
+    float lb=nz(vec2(s*14.-uT*.25,uT*.15))*.6+nz(vec2(s*35.+uT*.3,1.7))*.4;
+    float th=.006+.032*lb*lb*(.7+uE*.6);
+    float inl=1.-smoothstep(th-.006,th+.003,d);
+    vec3 lc=mix(uC,uA,lb);
+    return (lc*inl*(.3+.55*lb)+mix(lc,vec3(1.,.9,.6),.4)*exp(-max(d-th,0.)/.01)*.45*lb+uA*exp(-d/(.07*uW))*.1)*side*uK*fade;
+  } else if(uMode<7.5){                                      /* SNAKE: three snakes chasing clockwise */
+    float sn=0.;
+    for(int k=0;k<3;k++){float tt=fract(uPh*.45+float(k)/3.-s);float L=.09+uE*.05;sn=max(sn,smoothstep(0.,.006,tt)*(1.-smoothstep(L*.6,L,tt))*(1.-tt/L*.6));}
+    amp=(.1+sn*(1.1+uB*.8))*side; wc=.002+sn*.003; wb=.012+sn*.02; wh=.06; hot=.25+sn*.3; col=mix(uC,uA,sn);
+  } else if(uMode<8.5){                                      /* SPARKLE: twinkling points, brighter on the beat */
+    float N=180.,cell=floor(s*N),f=fract(s*N);
+    float r=h1(cell*7.13),tw=fract(r*13.+uT*(.6+r*1.4));
+    float on=smoothstep(0.,.08,tw)*(1.-smoothstep(.08,.35,tw))*(.4+uB*1.2+spec);
+    float dt_=exp(-pow((f-.5)*7.,2.))*exp(-pow((d-.012-r*.03)/.006,2.));
+    return (mix(uA,vec3(1.),.5)*dt_*on*2.+uA*exp(-d/(.05*uW))*.12*(.4+uE))*side*uK*fade;
+  } else if(uMode<9.5){                                      /* NEON: a steady glass tube that flickers now and then */
+    float flk=.82+.18*step(.07,h1(floor(uT*14.)));
+    amp=(.55+uE*.35+uB*.25)*flk*side; wc=.0016; wb=.01; wh=.05; hot=.55; col=mix(uA,uC,.5+.5*sin(s*12.566+uT*.3));
+  } else {                                                   /* WAVE: a line that ripples with the bass */
+    float y=.02+(.012+spec*.03+uB*.015)*(.5+.5*sin(s*150.8-uT*3.+bp*4.));
+    float ln=exp(-pow((d-y)/(.0025+spec*.002),2.));
+    float under=(1.-smoothstep(y-.002,y+.002,d))*.18;
+    return (mix(uA,vec3(1.),.3)*ln*1.3+uA*under+uC*exp(-d/(.05*uW))*.12*(.4+uE))*side*uK*fade;
   }
   amp*=(.85+.3*fl)*uK;
   return (col*exp(-dn/(wb*uW))*.62*amp + col*exp(-dn/(wh*uW))*.2*(.35+amp*.65) + mix(col,vec3(1.),hot)*exp(-dn/wc)*1.2*amp)*fade;
@@ -1464,11 +1499,15 @@ void main(){
   vec2 p=gl_FragCoord.xy;float W=uRes.x,H=uRes.y,m=min(W,H),P=2.*(W+H);
   float db=p.y/m,dt=(H-p.y)/m,dl=p.x/m,dr=(W-p.x)/m;
   if(min(min(db,dt),min(dl,dr))>min(.4*uW,.62)){gl_FragColor=vec4(0.);return;}
+  /* placement: 0 whole frame, 1 bottom, 2 top, 3 corners */
+  float cnr=step(2.5,uPlace);
+  float mB=uPlace<.5||cnr>.5||(uPlace>.5&&uPlace<1.5)?1.:0.,mT=uPlace<.5||cnr>.5||(uPlace>1.5&&uPlace<2.5)?1.:0.,mS=uPlace<.5||cnr>.5?1.:0.;
+  float cH=mix(1.,1.-smoothstep(.05,.22,min(p.x,W-p.x)/W),cnr),cV=mix(1.,1.-smoothstep(.05,.22,min(p.y,H-p.y)/H),cnr);
   vec3 c=vec3(0.);
-  c+=edge(db,(p.x<=W*.5?W*.5-p.x:P-(p.x-W*.5))/P,1.);
-  c+=edge(dl,(W*.5+p.y)/P,.9);
-  c+=edge(dt,(W*.5+H+p.x)/P,1.);
-  c+=edge(dr,(W*.5+H+W+(H-p.y))/P,.9);
+  if(mB*cH>0.) c+=edge(db,(p.x<=W*.5?W*.5-p.x:P-(p.x-W*.5))/P,1.)*mB*cH;
+  if(mS*cV>0.) c+=edge(dl,(W*.5+p.y)/P,.9)*mS*cV;
+  if(mT*cH>0.) c+=edge(dt,(W*.5+H+p.x)/P,1.)*mT*cH;
+  if(mS*cV>0.) c+=edge(dr,(W*.5+H+W+(H-p.y))/P,.9)*mS*cV;
   c=min(c,vec3(1.));gl_FragColor=vec4(c,max(max(c.r,c.g),c.b));
 }`;
   const sh = (t, src) => { const o = gl.createShader(t); gl.shaderSource(o, src); gl.compileShader(o); if (!gl.getShaderParameter(o, gl.COMPILE_STATUS)) throw gl.getShaderInfoLog(o); return o };
@@ -1484,7 +1523,7 @@ void main(){
   const spec = new Uint8Array(32); gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
   gl.texImage2D(gl.TEXTURE_2D, 0, gl.LUMINANCE, 32, 1, 0, gl.LUMINANCE, gl.UNSIGNED_BYTE, spec);
   const U = n => gl.getUniformLocation(pr, n);
-  const uRes = U('uRes'), uT = U('uT'), uE = U('uE'), uB = U('uB'), uS = U('uS'), uPh = U('uPh'), uRot = U('uRot'), uK = U('uK'), uW = U('uW'), uMode = U('uMode'), uA = U('uA'), uC = U('uC');
+  const uPlace = U('uPlace'), uRes = U('uRes'), uT = U('uT'), uE = U('uE'), uB = U('uB'), uS = U('uS'), uPh = U('uPh'), uRot = U('uRot'), uK = U('uK'), uW = U('uW'), uMode = U('uMode'), uA = U('uA'), uC = U('uC');
   gl.uniform1i(U('uSpec'), 0);
   function size(){ const r = app.getBoundingClientRect(); cv.width = Math.max(2, Math.round(r.width * .5)); cv.height = Math.max(2, Math.round(r.height * .5)); gl.viewport(0, 0, cv.width, cv.height) }
   addEventListener('resize', () => { size(); PW.kick() }); size(); host.classList.add('gl');
@@ -1498,7 +1537,7 @@ void main(){
       const k = Math.min(1, dt * 2.2); for (let i = 0; i < 3; i++){ ca[i] += (A[i] / 255 - ca[i]) * k; cc[i] += (C[i] / 255 - cc[i]) * k }
       for (let i = 0; i < 32; i++) spec[i] = Math.round(clamp(AU.lvl[i], 0, 1) * 255);
       gl.bindTexture(gl.TEXTURE_2D, tex); gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, 32, 1, gl.LUMINANCE, gl.UNSIGNED_BYTE, spec);
-      gl.uniform2f(uRes, cv.width, cv.height); gl.uniform1f(uT, t); gl.uniform1f(uE, clamp(AU.energy, 0, 1)); gl.uniform1f(uB, AU.beat); gl.uniform1f(uS, AU.snare); gl.uniform1f(uPh, ph); gl.uniform1f(uRot, rot); gl.uniform1f(uK, +S.look.ambK || 1); gl.uniform1f(uW, +S.look.ambW || 1); gl.uniform1f(uMode, Math.max(0, AMB_FX.findIndex(a => a[0] === S.look.afx)));
+      gl.uniform2f(uRes, cv.width, cv.height); gl.uniform1f(uT, t); gl.uniform1f(uE, clamp(AU.energy, 0, 1)); gl.uniform1f(uB, AU.beat); gl.uniform1f(uS, AU.snare); gl.uniform1f(uPh, ph); gl.uniform1f(uRot, rot); gl.uniform1f(uK, +S.look.ambK || 1); gl.uniform1f(uW, +S.look.ambW || 1); gl.uniform1f(uMode, Math.max(0, AMB_FX.findIndex(a => a[0] === (S.afxPreview || S.look.afx)))); gl.uniform1f(uPlace, Math.max(0, AMB_POS.findIndex(a => a[0] === (S.look.apos || 'all'))));
       gl.uniform3f(uA, ca[0], ca[1], ca[2]); gl.uniform3f(uC, cc[0], cc[1], cc[2]);
       gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT); gl.drawArrays(gl.TRIANGLES, 0, 3);
     }
@@ -1609,10 +1648,10 @@ async function artForColor(url){
 let artSeq = 0;
 async function applyArt(url){
   const seq = ++artSeq; const np = $('#npArt');
-  if (!url){ np.removeAttribute('src'); np.classList.add('none'); S.pal = null; setAccent(null); setWallArt(null); return }
+  if (!url){ np.removeAttribute('src'); np.classList.add('none'); S.pal = null; S.artImg = null; setAccent(null); setWallArt(null); return }
   np.src = url; np.classList.remove('none');
   const local = await artForColor(url); if (seq !== artSeq) return;
-  const img = new Image(); img.onload = () => { if (seq !== artSeq) return; S.pal = palette2(img); applyTheme(); setWallArt(local); if ($('#appPop').classList.contains('open')) renderAppPop() }; img.onerror = () => setWallArt(url); img.src = local;
+  const img = new Image(); img.onload = () => { if (seq !== artSeq) return; S.pal = palette2(img); S.artImg = img; TRAY.key = ''; applyTheme(); setWallArt(local); if ($('#appPop').classList.contains('open')) renderAppPop() }; img.onerror = () => setWallArt(url); img.src = local;
 }
 function setTrack(t){
   S.track = t;
@@ -2221,14 +2260,19 @@ $('#appPop').addEventListener('click', e => {
   if (e.target.closest('#selfTestBtn')){ e.stopPropagation(); closeMenus(); selfTest(); return }
   e.stopPropagation(); const c = e.target.closest('.chip[data-k]'), tg = e.target.closest('[data-t]'), sw = e.target.closest('[data-sw]'), mon = e.target.closest('[data-mon]');
   if (sw){ S.look.theme = 'manual'; S.look.pickIdx = +sw.dataset.sw; store.set('look', S.look); applyTheme(); renderAppPop(); return }
+  const amon = e.target.closest('[data-ambmon]');
+  if (amon){ const off = S.look.ambOff = {...(S.look.ambOff || {})}; const id = amon.dataset.ambmon; if (off[id]) delete off[id]; else off[id] = true; store.set('look', S.look); amon.classList.toggle('on', !off[id]); applyToggles(); return }
   if (mon){ invoke('set_monitor', {id: mon.dataset.mon}).then(() => { toast('Moved to ' + mon.textContent); loadMonitors() }).catch(err => toast(String(err))); return }
   if (c){ S.look[c.dataset.k] = c.dataset.v; if (c.dataset.k === 'pwr') PW.prefs(); if (c.dataset.k === 'lys') S.look.lysz = 0; if (c.dataset.k === 'ck') S.look.clock = true; if (c.dataset.k === 'theme') applyTheme(); applyLook(); if (c.dataset.k === 'bg') applyBg(); renderAppPop() }
-  if (tg){ if (tg.dataset.t === 'clock'){ S.look.clock = !S.look.clock; applyLook() } else if (tg.dataset.t === 'bgEach'){ S.look.bgEach = !S.look.bgEach; store.set('look', S.look) } else if (tg.dataset.t === 'lynet'){ S.look.lyNet = S.look.lyNet === false; store.set('look', S.look); if (S.look.lyNet && S.track && !S.lyr.length) loadLyrics(S.track) } else if (tg.dataset.t === 'autoup'){ invoke('update_set_auto', {on: !UP.auto}).then(setUp).catch(() => toast('Updates work in the Windows app')); UP.auto = !UP.auto } else if (tg.dataset.t === 'pcov'){ S.look.pcov = S.look.pcov === false; store.set('look', S.look); PW.prefs() } else { S.ambOn = !S.ambOn; applyToggles() } renderAppPop() }
+  if (tg){ if (tg.dataset.t === 'clock'){ S.look.clock = !S.look.clock; applyLook() } else if (tg.dataset.t === 'bgEach'){ S.look.bgEach = !S.look.bgEach; store.set('look', S.look) } else if (tg.dataset.t === 'trayart'){ S.look.trayArt = S.look.trayArt === false; store.set('look', S.look); TRAY.key = '' } else if (tg.dataset.t === 'lynet'){ S.look.lyNet = S.look.lyNet === false; store.set('look', S.look); if (S.look.lyNet && S.track && !S.lyr.length) loadLyrics(S.track) } else if (tg.dataset.t === 'autoup'){ invoke('update_set_auto', {on: !UP.auto}).then(setUp).catch(() => toast('Updates work in the Windows app')); UP.auto = !UP.auto } else if (tg.dataset.t === 'pcov'){ S.look.pcov = S.look.pcov === false; store.set('look', S.look); PW.prefs() } else { S.ambOn = !S.ambOn; applyToggles() } renderAppPop() }
   const bv = e.target.closest('[data-bgv]');
   if (bv){ const v = BGQ.res[+bv.dataset.bgv]; if (v){ S.look.bgVid = {id: v.id, title: v.title, art: v.art}; store.set('look', S.look); BGQ.res = []; bgVideo(S.track, true); renderAppPop() } }
   if (e.target.closest('[data-bgnext]')){ bgVideo(S.track, true); toast('Finding another one…') }
   const hb = e.target.closest('[data-h]'); if (hb){ if (hb.dataset.h === 'queue'){ S.qOff = !S.qOff; applyToggles() } else { S.hide[hb.dataset.h] = !S.hide[hb.dataset.h]; applyHide() } renderAppPop() }
 });
+// point at an edge-light effect to see it for a moment (it moves even when nothing plays)
+$('#appPop').addEventListener('pointerover', e => { const c = e.target.closest('.chip[data-k=afx]'); if (!c || S.afxPreview === c.dataset.v) return; S.afxPreview = c.dataset.v; PW.preview = true; PW.quiet = 0; wakeLoop() });
+$('#appPop').addEventListener('pointerout', e => { const c = e.target.closest('.chip[data-k=afx]'); if (!c || (e.relatedTarget && c.contains(e.relatedTarget))) return; S.afxPreview = null; PW.preview = false });
 // My video: search YouTube from the Appearance panel
 $('#appPop').addEventListener('keydown', async e => {
   if (e.target.id !== 'bgQ' || e.key !== 'Enter') return;
@@ -2288,12 +2332,37 @@ function deskMouse(m){
 (function mirrorHover(){ for (const sh of document.styleSheets){ let rules; try { rules = sh.cssRules } catch(e){ continue }
   for (const r of [...rules]){ if (r.selectorText && r.selectorText.includes(':hover')){ try { sh.insertRule(r.cssText.replace(/:hover/g, '.vh'), sh.cssRules.length) } catch(e){} } } } })();
 
+/* ════════════════════ tray icon: the album cover, with a ring that beats ════════════════════ */
+// While a song plays the icon by the clock shows its cover in a circle; a ring around it follows the beat.
+// Paused: the cover stays, without the ring. Nothing playing (or switched off): Wallplayer's own icon.
+const TRAY = {key: '', cv: null, busy: false};
+function trayTick(){
+  if (!T || MIRROR || TRAY.busy) return;
+  const on = S.look.trayArt !== false && S.artImg && S.track;
+  if (!on){ if (TRAY.key !== 'default'){ TRAY.key = 'default'; invoke('set_tray_art', {rgba: null}).catch(() => {}) } return }
+  const pl = isPlaying(), lvl = pl ? Math.round(clamp(AU.beat * .8 + AU.energy * .6, 0, 1) * 6) : -1;
+  const key = (S.track.title + '|' + S.track.artist) + '|' + lvl + '|' + (S.tgtA || []).join(',');
+  if (key === TRAY.key) return; TRAY.key = key;
+  const N = 32, cv = TRAY.cv || (TRAY.cv = Object.assign(document.createElement('canvas'), {width: N, height: N})), x = cv.getContext('2d', {willReadFrequently: true});
+  x.clearRect(0, 0, N, N);
+  const r = pl ? 11.5 : 14.5;   // room for the ring while playing
+  x.save(); x.beginPath(); x.arc(N / 2, N / 2, r, 0, 6.2832); x.clip();
+  try { const im = S.artImg, sc = Math.max(N / im.width, N / im.height) * (r * 2 / N); x.drawImage(im, N / 2 - im.width * sc / 2, N / 2 - im.height * sc / 2, im.width * sc, im.height * sc) } catch(e){}
+  x.restore();
+  if (pl){ const a = S.tgtA || [255, 255, 255], k = lvl / 6;
+    x.beginPath(); x.arc(N / 2, N / 2, 14.2, 0, 6.2832); x.lineWidth = 1.4 + k * 1.6; x.strokeStyle = `rgba(${a.join(',')},${(.45 + k * .55).toFixed(2)})`; x.stroke() }
+  let px; try { px = x.getImageData(0, 0, N, N).data } catch(e){ return }   // a cover from another site without CORS: keep the icon
+  let b = ''; for (let i = 0; i < px.length; i += 8192) b += String.fromCharCode.apply(null, px.subarray(i, i + 8192));
+  TRAY.busy = true; invoke('set_tray_art', {rgba: btoa(b)}).catch(() => {}).finally(() => TRAY.busy = false);
+}
+setInterval(trayTick, 110);
+
 /* ════════════════════ toggles ════════════════════ */
 function renderLike(){ const k = S.track ? S.track.title + '|' + S.track.artist : ''; const on = S.liked.has(k); $('#likeBtn').innerHTML = on ? I.heartF : I.heart; $('#likeBtn').classList.toggle('on', on) }
 function applyToggles(){
   if (deskFill() && T && !$('#deskImg').classList.contains('ok')) applyBg();
   app.classList.toggle('nolyr', !S.lyrOn);
-  app.classList.toggle('noamb', !S.ambOn);
+  app.classList.toggle('noamb', !ambHere());
   app.classList.toggle('dim', S.dim); $('#dimBtn').classList.toggle('on', S.dim);
   $('#mvBtn').classList.toggle('on', S.mvOn);
   $('#repBtn').innerHTML = S.repeat === 'one' ? I.repeat1 : I.repeat; $('#repBtn').classList.toggle('on', S.repeat !== 'off');
@@ -2396,9 +2465,13 @@ $('#repBtn').onclick = () => { S.repeat = {off: 'all', all: 'one', one: 'off'}[S
   toast({off: 'Repeat off', all: 'Repeat all', one: 'Looping this song'}[S.repeat]) };
 $('#likeBtn').onclick = () => { if (!S.track) return; const k = S.track.title + '|' + S.track.artist; S.liked.has(k) ? S.liked.delete(k) : S.liked.add(k); store.set('liked', [...S.liked]); renderLike() };
 $('#lyrBtn').onclick = e => { e.stopPropagation(); openLyricsPanel() };
+// the edge light on this window's display (each display can be switched off)
+const ambHere = () => S.ambOn && !(S.look.ambOff || {})[PW.monitor || ''];
 async function loadMonitors(){
   const box = $('#monList'); if (!box || !T) return;
   try { const r = await invoke('list_monitors'); const cur = r.current || (r.monitors.find(m => m.primary) || {}).id;
+    const am = $('#ambMons'), off = S.look.ambOff || {};
+    if (am) am.innerHTML = r.monitors.length > 1 ? '<div class="lnote">Light on each display</div>' + r.monitors.map((m, i) => `<div class="lrow"><span>Display ${i + 1}${m.primary ? ' · main' : ''}</span><button class="tg ${off[m.id] ? '' : 'on'}" data-ambmon="${esc(m.id)}"></button></div>`).join('') : '';
     box.innerHTML = r.monitors.map((m, i) => `<button class="chip ${m.id === cur ? 'on' : ''}" data-mon="${esc(m.id)}">Display ${i + 1} · ${m.w}×${m.h}${m.primary ? ' · main' : ''}</button>`).join('') || '<span class="lnote">No displays found</span>' } catch(e){ box.innerHTML = '<span class="lnote">Unavailable</span>' }
 }
 function openAppPop(){ const m = $('#appPop'); if (m.classList.contains('open')){ m.classList.remove('open'); return } closeMenus(m); renderAppPop(); m.classList.add('open') }
@@ -2654,12 +2727,12 @@ function frame(now){
   // rest: nothing plays and the room is quiet for 1.5 s
   const loud = AU.energy > .03 || AU.beat > .05;
   PW.quiet = pl || loud ? 0 : PW.quiet + dt;
-  const want = PW.quiet > 1.5 ? 0 : 1;
+  const want = PW.quiet > 1.5 && !PW.preview ? 0 : 1;   // a preview keeps it moving even in silence
   PW.motion += (want - PW.motion) * Math.min(1, dt * (want ? 6 : 2)); if (PW.motion < .01) PW.motion = 0;
   const rest = PW.motion === 0, asleep = PW.asleep(), kicked = now < PW.until;
   if (rest !== app.classList.contains('rest')) app.classList.toggle('rest', rest);
   if (!asleep && (!rest || kicked)){
-    if (AMB && S.ambOn) AMB.render(dt, S.vidA || S.tgtA, S.vidB || S.tgtB, PW.motion);
+    if (AMB && ambHere()) AMB.render(dt, S.vidA || S.tgtA, S.vidB || S.tgtB, PW.motion);
     FX.draw(now, PW.motion);
   }
   if (S.look.lfx === 'glow') $('#lyrics2').style.setProperty('--beat', AU.beat.toFixed(3));

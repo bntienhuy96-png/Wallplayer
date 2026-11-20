@@ -422,6 +422,19 @@ pub(crate) fn quit(app: &AppHandle) {
     app.exit(0);
 }
 
+/// Tray icon = the album cover drawn by the UI (32×32 RGBA, base64); None = Wallplayer's own icon.
+#[tauri::command]
+fn set_tray_art(app: AppHandle, rgba: Option<String>) {
+    use base64::Engine;
+    let Some(tray) = app.tray_by_id("wallplayer") else { return };
+    let icon = rgba
+        .and_then(|b| base64::engine::general_purpose::STANDARD.decode(b).ok())
+        .filter(|px| px.len() == 32 * 32 * 4)
+        .map(|px| tauri::image::Image::new_owned(px, 32, 32))
+        .or_else(|| app.default_window_icon().cloned());
+    let _ = tray.set_icon(icon);
+}
+
 #[tauri::command]
 fn get_power(app: AppHandle, window: tauri::WebviewWindow) -> power::PowerState {
     power::current(&app, window.label())
@@ -600,6 +613,7 @@ fn main() {
             lyrics_page,
             translate,
             get_power,
+            set_tray_art,
             set_power_prefs,
             update_status,
             update_check,
