@@ -2,14 +2,14 @@
 
 Research ngày 20/11/2026: các app cùng loại trên Windows/Mac (Wallpaper Engine, Lively Wallpaper, Rainmeter, Sleeve 2, Lyrimuse, Lyricify, FluentFlyout, Notchify, WinIsland, Hue Sync, Govee Desktop, các app lofi + Pomodoro).
 
-Ký hiệu: ✅ đã làm · 🔨 đang làm · ⭐ nên làm sớm · 💡 cân nhắc · ⛔ chưa nên làm
+Ký hiệu: ✅ đã làm · ⏸️ làm xong, tạm ẩn · 🔨 đang làm · ⭐ nên làm sớm · 💡 cân nhắc · ⛔ chưa nên làm
 
 ## Nên làm sớm
 
 | | Tính năng | Ai đang có | Vì sao hợp với Wallplayer | Công sức |
 |---|---|---|---|---|
 | ✅ | **Lời bài hát chạy theo từng chữ** (kiểu Apple Music) | Apple Music, Lyrimuse, Lyricify, LyricGlow | Nguồn NetEase có sẵn định dạng YRC (thời điểm từng chữ). Hợp với các hiệu ứng lyrics đang có. **Đã làm (1.0.3)**: mọi hiệu ứng + hiệu ứng Apple Music | Vừa |
-| ✅ | **Dynamic Island**: đảo nhỏ trên cùng màn hình khi cửa sổ che hình nền hoặc khi bấm thu gọn | Notchify, WinIsland, Isle Notch, FluentFlyout | Wallplayer nằm sau các cửa sổ, đảo nhỏ bù đúng chỗ thiếu. Có thể hiện luôn dòng lyrics. **Đã làm (1.0.3)** | Vừa |
+| ⏸️ | **Dynamic Island**: đảo nhỏ trên cùng màn hình khi cửa sổ che hình nền hoặc khi bấm thu gọn | Notchify, WinIsland, Isle Notch, FluentFlyout | Wallplayer nằm sau các cửa sổ, đảo nhỏ bù đúng chỗ thiếu. Có thể hiện luôn dòng lyrics. **Đã làm xong nhưng đang tạm ẩn** (bật lại: `ISLAND_ENABLED = true` trong `ui/index.html`) | Vừa |
 | ⭐ | **Hẹn giờ tập trung / hẹn giờ tắt nhạc** trên chiếc đồng hồ lớn | LoFi Pomodoro, Lofikofi, Cozy Pomodoro | Đã có đồng hồ to và nhạc; chỉ cần đếm ngược + vòng tiến trình. Rất hợp chất aesthetic | Nhỏ |
 | ⭐ | **Điều khiển bằng điện thoại qua mã QR** (không cần cài app) | Simple Remote Control, LocalTV Remote, WeRV | Mở trang điều khiển trên trình duyệt điện thoại cùng Wi-Fi: play/pause, chuyển bài, âm lượng, xem lyrics | Vừa |
 | ⭐ | **Hiện bài đang nghe trên Discord** | Music Discord Rich Presence, AMWin-RP, Navicord | Wallplayer biết bài đang phát từ mọi nguồn (Spotify, YouTube, nhạc máy) | Nhỏ |

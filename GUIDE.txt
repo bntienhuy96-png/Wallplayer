@@ -28,8 +28,8 @@ Platform · Previous · Play / Pause · Next · Repeat (off → whole list → t
 · 🔊 Volume: point at it for the slider, click to mute, scroll to change. Songs playing inside Wallplayer
   use the player volume; songs playing in Spotify or another app use the Windows volume.
 · ··· Settings (see SETTINGS below).
-In the search field: ✕ clears what you typed · ◎ music video wallpaper · the collapse button shrinks the
-whole interface to the Dynamic Island.
+In the search field: ✕ clears what you typed · ◎ music video wallpaper · the collapse button hides the
+whole interface (H, or a double-click on the wallpaper, brings it back).
 
 SEARCH
 - Click the search field (or press Ctrl + Alt + Space): with nothing typed you see "Recently played".
@@ -126,7 +126,6 @@ Esc or a click outside closes it.
 - Ambient Light (the edge light): on / off; colour from the album cover or the live video; 11 effects
   (Comet, Pulse, Spectrum, Rainbow, Aurora, Fire, Lava, Snake, Sparkle, Neon, Wave) — point at one to
   preview it; Where: whole frame, bottom, top or corners; Light on each display; Intensity and Blend.
-- Dynamic Island: see below.
 - Layout: Player bar, Search field, Cover flow, Playlist, and "Album cover as the tray icon" (the tray icon
   shows the song's cover with a ring that beats).
 - Performance: Power Auto (lighter on battery or with Energy Saver), Full or Saver (30 fps, video up to
@@ -136,16 +135,6 @@ Esc or a click outside closes it.
 - Accounts: see ACCOUNTS above.
 - General: Language (English or Tiếng Việt, also the tray menu; Wallplayer uses Vietnamese when Windows
   does), Behind desktop icons, Search from anywhere, Updates, Privacy policy, Self-test, Quit.
-
-DYNAMIC ISLAND
-A small black capsule at the top of the screen, on top of every window, with the cover, the line being
-sung (or the song title) and a little equaliser in the album's colour.
-- It appears when a maximised window covers the wallpaper, or when you collapse the player (the collapse
-  button in the search field, H, or a double-click on the wallpaper).
-- Point at it: it opens to the song, a progress bar (click to jump), Previous / Play / Next, and a button
-  that opens the full player (above your windows; a click elsewhere sends it back).
-- It stays out of the way of games, films and slideshows, and goes away after five minutes on pause.
-- Settings → Dynamic Island: Automatic, Only when collapsed, or Off; show the lyrics line or the title.
 
 UPDATES (no installer)
 - Each time it starts, Wallplayer quietly checks GitHub once. When there is a new version, the tray menu
@@ -165,7 +154,7 @@ One global shortcut: "Search from anywhere" (Ctrl + Alt + Space by default) open
 Change it in Settings → General → Search from anywhere: click the button, then press a new key combination (with
 Ctrl, Alt or Shift, or F1–F24) or the middle / side mouse buttons (with Ctrl, Alt or Shift if you like).
 Esc cancels, Reset goes back to Ctrl + Alt + Space. The left and right mouse buttons cannot be used.
-When Wallplayer is in front: Space play / pause, ← → previous / next, ↑ ↓ volume, H collapse to the island,
+When Wallplayer is in front: Space play / pause, ← → previous / next, ↑ ↓ volume, H hide the interface,
 L full lyrics, E editor, [ ] lyrics timing, / search.
 
 ON THE DESKTOP (tray icon, right-click)

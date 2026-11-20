@@ -714,7 +714,7 @@ button.bgv:hover{background:rgba(255,255,255,.08)}
       <div class="rlabel" id="rSongsLabel">Songs</div><div id="rSongs"></div>
     </div>
     <div id="searchBox"><span id="sIco"></span><input id="q" placeholder="Search YouTube Music" spellcheck="false" autocomplete="off"><button class="b" id="qClear" type="button" title="Clear"></button>
-      <span class="sbtns"><button class="b" id="mvBtn" type="button" title="Music video wallpaper"></button><button class="b" id="focusBtn" type="button" title="Collapse to the Dynamic Island  (H)"></button></span></div>
+      <span class="sbtns"><button class="b" id="mvBtn" type="button" title="Music video wallpaper"></button><button class="b" id="focusBtn" type="button" title="Hide UI  (H)"></button></span></div>
     <div id="bar" class="glass">
       <button class="b" id="platBtn" title="Platform"></button>
       <button class="b" id="prevBtn" title="Previous"></button>
@@ -1463,7 +1463,7 @@ function renderAppPop(){
       + grp('Updates', row('Check when Wallplayer starts', tg(UP.auto, 'data-t="autoup"')) + `<div class="sr col"><span class="sl"><small id="upNow">${upText()}</small></span><div class="chips" id="upBtns">${upBtns()}</div></div>`)
       + grp('', row('Privacy policy', `<button class="abtn" id="privBtn">Open</button>`) + row('Self-test', `<button class="abtn" id="selfTestBtn">Run (Ctrl+Shift+D)</button>`) + (T ? row('Quit Wallplayer', `<button class="abtn warn" data-sa="quit">Quit</button>`) : ''));
   }
-  const nav = SET_TABS.map(x => x ? `<button class="sn ${x[0] === tab ? 'on' : ''}" data-tab="${x[0]}" data-kw="${esc(plainText(x[1] + ' ' + x[3] + ' ' + ((window.WP_VI && WP_VI.dict[x[1]]) || '')))}">${setTile(x[0], x[2])}<span>${x[1]}</span></button>` : '<div class="snsep"></div>').join('');
+  const nav = SET_TABS.filter(x => !x || x[0] !== 'island' || ISLAND_ENABLED).map(x => x ? `<button class="sn ${x[0] === tab ? 'on' : ''}" data-tab="${x[0]}" data-kw="${esc(plainText(x[1] + ' ' + x[3] + ' ' + ((window.WP_VI && WP_VI.dict[x[1]]) || '')))}">${setTile(x[0], x[2])}<span>${x[1]}</span></button>` : '<div class="snsep"></div>').join('');
   const title = (SET_TABS.find(x => x && x[0] === tab) || [])[1] || '';
   pop.innerHTML = `<nav class="snav"><div class="stop"><button class="sclose" title="Close"></button></div>
       <label class="ssearch">${I.search}<input id="setQ" placeholder="Search" spellcheck="false" autocomplete="off" value="${esc(SET.q)}"></label>
@@ -3239,9 +3239,12 @@ if (MIRROR) addEventListener('storage', e => { if (e.key && !e.key.startsWith('w
 // A small capsule on top of every window (ui/island.html) shows the song while this player can't be seen:
 // a maximised window covers the wallpaper (Automatic), or the player is collapsed (button, H, double-click).
 // Never over games, films or slideshows, and gone after five minutes on pause.
+// Turned off for now (not needed yet): no island, no settings page, H only hides the interface.
+// The island page (ui/island.html) and its Rust side stay in place; set this to true to bring it back.
+var ISLAND_ENABLED = false;   // var: islandSync() can run before this line
 var ISL = {on: null, pausedAt: 0};   // var: islandSync() can run before this line
 function islandWant(){
-  if (!T || MIRROR) return false;
+  if (!T || MIRROR || !ISLAND_ENABLED) return false;
   const mode = S.look.isl || 'auto'; if (mode === 'off' || !S.track) return false;
   if (PW.full) return false;
   const pl = isPlaying(); if (pl) ISL.pausedAt = 0; else if (!ISL.pausedAt) ISL.pausedAt = Date.now();
@@ -3250,7 +3253,7 @@ function islandWant(){
   return mode === 'auto' && PW.max;
 }
 function islandSync(force){
-  if (!T || MIRROR) return; const on = islandWant();
+  if (!T || MIRROR || !ISLAND_ENABLED) return; const on = islandWant();
   if (on === ISL.on && !force) return; ISL.on = on;
   invoke('island_show', {on}).catch(() => {}); if (on) setTimeout(() => mirrorSync(true), 400);
 }

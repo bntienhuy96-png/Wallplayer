@@ -24,7 +24,7 @@ Nền tảng · Lùi · Phát/Dừng · Tới · Repeat (Tắt → Lặp danh s�
 · 🔊 Âm lượng: rê chuột vào để hiện thanh kéo, bấm để tắt tiếng, lăn chuột để chỉnh.
   Phát trong app → chỉnh âm lượng player; phát qua Spotify/app khác → chỉnh âm lượng Windows.
 · ··· Cài đặt (xem mục CÀI ĐẶT).
-Trong ô search: ✕ xoá nhanh chữ đã gõ · ◎ video nhạc làm nền · nút thu gọn = thu cả giao diện thành Dynamic Island.
+Trong ô search: ✕ xoá nhanh chữ đã gõ · ◎ video nhạc làm nền · nút thu gọn = ẩn toàn bộ giao diện (phím H hoặc nhấp đúp hình nền để hiện lại).
 
 SEARCH
 - Bấm vào ô search → hiện panel phía trên: chưa gõ thì là "Recently played";
@@ -104,22 +104,11 @@ cũng được), nội dung bên phải. Esc hoặc bấm ra ngoài để đóng
 - Viền sáng: bật/tắt; Colour from = Album cover hoặc Live video (màu thật của video đang chiếu);
   11 hiệu ứng (rê chuột lên tên để xem trước); Where: cả viền / cạnh dưới / cạnh trên / các góc;
   bật tắt riêng từng màn hình; Intensity (độ sáng), Blend (độ loang).
-- Dynamic Island: xem mục DYNAMIC ISLAND.
 - Bố cục: bật/tắt Player bar, Search field, Cover flow, Playlist, "Album cover as the tray icon".
 - Hiệu năng: xem mục NHẸ MÁY.
 - Tài khoản: xem mục TÀI KHOẢN.
 - Chung: Ngôn ngữ, Behind desktop icons, phím tắt Search from anywhere, Cập nhật, Chính sách quyền riêng tư,
   Tự kiểm tra, Thoát.
-
-DYNAMIC ISLAND
-Một viên thuốc màu đen nhỏ ở trên cùng màn hình, nổi trên mọi cửa sổ: bìa album, dòng đang hát (hoặc tên bài)
-và vài cột sóng nhạc theo màu album.
-- Tự hiện khi một cửa sổ phóng to che hình nền, hoặc khi bạn thu gọn trình phát (nút thu gọn trong ô search,
-  phím H, hoặc nhấp đúp lên hình nền).
-- Rê chuột lên: đảo mở to ra với tên bài, thanh tiến trình (bấm để tua), Lùi / Phát / Tới và nút mở trình phát
-  đầy đủ (nổi lên trên các cửa sổ; bấm chỗ khác là trở về nền).
-- Tự tránh đường khi có game, phim, trình chiếu toàn màn hình; tự ẩn khi tạm dừng quá 5 phút.
-- Cài đặt → Dynamic Island: Tự động / Chỉ khi thu gọn / Tắt; hiện dòng lời bài hát hoặc tên bài.
 
 NHẸ MÁY (Cài đặt → Hiệu năng)
 - Dừng nhạc: viền sáng và nền chậm dần rồi đứng yên, app thôi vẽ hẳn. Phát lại là chạy tiếp ngay.
@@ -191,7 +180,7 @@ CHẾ ĐỘ ĐẶT TRÊN DESKTOP (chuột phải biểu tượng khay)
   Nhờ vậy bấm Win + D, Show desktop hay Win + M thì Wallplayer vẫn hiện như hình nền.
   Chuột vẫn dùng được: rê, bấm, kéo, cuộn trên vùng desktop trống (không phải trên icon).
   Khi bấm vào ô search, Wallplayer tạm nổi lên để bạn gõ chữ; bấm ra ngoài thì trở lại nền.
-  Phím tắt đơn (Space, H = thu gọn thành đảo, L, E...) chỉ dùng được khi Wallplayer đang nổi lên (Ctrl+Alt+Space).
+  Phím tắt đơn (Space, H = ẩn giao diện, L, E...) chỉ dùng được khi Wallplayer đang nổi lên (Ctrl+Alt+Space).
 - Bỏ tick "Behind desktop icons": Wallplayer thành cửa sổ thường nằm sát đáy, che icon desktop,
   bấm trực tiếp mọi nút; khi Win + D thì app tự cố hiện lên thay desktop trống (kém ổn định hơn).
 - "Hide desktop icons" (mặc định bật): tự ẩn toàn bộ icon desktop kể cả Thùng rác khi Wallplayer chạy,

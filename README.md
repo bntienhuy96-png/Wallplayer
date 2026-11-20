@@ -27,7 +27,6 @@ Wallplayer lives *behind* your desktop icons, the same way Wallpaper Engine does
 | **Smart search** | Songs, **Singers** and **Playlists** in one box — tabs *All · Songs · Singers · Playlists*, typing suggestions, YouTube Music, SoundCloud and Spotify. |
 | **Continue Playing** | Pick one song and the queue becomes YouTube’s suggestions for it, mixed with picks from your own account. A **History** button flips it to *History Playing* (last 100 songs). |
 | **Synced lyrics** | Found automatically online (LRCLIB, NetEase, Genius), timed to the song — **word by word** when NetEase has it — with a second-language subtitle line and per-song offset (`[` `]`). 14 effects, including an **Apple Music**-style scrolling view. |
-| **Dynamic Island** | A small capsule at the top of the screen, above every window, shows the cover and the line being sung while the wallpaper is covered or the player is collapsed; point at it for the controls. |
 | **Ambient light** | WebGL neon edge that reacts to the system audio — 11 effects (Comet, Pulse, Spectrum, Rainbow, Aurora, Fire, Lava, Snake, Sparkle, Neon, Wave) on the whole frame, the bottom, the top or the corners, per display — coloured from the album art. The tray icon becomes the album cover with a beating ring. |
 | **Backgrounds** | Music video, your own video, “Surprise me” (no AI-generated clips), or your Windows wallpaper between songs. |
 | **Lock-screen style editor** | Fonts, glass and colours for the clock and lyrics, like the iPhone lock screen. |
