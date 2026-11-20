@@ -5,27 +5,35 @@
 <title>Wallplayer</title>
 <link href="fonts/fonts.css" rel="stylesheet">
 <style>
-/* Dynamic Island: a black capsule at the top of the screen. Small: cover, the line being sung, a little
-   equaliser. Point at it: it opens to the song, a progress bar and the buttons. */
+/* Dynamic Island: a capsule at the top of the screen, in the player's glass: the blurred, darkened cover the
+   player bar sits on, its smoky tint, thin light edge and soft shadow. Small: cover, the line being sung, a
+   little equaliser. Point at it: it opens to the song, a progress bar and the buttons. */
 :root{--acc:255,255,255}
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{width:100%;height:100%;background:transparent;overflow:hidden;user-select:none;-webkit-user-select:none;color:#fff;
   font-family:Inter,-apple-system,"SF Pro Text","Segoe UI Variable Text","Segoe UI",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
 button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
-#isl{position:absolute;left:50%;top:6px;width:300px;height:38px;border-radius:19px;background:#000;overflow:hidden;cursor:default;
+#isl{position:absolute;left:50%;top:6px;width:300px;height:38px;border-radius:19px;background:#1b1c22;overflow:hidden;cursor:default;isolation:isolate;
   transform:translateX(-50%) scale(.55,.4);transform-origin:50% 0;opacity:0;
-  box-shadow:0 0 0 1px rgba(255,255,255,.07) inset,0 6px 16px rgba(0,0,0,.45),0 0 22px rgba(var(--acc),calc(.28 * var(--glow, 0)));
+  box-shadow:0 3px 8px rgba(0,0,0,.35),0 0 12px rgba(var(--acc),calc(.3 * var(--glow, 0)));
   transition:width .42s cubic-bezier(.3,1.25,.45,1),height .42s cubic-bezier(.3,1.25,.45,1),border-radius .42s,transform .38s cubic-bezier(.3,1.3,.45,1),opacity .22s,box-shadow .6s}
 #isl.show{transform:translateX(-50%);opacity:1}
+/* the glass: the cover blurred like the wallpaper behind the player, then the player bar's tint and edge */
+.bg{position:absolute;inset:0;z-index:-1;overflow:hidden;border-radius:inherit;background:linear-gradient(135deg,rgba(var(--acc),.5),rgba(18,18,24,.9))}
+.bg i{position:absolute;inset:-60%;background:center/cover no-repeat;filter:blur(18px) saturate(1.6) brightness(.62);opacity:0;transition:opacity .8s}
+.bg i.on{opacity:1}
+.bg::after{content:"";position:absolute;inset:0;background:rgba(36,38,46,.5);transition:background .6s}
+#isl.dim .bg::after{background:rgba(20,21,26,.66)}
+#isl::after{content:"";position:absolute;inset:0;border-radius:inherit;border:1px solid rgba(255,255,255,.16);box-shadow:0 1px 0 rgba(255,255,255,.06) inset;pointer-events:none}
 #isl.open{width:384px;height:152px;border-radius:30px}
-.art{position:absolute;left:5px;top:5px;width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,.14) center/cover no-repeat;
+.art{position:absolute;left:5px;top:5px;width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,.14) center/cover no-repeat;box-shadow:0 2px 6px rgba(0,0,0,.3);
   transition:left .42s cubic-bezier(.3,1.25,.45,1),top .42s cubic-bezier(.3,1.25,.45,1),width .42s cubic-bezier(.3,1.25,.45,1),height .42s cubic-bezier(.3,1.25,.45,1),border-radius .42s}
 #isl.playing:not(.open) .art{animation:spin 14s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 #isl.open .art{left:16px;top:16px;width:58px;height:58px;border-radius:14px}
 /* small: one line */
 .line{position:absolute;left:42px;right:46px;top:0;height:38px;transition:opacity .2s}
-.line span{position:absolute;inset:0;display:block;line-height:38px;font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:opacity .35s,transform .35s}
+.line span{position:absolute;inset:0;display:block;line-height:38px;font-size:13px;font-weight:600;color:rgba(255,255,255,.92);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:opacity .35s,transform .35s}
 .line span.out{opacity:0;transform:translateY(-8px)}
 .line span.in{opacity:0;transform:translateY(8px)}
 #isl.open .line{opacity:0;pointer-events:none}
@@ -40,17 +48,19 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 #isl.open .big{opacity:1;pointer-events:auto;transition:opacity .3s .14s}
 .meta{position:absolute;left:86px;right:52px;top:20px}
 .meta b{display:block;font-size:15px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.meta small{display:block;margin-top:2px;font-size:12.5px;color:rgba(255,255,255,.6);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.meta small{display:block;margin-top:2px;font-size:12.5px;color:rgba(255,255,255,.62);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .meta em{display:block;margin-top:5px;font-style:normal;font-size:12px;font-weight:600;color:rgb(var(--acc));white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-height:15px}
 .bar{position:absolute;left:18px;right:18px;top:88px;display:flex;align-items:center;gap:9px;font-size:10.5px;font-variant-numeric:tabular-nums;color:rgba(255,255,255,.5)}
-.trk{flex:1;height:5px;border-radius:3px;background:rgba(255,255,255,.18);position:relative;cursor:pointer}
+.trk{flex:1;height:3px;border-radius:2px;background:rgba(255,255,255,.2);position:relative;cursor:pointer;transition:height .15s}
 .trk::before{content:"";position:absolute;inset:-7px 0}
-.trk i{position:absolute;left:0;top:0;bottom:0;border-radius:3px;background:#fff;width:0}
+.trk:hover{height:5px}
+.trk i{position:absolute;left:0;top:0;bottom:0;border-radius:2px;background:#fff;width:0}
 .ctl{position:absolute;left:0;right:0;top:108px;height:36px;display:flex;align-items:center;justify-content:center;gap:22px}
 .ctl button{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;transition:background .15s,transform .12s}
-.ctl button:hover{background:rgba(255,255,255,.12)}
+.ctl button{color:rgba(255,255,255,.92)}
+.ctl button:hover{background:rgba(255,255,255,.1)}
 .ctl button:active{transform:scale(.9)}
-.ctl svg{width:20px;height:20px;fill:#fff}
+.ctl svg{width:20px;height:20px;fill:currentColor}
 .ctl .pp svg{width:24px;height:24px}
 .ctl .go{position:absolute;right:16px}
 .ctl .go svg{fill:none;stroke:rgba(255,255,255,.8);stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;width:17px;height:17px}
@@ -58,6 +68,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 </head>
 <body>
 <div id="isl">
+  <div class="bg"><i id="bgA"></i><i id="bgB"></i></div>
   <div class="art" id="art"></div>
   <div class="line" id="line"><span></span></div>
   <div class="eq"><i></i><i></i><i></i><i></i></div>
@@ -91,7 +102,7 @@ const PAUSE = '<svg viewBox="0 0 24 24"><rect x="5.5" y="4" width="4.6" height="
 
 // what plays: the player's own broadcast (it is also what the other displays draw from);
 // Windows' media session as a stand-in when the player has gone quiet for a while
-const ST = {track: null, pos: 0, at: 0, playing: false, dur: 0, lyr: [], lo: 0, acc: '255,255,255', lyrOn: true, last: 0};
+const ST = {track: null, pos: 0, at: 0, playing: false, dur: 0, lyr: [], lo: 0, acc: '255,255,255', lyrOn: true, dim: false, last: 0};
 const SYS = {m: null, at: 0, art: ''};
 function state(m){
   if (!m) return; ST.last = performance.now();
@@ -102,6 +113,7 @@ function state(m){
   if (m.lo != null) ST.lo = m.lo;
   if (m.acc) ST.acc = m.acc;
   if (m.islLyr != null) ST.lyrOn = m.islLyr;
+  if (m.dim != null) ST.dim = !!m.dim;
   draw();
 }
 function now(){
@@ -117,7 +129,13 @@ function lineAt(lyr, pos){
   const L = lyr[i], nx = lyr[i + 1], end = L.e ? L.e + 1.5 : nx ? Math.min(nx.t, L.t + 9) : L.t + 6;
   return pos < end ? L.text : '♪';
 }
-let lastArt = '', lastLine = null;
+let lastArt = '', lastLine = null, bgFlip = false;
+// the cover behind the glass crossfades to the next song's
+function glassArt(u){
+  const a = $(bgFlip ? '#bgA' : '#bgB'), b = $(bgFlip ? '#bgB' : '#bgA'); bgFlip = !bgFlip;
+  if (!u){ a.classList.remove('on'); b.classList.remove('on'); return }
+  const img = new Image(); img.onload = () => { a.style.backgroundImage = u; a.classList.add('on'); b.classList.remove('on') }; img.src = u.slice(5, -2).replace(/%22/g, '"');
+}
 function setLine(txt){
   if (txt === lastLine) return; lastLine = txt;
   const box = $('#line'), old = box.querySelector('span:not(.out)'), s = document.createElement('span');
@@ -129,7 +147,8 @@ function draw(){
   const n = now(), isl = $('#isl');
   document.documentElement.style.setProperty('--acc', ST.acc);
   isl.classList.toggle('playing', !!n.playing); isl.style.setProperty('--glow', n.playing ? 1 : 0);
-  if (n.art !== lastArt){ lastArt = n.art; $('#art').style.backgroundImage = n.art ? `url("${String(n.art).replace(/"/g, '%22')}")` : '' }
+  isl.classList.toggle('dim', ST.dim);
+  if (n.art !== lastArt){ lastArt = n.art; const u = n.art ? `url("${String(n.art).replace(/"/g, '%22')}")` : ''; $('#art').style.backgroundImage = u; glassArt(u) }
   const sung = ST.lyrOn && n.lyr && n.lyr.length ? lineAt(n.lyr, n.pos + ST.lo) : '';
   setLine(sung || (n.title ? n.title + (n.artist ? ' · ' + n.artist : '') : TX.none));
   $('#ttl').textContent = n.title || TX.none; $('#sub').textContent = n.artist || '';

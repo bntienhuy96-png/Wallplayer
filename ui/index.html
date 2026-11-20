@@ -581,7 +581,7 @@ img{display:block}
 #appPop #accMenu.inset .acc+.acc{border-top:0}
 /* a little island preview at the top of its page */
 #appPop .isldemo{display:grid;place-items:center;height:7rem;margin-bottom:1.2rem;border-radius:1rem;background:linear-gradient(160deg,rgba(var(--accent),.35),rgba(0,0,0,.25))}
-.ipill{display:flex;align-items:center;gap:.8rem;height:3.2rem;width:24rem;padding:0 1rem 0 .4rem;border-radius:1.6rem;background:#000;box-shadow:0 .6rem 1.6rem rgba(0,0,0,.4);font-size:1.1rem;font-weight:600}
+.ipill{display:flex;align-items:center;gap:.8rem;height:3.2rem;width:24rem;padding:0 1rem 0 .4rem;border-radius:1.6rem;background:rgba(36,38,46,.5);-webkit-backdrop-filter:var(--blur);backdrop-filter:var(--blur);border:1px solid var(--brd);box-shadow:0 .1rem 0 rgba(255,255,255,.06) inset,0 .6rem 1.6rem rgba(0,0,0,.3);font-size:1.1rem;font-weight:600}
 .ipill .ia{width:2.4rem;height:2.4rem;border-radius:50%;background:rgba(255,255,255,.2) center/cover;flex:none}
 .ipill span{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ieq{display:flex;align-items:center;gap:.18rem;height:1.4rem}
@@ -3199,7 +3199,7 @@ function mirrorSync(force){
   const P = clip ? YTA : YTV;
   const video = (clip || $('#ytWrap').classList.contains('on')) ? (P.ids[P.i] || null) : null;
   const m = {pos: getPos(), playing: isPlaying(), video, vt: video ? P.time() : 0, vpl: video ? P.playing() : false, clip, at: Date.now(),
-    dur: getDur(), lo: (S.lyrOff || 0) + (S.lyrOffAll || 0), acc: getComputedStyle(document.documentElement).getPropertyValue('--accent').trim(), islLyr: S.look.islLyr !== false};
+    dur: getDur(), lo: (S.lyrOff || 0) + (S.lyrOffAll || 0), acc: getComputedStyle(document.documentElement).getPropertyValue('--accent').trim(), islLyr: S.look.islLyr !== false, dim: !!S.dim};
   const tk = t ? t.title + '|' + t.artist + '|' + (t.art || '').length : '';
   if (force || tk !== MIR.tk){ MIR.tk = tk; m.track = t ? {...t, lyrics: undefined} : null; m.hasTrack = true }
   const list = queueList(), qk = list.length + '|' + list.slice(0, 30).map(x => x.title).join('|') + '|' + (t ? t.title : '');
