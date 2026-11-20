@@ -1,12 +1,13 @@
 //! Self-update for the portable app: no installer.
 //!
-//! Once per start (when "check when Wallplayer starts" is on), or from the tray
-//! menu, the app asks GitHub for the latest release. Nothing is downloaded until
-//! the user says so: the UI shows the release notes with Update / Skip. Update
+//! Once per start (when "check when Wallplayer starts" is on) the app asks GitHub
+//! quietly for the latest release; a newer one only changes the tray menu item to
+//! "Update available: vX" (unless the user skipped that version). Clicking it, or
+//! "Check for updates", shows the release notes with Skip / Update. Update
 //! downloads `Wallplayer-Windows-x64.zip`, takes the files out and swaps them in
 //! next to the running exe: Windows lets a running exe be renamed (not
 //! overwritten), so the running one becomes `Wallplayer.exe.old` and the new one
-//! takes its name. Restart starts it; `.old` files are removed on the next start.
+//! takes its name, and the new version is started; `.old` files are removed on the next start.
 
 use std::io::Read;
 use std::path::{Path, PathBuf};
@@ -79,6 +80,22 @@ fn set(app: &AppHandle, f: impl FnOnce(&mut UpdateStatus)) {
         f(st);
     }
     let _ = app.emit_to("main", "update-state", status(app));
+    refresh_tray(app);
+}
+
+/// Tray menu item + tooltip: "Update available: vX" while a newer, not skipped, version waits.
+pub fn refresh_tray(app: &AppHandle) {
+    let st = status(app);
+    let skip = app.state::<AppState>().settings.lock().unwrap().skip_version.clone();
+    let waiting = matches!(st.state.as_str(), "available" | "downloading" | "ready") && !st.version.is_empty() && st.version != skip;
+    let label = if waiting { format!("Update available: v{}", st.version) } else { format!("Check for updates   (v{})", current()) };
+    if let Some(item) = app.state::<AppState>().update_item.lock().unwrap().as_ref() {
+        let _ = item.set_text(label);
+    }
+    if let Some(tray) = app.tray_by_id("wallplayer") {
+        let tip = if waiting { format!("Wallplayer · update available (v{})", st.version) } else { "Wallplayer".to_string() };
+        let _ = tray.set_tooltip(Some(tip));
+    }
 }
 
 #[derive(Clone)]
@@ -263,10 +280,16 @@ pub async fn download(app: AppHandle) -> UpdateStatus {
     status(&app)
 }
 
-/// Tidy up after the previous version once it has surely exited.
-pub fn spawn(_app: AppHandle) {
+/// A quiet check a little after start (when turned on), then tidy up after the
+/// previous version, which has surely exited by now.
+pub fn spawn(app: AppHandle) {
     tauri::async_runtime::spawn(async move {
-        tokio::time::sleep(Duration::from_secs(20)).await;
+        tokio::time::sleep(Duration::from_secs(12)).await;
+        let auto = app.state::<AppState>().settings.lock().unwrap().auto_update;
+        if auto {
+            check(app.clone()).await;
+        }
+        tokio::time::sleep(Duration::from_secs(8)).await;
         cleanup();
     });
 }

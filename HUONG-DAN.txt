@@ -115,11 +115,10 @@ NHẸ MÁY (Appearance → Performance)
 - Dòng "Now: ..." cho biết app đang ở chế độ nào.
 
 CẬP NHẬT (không cần file cài)
-- Mỗi lần mở, Wallplayer kiểm tra ngầm một lần. Có bản mới thì góc trên bên phải hiện nhãn nhỏ
-  "Wallplayer x.y.z is available" với Update / Skip. Update = tải về rồi tự mở lại bản mới.
-  Skip = bỏ qua bản đó, không nhắc lại.
-- Muốn xem release notes: chuột phải biểu tượng khay → "Check for updates" (hoặc Appearance → Updates →
-  Check for updates). App hiện ghi chú bản mới và tải luôn; xong bấm Restart now hoặc Later.
+- Mỗi lần mở, Wallplayer kiểm tra ngầm một lần, không hiện gì lên màn hình. Có bản mới thì mục trong menu
+  chuột phải biểu tượng khay đổi thành "Update available: vx.y.z".
+- Bấm mục đó (hoặc "Check for updates", hoặc Appearance → Updates): hiện release notes với Skip / Update.
+  Update = tải về rồi tự mở lại bản mới. Skip = bỏ qua bản đó, menu khay không nhắc lại.
 - Tắt việc kiểm tra lúc mở app: Appearance → Updates → "Check when Wallplayer starts".
 - Bản mới thay Wallplayer.exe ngay trong thư mục hiện tại (file cũ thành Wallplayer.exe.old, tự xóa lần sau).
   Nếu để thư mục trong Program Files thì app không ghi được: hãy để thư mục ở chỗ khác (ví dụ Documents).

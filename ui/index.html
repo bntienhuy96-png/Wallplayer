@@ -2118,9 +2118,8 @@ $('#appPop').addEventListener('click', e => {
   const ed = e.target.closest('[data-edit]'); if (ed){ e.stopPropagation(); closeMenus(); openEditor(ed.dataset.edit); return }
   if (e.target.closest('#bindBtn')){ e.stopPropagation(); S.binding ? stopBinding() : startBinding(); return }
   if (e.target.closest('#bindReset')){ e.stopPropagation(); stopBinding(); applySearchKey('Ctrl+Alt+Space'); return }
-  if (e.target.closest('#upCheck')){ e.stopPropagation(); closeMenus(); manualCheck(); return }
+  if (e.target.closest('#upCheck')){ e.stopPropagation(); closeMenus(); openUpdates(); return }
   if (e.target.closest('#privBtn')){ e.stopPropagation(); openExternal('https://github.com/lehuynhtan17/Wallplayer/blob/main/PRIVACY.md'); return }
-  if (e.target.closest('#upRestart')){ e.stopPropagation(); upRestart(); return }
   if (e.target.closest('#upNotes')){ e.stopPropagation(); openExternal(UP.url || upPage(UP.current)); return }
   if (e.target.closest('#selfTestBtn')){ e.stopPropagation(); closeMenus(); selfTest(); return }
   e.stopPropagation(); const c = e.target.closest('.chip[data-k]'), tg = e.target.closest('[data-t]'), sw = e.target.closest('[data-sw]'), mon = e.target.closest('[data-mon]');
@@ -2210,23 +2209,23 @@ function toggleMV(){ S.mvOn = !S.mvOn; applyToggles(); if (!S.mvOn) YTV.stop(); 
 
 /* ════════════════════ toast ════════════════════ */
 /* ════════════════════ updates (portable: the app swaps its own exe, see update.rs) ════════════════════ */
-// At start: one quiet check; a newer version only shows a small pill (Update / Skip), no notes.
-// "Check for updates" (tray menu or Appearance): the card with the release notes, and it downloads.
+// The app checks quietly at start; a newer version only changes the tray menu item to "Update available".
+// That item, "Check for updates" and Appearance → Updates open the card: release notes with Skip / Update.
 const UP = {current: '', auto: true, state: 'idle', version: '', notes: '', url: '', error: '', just_updated: false, card: false};
 const upPage = v => `https://github.com/lehuynhtan17/Wallplayer/releases/tag/V${v}`;
+const upFound = () => ['available', 'downloading', 'ready'].includes(UP.state) && !!UP.version;
 function upText(){
   if (!T) return 'Updates work in the Windows app';
   const cur = UP.current ? `Wallplayer ${UP.current}` : 'Wallplayer';
   return {checking: 'Looking for a new version…', available: `Wallplayer ${UP.version} is available`, downloading: `Downloading Wallplayer ${UP.version}…`,
-    ready: `Wallplayer ${UP.version} is ready. Restart to use it.`,
-    latest: `${cur} · up to date`, error: `${cur} · couldn't check${UP.error ? ': ' + UP.error : ''}`}[UP.state] || cur;
+    ready: `Wallplayer ${UP.version} is ready`, latest: `${cur} · up to date`, error: `${cur} · couldn't check${UP.error ? ': ' + UP.error : ''}`}[UP.state] || cur;
 }
 function upBtns(){
-  const busy = UP.state === 'checking' || UP.state === 'downloading';
-  return (UP.state === 'ready' ? '<button class="chip on" id="upRestart">Restart to update</button>' : `<button class="chip" id="upCheck" ${busy ? 'disabled' : ''}>${busy ? 'Checking…' : 'Check for updates'}</button>`)
+  const busy = UP.state === 'checking';
+  return (upFound() ? `<button class="chip on" id="upCheck">Update available: v${esc(UP.version)}</button>` : `<button class="chip" id="upCheck" ${busy ? 'disabled' : ''}>${busy ? 'Checking…' : 'Check for updates'}</button>`)
     + (UP.current ? `<button class="chip" id="upNotes">What's new</button>` : '');
 }
-// release notes are markdown: headings, bullets and **bold** are enough
+// release notes are markdown: headings, bullets, **bold**, *italic* are enough
 function mdLite(md){
   return esc(md || '').split(/\r?\n/).map(l => {
     const t = l.trim(); if (!t) return '';
@@ -2238,67 +2237,54 @@ function mdLite(md){
 }
 function renderCard(){
   const c = $('#upCard'); if (!UP.card){ c.classList.remove('on'); return }
-  const has = ['available', 'downloading', 'ready'].includes(UP.state) || (UP.state === 'error' && UP.version);
+  const has = upFound() || (UP.state === 'error' && UP.version && UP.going);
   const head = has ? `<h3>Wallplayer ${esc(UP.version)}</h3><div class="lnote">You have ${esc(UP.current)}</div>` : '<h3>Updates</h3>';
   const notes = has ? `<div class="upNotes">${mdLite(UP.notes) || '<p>No release notes.</p>'}</div>` : '';
-  const line = {checking: 'Looking for a new version…', latest: `You have the latest version (${esc(UP.current)}).`, downloading: 'Downloading…',
-    available: 'Downloading…', ready: 'Ready. Restart to use the new version.', error: `Couldn't update: ${esc(UP.error || 'unknown error')}`}[UP.state] || '';
-  const btns = UP.state === 'ready' ? '<button class="chip on" data-up="restart">Restart now</button><button class="chip" data-up="close">Later</button>'
-    : UP.state === 'checking' || UP.state === 'downloading' || UP.state === 'available' ? '<button class="chip" data-up="close">Hide</button>'
+  const line = {checking: 'Looking for a new version…', latest: `You have the latest version (${esc(UP.current)}).`,
+    downloading: 'Downloading…', ready: 'Restarting with the new version…', error: `Couldn't ${UP.going ? 'update' : 'check'}: ${esc(UP.error || 'unknown error')}`}[UP.state] || '';
+  const btns = UP.state === 'available' ? '<button class="chip" data-up="skip">Skip</button><button class="chip on" data-up="update">Update</button>'
+    : UP.state === 'downloading' || UP.state === 'ready' ? ''
     : '<button class="chip" data-up="close">Close</button>';
-  c.innerHTML = head + notes + `<div class="lnote upLine">${line}</div><div class="chips">${btns}</div>`; c.classList.add('on');
+  c.innerHTML = head + notes + (line ? `<div class="lnote upLine">${line}</div>` : '') + (btns ? `<div class="chips">${btns}</div>` : ''); c.classList.add('on');
 }
-function showPill(mode){
-  const pill = $('#upPill'), msg = $('#upMsg'), go = $('#upGo'), x = $('#upX'); pill.dataset.mode = mode;
-  if (mode === 'avail'){ msg.textContent = `Wallplayer ${UP.version} is available`; go.textContent = 'Update'; x.textContent = 'Skip'; x.title = 'Skip this version' }
-  else if (mode === 'updating'){ msg.textContent = `Updating to ${UP.version}…`; go.textContent = ''; x.textContent = '✕'; x.title = 'Hide' }
-  else if (mode === 'ready'){ msg.textContent = `Wallplayer ${UP.version} is ready`; go.textContent = 'Restart'; x.textContent = '✕'; x.title = 'Later' }
-  else if (mode === 'news'){ msg.textContent = `Updated to Wallplayer ${UP.current}`; go.textContent = "What's new"; x.textContent = '✕'; x.title = 'Hide' }
-  go.style.display = go.textContent ? '' : 'none'; pill.classList.add('on');
+function showPill(){   // only after an update: "Updated to Wallplayer x · What's new"
+  $('#upMsg').textContent = `Updated to Wallplayer ${UP.current}`; $('#upGo').textContent = "What's new"; $('#upX').textContent = '✕'; $('#upPill').classList.add('on');
 }
-const hidePill = () => { const p = $('#upPill'); p.classList.remove('on'); delete p.dataset.mode };
+const hidePill = () => $('#upPill').classList.remove('on');
 function setUp(st){
   if (st) Object.assign(UP, st);
   const n = $('#upNow'), b = $('#upBtns'); if (n) n.textContent = upText(); if (b) b.innerHTML = upBtns();
   renderCard();
-  const mode = $('#upPill').dataset.mode;
-  if (mode === 'updating' && UP.state === 'error'){ hidePill(); toast(`Couldn't update: ${UP.error || 'unknown error'}`) }
-  if (mode === 'avail' && (UP.state === 'downloading' || UP.state === 'ready')) hidePill();
 }
-async function upRestart(){ try { await invoke('update_restart') } catch(err){ toast(String(err)) } }
-// asked for: show the card with the notes, and download right away when there is something new
-async function manualCheck(){
+async function upRestart(){ try { await invoke('update_restart') } catch(err){ setUp({state: 'error', error: String(err)}) } }
+// "Check for updates" / "Update available": the card, checking first unless a newer version is already known
+async function openUpdates(){
   if (!T){ toast('Updates work in the Windows app'); return }
-  hidePill(); UP.card = true; if (UP.state !== 'ready'){ UP.state = 'checking'; setUp() } else renderCard();
+  UP.card = true; UP.going = false;
+  if (upFound()){ renderCard(); return }
+  setUp({state: 'checking'});
   try { setUp(await invoke('update_check')) } catch(err){ setUp({state: 'error', error: String(err)}) }
-  if (UP.state === 'available'){ try { setUp(await invoke('update_download')) } catch(err){ setUp({state: 'error', error: String(err)}) } }
 }
-async function quietCheck(){
-  try { setUp(await invoke('update_check')) } catch(e){ return }
-  if (UP.state === 'available' && UP.version !== store.get('upSkip', '') && !UP.card) showPill('avail');
-}
-$('#upCard').addEventListener('click', e => {
+$('#upCard').addEventListener('click', async e => {
   e.stopPropagation(); const a = e.target.closest('[data-up]'); if (!a) return;
-  if (a.dataset.up === 'restart') upRestart();
-  else { UP.card = false; renderCard(); if (UP.state === 'ready') showPill('ready') }
+  const act = a.dataset.up;
+  if (act === 'update'){   // download, swap the exe, start the new version
+    UP.going = true; setUp({state: 'downloading'});
+    try { const st = await invoke('update_download'); setUp(st); if (st.state === 'ready') setTimeout(upRestart, 600) } catch(err){ setUp({state: 'error', error: String(err)}) }
+  } else if (act === 'skip'){ try { setUp(await invoke('update_skip', {version: UP.version})) } catch(err){} UP.card = false; renderCard(); toast(`Skipped Wallplayer ${UP.version}`) }
+  else { UP.card = false; renderCard() }
 });
-$('#upPill').addEventListener('click', async e => {
-  e.stopPropagation(); const mode = $('#upPill').dataset.mode;
-  if (e.target.closest('#upX')){ if (mode === 'avail') store.set('upSkip', UP.version); hidePill(); return }
-  if (!e.target.closest('#upGo')) return;
-  if (mode === 'avail'){   // one click: download, then start the new version
-    showPill('updating');
-    try { const st = await invoke('update_download'); setUp(st); if (st.state === 'ready') upRestart() } catch(err){ hidePill(); toast(String(err)) }
-  } else if (mode === 'ready') upRestart();
-  else if (mode === 'news'){ openExternal(upPage(UP.current)); hidePill() }
+$('#upPill').addEventListener('click', e => {
+  e.stopPropagation();
+  if (e.target.closest('#upGo')) openExternal(upPage(UP.current));
+  if (e.target.closest('#upGo') || e.target.closest('#upX')) hidePill();
 });
 async function initUpdates(){
   if (!T || MIRROR) return;
   listen('update-state', e => setUp(e.payload));
-  listen('update-check-request', () => manualCheck());
+  listen('update-check-request', () => openUpdates());
   try { setUp(await invoke('update_status')) } catch(e){ return }
-  if (UP.just_updated){ showPill('news'); setTimeout(() => { if ($('#upPill').dataset.mode === 'news') hidePill() }, 15000) }
-  if (UP.auto) setTimeout(quietCheck, UP.just_updated ? 20000 : 12000);
+  if (UP.just_updated){ showPill(); setTimeout(hidePill, 15000) }
 }
 
 function toast(msg){ const t = $('#toast'); t.textContent = msg; t.classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove('on'), 2600) }

@@ -25,6 +25,7 @@ pub(crate) struct AppState {
     peek: Mutex<bool>,
     hwnd: Mutex<isize>,
     wall_item: Mutex<Option<CheckMenuItem<tauri::Wry>>>,
+    pub(crate) update_item: Mutex<Option<MenuItem<tauri::Wry>>>,
     pub(crate) mirrors_installed: Mutex<Vec<isize>>,
 }
 
@@ -458,6 +459,18 @@ fn update_set_auto(app: AppHandle, on: bool) -> update::UpdateStatus {
 }
 
 #[tauri::command]
+fn update_skip(app: AppHandle, version: String) -> update::UpdateStatus {
+    {
+        let st = app.state::<AppState>();
+        let mut s = st.settings.lock().unwrap();
+        s.skip_version = version;
+        settings::save(&app, &s);
+    }
+    update::refresh_tray(&app);
+    update::status(&app)
+}
+
+#[tauri::command]
 fn update_restart(app: AppHandle) -> Result<(), String> {
     update::restart(&app)
 }
@@ -544,6 +557,7 @@ fn main() {
             peek: Mutex::new(false),
             hwnd: Mutex::new(0),
             wall_item: Mutex::new(None),
+            update_item: Mutex::new(None),
             mirrors_installed: Mutex::new(Vec::new()),
         })
         .invoke_handler(tauri::generate_handler![
@@ -590,6 +604,7 @@ fn main() {
             update_status,
             update_check,
             update_download,
+            update_skip,
             update_set_auto,
             update_restart,
             quit_app
@@ -649,6 +664,7 @@ fn main() {
             let menu = Menu::with_items(app, &[&search_i, &wall_i, &icons_i, &display_i, &mirror_i, &auto_i, &sep, &update_i, &reload_i, &quit_i])?;
             let mirror_c = mirror_i.clone();
             *app.state::<AppState>().wall_item.lock().unwrap() = Some(wall_i.clone());
+            *app.state::<AppState>().update_item.lock().unwrap() = Some(update_i.clone());
 
             let auto_c = auto_i.clone();
             let icons_c = icons_i.clone();
@@ -658,7 +674,7 @@ fn main() {
                 .show_menu_on_left_click(false)
                 .on_menu_event(move |app, ev| match ev.id().as_ref() {
                     "search" => open_search(app),
-                    // bring the skin up and let it check, show the notes and download
+                    // bring the skin up: it shows the release notes (Skip / Update), checking first if needed
                     "update" => {
                         set_peek(app, true);
                         let _ = app.emit_to("main", "update-check-request", ());

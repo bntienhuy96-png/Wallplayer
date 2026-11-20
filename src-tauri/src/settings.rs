@@ -35,6 +35,9 @@ pub struct Settings {
     /// version that ran last time (to say "updated" once)
     #[serde(default)]
     pub last_version: String,
+    /// a version the user chose to skip: the tray menu does not offer it
+    #[serde(default)]
+    pub skip_version: String,
 }
 
 pub fn default_search_key() -> String {

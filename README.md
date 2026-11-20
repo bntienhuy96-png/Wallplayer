@@ -32,7 +32,7 @@ Wallplayer lives *behind* your desktop icons, the same way Wallpaper Engine does
 | **Lock-screen style editor** | Fonts, glass and colours for the clock and lyrics, like the iPhone lock screen. |
 | **Search from anywhere** | The one global shortcut — default `Ctrl + Alt + Space`, rebind it to any key combo **or mouse button**. |
 | **Light on your PC** | Stops drawing when the music stops, rests behind full-screen and maximised windows, gets lighter on battery (Auto / Full / Saver). |
-| **Updates itself** | No installer: one quiet check at start, *Update* or *Skip*; *Check for updates* in the tray menu shows the release notes. |
+| **Updates itself** | No installer: one quiet check at start; a new version shows up as *Update available* in the tray menu, with the release notes and *Update* / *Skip*. |
 | **Desktop, tidied** | Auto-hides desktop icons (Recycle Bin included) and gives them back when you quit. Multi-monitor and portrait screens supported. |
 
 ## Download
@@ -49,7 +49,7 @@ See the [Code signing policy](CODE_SIGNING.md).
 
 > Press **Ctrl + Shift + D** to run the built-in self-test if something Windows-specific misbehaves.
 
-**Updating:** Wallplayer checks for a new version once when it starts and offers *Update* or *Skip*. *Check for updates* is in the tray menu. Nothing is installed: the new `Wallplayer.exe` replaces the old one in the same folder.
+**Updating:** Wallplayer checks for a new version once when it starts, quietly. When there is one, the tray menu shows *Update available*; click it to read the release notes and choose *Update* or *Skip*. Nothing is installed: the new `Wallplayer.exe` replaces the old one in the same folder.
 
 **Uninstalling:** in the tray menu, untick *Start with Windows*, then choose *Quit Wallplayer*. Delete the `Wallplayer` folder. To remove settings and sign-ins too, delete the `com.tan.wallplayer` folders in `%APPDATA%` and `%LOCALAPPDATA%`.
 
