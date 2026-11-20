@@ -11,7 +11,7 @@ one exception below, which you can turn off.
 
 | When | Service | What is sent | Turn it off |
 |---|---|---|---|
-| Once when Wallplayer starts | GitHub (`api.github.com`) | A request for the latest release, with the app version in the user agent | Appearance → Updates → *Check when Wallplayer starts* |
+| Once when Wallplayer starts | GitHub (`api.github.com`) | A request for the latest release, with the app version in the user agent | Settings → General → *Check when Wallplayer starts* |
 
 ## What it contacts because you use a feature
 
@@ -20,7 +20,7 @@ one exception below, which you can turn off.
 | Search, artist pages, suggestions, radio | YouTube Music / YouTube, SoundCloud, Spotify, Apple (iTunes Search) | Your search text, the song or artist you open |
 | Playing music and music videos | YouTube (embedded player), SoundCloud (embedded player) | What you play, as with the official players |
 | Signing in to YouTube, SoundCloud or Spotify | Google, SoundCloud, Spotify sign-in pages | What you type on their pages. Sign-in cookies stay in Wallplayer's local WebView2 profile on your PC |
-| Synced lyrics (Appearance → Lyrics → *Find lyrics online*, on by default) | LRCLIB, NetEase Music, Genius | Title, artist and length of the song playing |
+| Synced lyrics, and word-by-word timing (Settings → Lyrics → *Find lyrics online*, on by default) | LRCLIB, NetEase Music, Genius | Title, artist and length of the song playing |
 | Second-language lyrics | Google Translate | The lyric lines being translated |
 | Fonts in the editor | Google Fonts | A request for the font files |
 | Updating | GitHub | Downloads the release zip, only after you choose *Update* |

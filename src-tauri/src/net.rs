@@ -317,6 +317,58 @@ pub async fn lyrics(artist: &str, title: &str, duration: Option<f64>) -> Result<
     Ok(genius_lyrics(a, t).await.ok().flatten())
 }
 
+/// NetEase "YRC": word-by-word timing, `[lineStart,lineDur](wordStart,wordDur,0)word…` in ms.
+async fn netease_yrc(id: i64) -> Option<String> {
+    let v: Value = client()
+        .get(format!("https://music.163.com/api/song/lyric/v1?id={id}&cp=false&lv=0&kv=0&tv=0&rv=0&yv=0&ytv=0&yrv=0"))
+        .header("Referer", "https://music.163.com/")
+        .send()
+        .await
+        .ok()?
+        .json()
+        .await
+        .ok()?;
+    let y = v.pointer("/yrc/lyric")?.as_str()?;
+    if Regex::new(r"\(\d+,\d+(,-?\d+)?\)").unwrap().is_match(y) {
+        Some(y.to_string())
+    } else {
+        None
+    }
+}
+
+/// Word-by-word timing for a song, when NetEase has it. `id`: a NetEase song id already known.
+/// Only a version with the same title, a matching artist and (when known) the same length.
+pub async fn lyrics_words(artist: &str, title: &str, duration: Option<f64>, id: Option<i64>) -> Result<Option<String>, String> {
+    if let Some(id) = id.filter(|i| *i > 0) {
+        return Ok(netease_yrc(id).await);
+    }
+    let d = duration.unwrap_or(0.0);
+    let vars = variants(artist, title);
+    let named: Vec<&String> = vars.iter().map(|(_, a)| a).filter(|a| !a.is_empty()).collect();
+    let mut cands: Vec<Lyrics> = Vec::new();
+    for (t, a) in vars.iter().filter(|(_, a)| !a.is_empty()).take(2) {
+        netease_candidates(t, a, &mut cands).await;
+        if cands.iter().any(|l| vars.iter().any(|(vt, _)| sim(&l.track, vt) >= 0.8)) {
+            break;
+        }
+    }
+    let mut ok: Vec<(f64, i64)> = cands
+        .into_iter()
+        .filter(|l| l.id > 0 && vars.iter().any(|(vt, _)| sim(&l.track, vt) >= 0.8))
+        .filter(|l| named.is_empty() || named.iter().any(|a| sim(&l.artist, a) > 0.0))
+        .filter(|l| d <= 0.0 || l.duration <= 0.0 || (l.duration - d).abs() <= 3.0)
+        .map(|l| (if d > 0.0 && l.duration > 0.0 { (l.duration - d).abs() } else { 1.5 }, l.id))
+        .collect();
+    ok.sort_by(|a, b| a.0.partial_cmp(&b.0).unwrap_or(std::cmp::Ordering::Equal));
+    ok.dedup_by_key(|x| x.1);
+    for (_, id) in ok.into_iter().take(2) {
+        if let Some(y) = netease_yrc(id).await {
+            return Ok(Some(y));
+        }
+    }
+    Ok(None)
+}
+
 pub async fn lyrics_search(query: &str) -> Result<Vec<Lyrics>, String> {
     let mut out: Vec<Lyrics> = match lrclib(format!("https://lrclib.net/api/search?q={}", enc(query))).await {
         Ok(v) => v.as_array().map(|a| a.iter().take(10).map(to_lyrics).collect()).unwrap_or_default(),

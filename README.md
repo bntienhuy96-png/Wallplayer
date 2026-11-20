@@ -26,7 +26,8 @@ Wallplayer lives *behind* your desktop icons, the same way Wallpaper Engine does
 |---|---|
 | **Smart search** | Songs, **Singers** and **Playlists** in one box — tabs *All · Songs · Singers · Playlists*, typing suggestions, YouTube Music, SoundCloud and Spotify. |
 | **Continue Playing** | Pick one song and the queue becomes YouTube’s suggestions for it, mixed with picks from your own account. A **History** button flips it to *History Playing* (last 100 songs). |
-| **Synced lyrics** | Found automatically online (LRCLIB, NetEase, Genius), timed to the song, with a second-language subtitle line and per-song offset (`[` `]`). |
+| **Synced lyrics** | Found automatically online (LRCLIB, NetEase, Genius), timed to the song — **word by word** when NetEase has it — with a second-language subtitle line and per-song offset (`[` `]`). 14 effects, including an **Apple Music**-style scrolling view. |
+| **Dynamic Island** | A small capsule at the top of the screen, above every window, shows the cover and the line being sung while the wallpaper is covered or the player is collapsed; point at it for the controls. |
 | **Ambient light** | WebGL neon edge that reacts to the system audio — 11 effects (Comet, Pulse, Spectrum, Rainbow, Aurora, Fire, Lava, Snake, Sparkle, Neon, Wave) on the whole frame, the bottom, the top or the corners, per display — coloured from the album art. The tray icon becomes the album cover with a beating ring. |
 | **Backgrounds** | Music video, your own video, “Surprise me” (no AI-generated clips), or your Windows wallpaper between songs. |
 | **Lock-screen style editor** | Fonts, glass and colours for the clock and lyrics, like the iPhone lock screen. |
@@ -34,7 +35,7 @@ Wallplayer lives *behind* your desktop icons, the same way Wallpaper Engine does
 | **Light on your PC** | Stops drawing when the music stops, rests behind full-screen and maximised windows, gets lighter on battery (Auto / Full / Saver). |
 | **Updates itself** | No installer: one quiet check at start; a new version shows up as *Update available* in the tray menu, with the release notes and *Update* / *Skip*. |
 | **Your own songs** | Add a music folder or drop songs on the window; tags and covers are read from the files. |
-| **Two languages** | English and Vietnamese interface (Appearance → Language). |
+| **Two languages** | English and Vietnamese interface (Settings → General → Language). |
 | **Desktop, tidied** | Auto-hides desktop icons (Recycle Bin included) and gives them back when you quit. Multi-monitor and portrait screens supported. |
 
 ## Download
@@ -47,7 +48,7 @@ See the [Code signing policy](CODE_SIGNING.md).
 
 1. Unzip `Wallplayer-Windows-x64.zip` and keep the files in the `Wallplayer` folder together.
 2. Run `Wallplayer.exe`. It needs the Microsoft Edge **WebView2 Runtime**, which Windows 11 and most Windows 10 PCs already have.
-3. Press **Ctrl + Alt + Space** and search. Everything else is in the tray icon and the Appearance panel. [`GUIDE.txt`](GUIDE.txt) is the full user guide ([Vietnamese](HUONG-DAN.txt)).
+3. Press **Ctrl + Alt + Space** and search. Everything else is in the tray icon and in Settings (the ··· button at the end of the player bar). [`GUIDE.txt`](GUIDE.txt) is the full user guide ([Vietnamese](HUONG-DAN.txt)).
 
 > Press **Ctrl + Shift + D** to run the built-in self-test if something Windows-specific misbehaves.
 

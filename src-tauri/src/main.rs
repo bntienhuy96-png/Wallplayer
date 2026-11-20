@@ -4,6 +4,7 @@ mod accounts;
 mod audio;
 mod deskmouse;
 mod desktop;
+mod island;
 mod library;
 mod media;
 mod mirror;
@@ -245,6 +246,18 @@ fn set_mirror(app: AppHandle, on: bool) {
 #[tauri::command]
 fn set_monitor(app: AppHandle, id: String) {
     set_monitor_inner(&app, id);
+    island::follow(&app);
+}
+
+/// Dynamic Island: the main window says when it shows; the island asks to grow on hover.
+#[tauri::command]
+fn island_show(app: AppHandle, on: bool) {
+    island::show(&app, on);
+}
+
+#[tauri::command]
+fn island_size(app: AppHandle, open: bool) {
+    island::set_open(&app, open);
 }
 
 #[tauri::command]
@@ -398,6 +411,11 @@ async fn yt_captions(video_id: String) -> Result<Vec<net::Cue>, String> {
 #[tauri::command]
 async fn lyrics(artist: String, title: String, duration: Option<f64>) -> Result<Option<net::Lyrics>, String> {
     net::lyrics(&artist, &title, duration).await
+}
+
+#[tauri::command]
+async fn lyrics_words(artist: String, title: String, duration: Option<f64>, id: Option<i64>) -> Result<Option<String>, String> {
+    net::lyrics_words(&artist, &title, duration, id).await
 }
 
 #[tauri::command]
@@ -652,6 +670,8 @@ fn main() {
             set_mute,
             list_monitors,
             set_monitor,
+            island_show,
+            island_size,
             get_mirror,
             set_mirror,
             media_control,
@@ -673,6 +693,7 @@ fn main() {
             suggest,
             lyrics,
             lyrics_search,
+            lyrics_words,
             fetch_image,
             lyrics_page,
             translate,

@@ -1,5 +1,7 @@
 # Wallplayer — Backlog cải thiện (so với iBaila)
 
+Xem thêm: [FEATURE-IDEAS.md](FEATURE-IDEAS.md) — tính năng cân nhắc từ research thị trường.
+
 Nguồn: [iBaila](https://aestheticmac.com/ibaila) · [What's new](https://aestheticmac.com/ibaila/whats-new) (đọc ngày 20/11/2026)
 
 iBaila cùng ý tưởng với Wallplayer: viền sáng theo nhạc, player kính cover flow trên desktop, lyrics đồng bộ, MV làm hình nền. Mac + Windows, 9,99 USD mua một lần, bán thêm gói giao diện player và gói hiệu ứng lyrics. 32 bản cập nhật từ 25/9 đến 17/11/2026.
