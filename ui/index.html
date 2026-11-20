@@ -488,6 +488,8 @@ img{display:block}
   background:rgba(40,40,46,.62)}
 .menu.open{opacity:1;pointer-events:auto;transform:none}
 #platMenu{left:0;bottom:6.4rem}
+#musicPop{position:absolute;left:2.2%;top:26%;width:30rem;transform-origin:top left}
+#musicPop .mf{display:flex;align-items:center;gap:.6rem;padding:.35rem .8rem;font-size:1.12rem;color:var(--txt2)}#musicPop .mf span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}#musicPop .mi em{margin-left:auto;font-style:normal;font-size:1.05rem;color:var(--txt2)}
 #moreMenu{right:15rem;bottom:6.4rem;transform-origin:bottom right}
 .mi{display:flex;align-items:center;gap:1rem;width:100%;padding:.75rem .8rem;border-radius:1rem;font-size:1.32rem;font-weight:600;text-align:left;color:#fff;text-decoration:none;transition:background .15s}
 .mi:hover,.mi.sel{background:rgba(255,255,255,.13)}
@@ -604,10 +606,11 @@ button.bgv:hover{background:rgba(255,255,255,.08)}
   <section id="queue" class="widget">
     <header class="qhead">
       <div class="qt" id="qToggle"><b><span id="qTitle">Continue Playing</span> <svg class="ico" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></b><span id="qsub">Up next</span></div>
-      <span class="qbtns"><button class="qbtn" id="qRefresh" title="Refresh — songs like this"></button><button class="qbtn" id="qHist" title="History — songs you played"></button></span>
+      <span class="qbtns"><button class="qbtn" id="qMusic" title="My music — songs on this PC"></button><button class="qbtn" id="qRefresh" title="Refresh — songs like this"></button><button class="qbtn" id="qHist" title="History — songs you played"></button></span>
     </header>
     <ol id="qlist"></ol>
   </section>
+  <div id="musicPop" class="glass menu"></div>
 
   <div id="flowWrap" class="widget">
     <div id="flowLabel"></div>
@@ -652,7 +655,7 @@ button.bgv:hover{background:rgba(255,255,255,.08)}
   <div id="upPill" class="glass"><span id="upMsg"></span><button class="chip on" id="upGo"></button><button class="chip" id="upX" title="Hide">✕</button></div>
   <div id="upCard" class="glass"></div>
   <div id="askPill" class="glass"></div>
-  <div id="dropHint">Drop an image or video to set it as wallpaper</div>
+  <div id="dropHint">Drop songs or a music folder to play them · a picture or video to make it the wallpaper</div>
   <input type="file" id="wpFile" accept="image/*,video/*" hidden>
 </div>
 <div id="rotateHint">Desktop skin · best viewed full-screen on a computer</div>
@@ -681,6 +684,7 @@ const enc = encodeURIComponent;
 const I = {
   playNext:'<svg class="ico" viewBox="0 0 24 24"><path d="M4 6.5h11M4 12h7M4 17.5h7"/><path d="M14.5 10.5v8.5l6.5-4.25z" fill="currentColor" stroke="none"/></svg>',
   addQ:'<svg class="ico" viewBox="0 0 24 24"><path d="M4 6.5h11M4 12h11M4 17.5h7M17.5 14.5v7M14 18h7"/></svg>',
+  folder:'<svg class="ico" viewBox="0 0 24 24"><path d="M3.5 7.5V18a1.5 1.5 0 0 0 1.5 1.5h14a1.5 1.5 0 0 0 1.5-1.5V9.5A1.5 1.5 0 0 0 19 8h-7l-2-2.5H5A1.5 1.5 0 0 0 3.5 7v.5Z"/><path d="M12 11v5M9.5 13.5h5"/></svg>',
   xs:'<svg class="ico" viewBox="0 0 24 24"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></svg>',
   grip:'<svg class="ico" viewBox="0 0 24 24"><g fill="currentColor" stroke="none"><circle cx="9" cy="6.5" r="1.4"/><circle cx="15" cy="6.5" r="1.4"/><circle cx="9" cy="12" r="1.4"/><circle cx="15" cy="12" r="1.4"/><circle cx="9" cy="17.5" r="1.4"/><circle cx="15" cy="17.5" r="1.4"/></g></svg>',
   prev:'<svg class="ico f" viewBox="0 0 24 24"><path d="M11.5 6.2v11.6L3.6 12zM20.4 6.2v11.6L12.5 12z"/></svg>',
@@ -1629,7 +1633,22 @@ const SCW = {
   seek(s){ if (!this.w) return; this.w.seekTo(s * 1000); this.pos = s * 1000; this.posAt = performance.now() },
   vol(){ this.w && this.w.setVolume(S.muted ? 0 : Math.round(S.vol * 100)) }
 };
-function stopInternal(){ YTA.stop(); SCW.stop(); app.classList.remove('clip') }
+/* your own songs: an <audio> player reading files through the asset protocol (see library.rs) */
+const LOC = {
+  el: null,
+  ensure(){ if (!this.el){ const a = this.el = new Audio(); a.preload = 'auto';
+    a.addEventListener('ended', () => { if (S.src === 'local') onEnded() });
+    a.addEventListener('play', () => renderPlay()); a.addEventListener('pause', () => renderPlay());
+    a.addEventListener('error', () => { if (S.src === 'local' && a.getAttribute('src')) toast("Couldn't play that file") }) } return this.el },
+  load(path){ const a = this.ensure(); a.src = T.core.convertFileSrc(path); this.vol(); a.play().catch(() => {}) },
+  play(){ this.el && this.el.play().catch(() => {}) }, pause(){ this.el && this.el.pause() },
+  stop(){ if (this.el && this.el.getAttribute('src')){ this.el.pause(); this.el.removeAttribute('src'); this.el.load() } },
+  time(){ return this.el ? this.el.currentTime || 0 : 0 }, dur(){ return this.el && isFinite(this.el.duration) ? this.el.duration : 0 },
+  playing(){ return !!this.el && !this.el.paused && !this.el.ended },
+  seek(sec){ if (this.el) this.el.currentTime = sec },
+  vol(){ if (this.el){ this.el.volume = clamp(S.vol, 0, 1); this.el.muted = !!S.muted } }
+};
+function stopInternal(){ YTA.stop(); SCW.stop(); LOC.stop(); app.classList.remove('clip') }
 function pauseSystem(){ if (T && S.sys && S.sys.has && S.sys.playing) invoke('media_control', {action: 'pause'}).catch(() => {}) }
 
 /* ════════════════════ track / playback ════════════════════ */
@@ -1638,12 +1657,13 @@ function getPos(){
   if (S.src === 'demo') return S.demo.pos;
   if (S.src === 'yt') return YTA.time();
   if (S.src === 'sc') return SCW.time();
+  if (S.src === 'local') return LOC.time();
   if (S.src === 'system' && S.sys){ const m = S.sys; const base = m.updated_ms > 0 ? m.updated_ms : S.sysRecv; let p = m.position_ms / 1000; if (isPlaying()) p += Math.max(0, (Date.now() - base) / 1000); return m.duration_ms ? Math.min(p, m.duration_ms / 1000) : p }
   return 0;
 }
 function getDur(){
   const td = (S.track && S.track.duration) || 0;
-  if (S.src === 'yt') return YTA.dur() || td; if (S.src === 'sc') return SCW.dur || td;
+  if (S.src === 'yt') return YTA.dur() || td; if (S.src === 'sc') return SCW.dur || td; if (S.src === 'local') return LOC.dur() || td;
   if (S.src === 'system' && S.sys) return S.sys.duration_ms / 1000; return td;
 }
 function isPlaying(){
@@ -1651,6 +1671,7 @@ function isPlaying(){
   if (S.src === 'demo') return S.demo.playing;
   if (S.src === 'yt') return YTA.playing();
   if (S.src === 'sc') return SCW.playing;
+  if (S.src === 'local') return LOC.playing();
   if (S.src === 'system' && S.sys){ if (S.sysOptimistic && Date.now() - S.sysOptimistic.at < 1500) return S.sysOptimistic.v; return !!S.sys.playing }
   return false;
 }
@@ -1706,7 +1727,7 @@ function cardStarting(t, label, extUrl, plat){
 }
 function showDots(){}
 function onEnded(){
-  if (S.repeat === 'one'){ seekTo(0); if (S.src === 'yt') YTA.play(); else if (S.src === 'sc') SCW.play(); else if (S.src === 'demo') S.demo.playing = true; return }
+  if (S.repeat === 'one'){ seekTo(0); if (S.src === 'yt') YTA.play(); else if (S.src === 'sc') SCW.play(); else if (S.src === 'local') LOC.play(); else if (S.src === 'demo') S.demo.playing = true; return }
   if (S.repeat === 'off' && !S.shuffle && S.qIdx >= S.queue.length - 1){ if (S.src === 'demo'){ S.demo.playing = false; S.demo.pos = 0 } renderPlay(); return }
   next();
 }
@@ -1724,17 +1745,22 @@ async function playTrack(t, list){
     YTV.stop(); S.src = 'demo'; S.demo = {pos: 0, playing: true}; setTrack(t); pushHistory(t);
     cardStarting(t, `Starting on ${platById(searchPlatform()).name}`, null, searchPlatform()); return;
   }
+  if (t.source === 'local'){   // a song on this PC
+    YTA.stop(); SCW.stop(); pauseSystem(); app.classList.remove('clip'); S.src = 'local';
+    if (!t.art) t.art = await localArt(t);
+    setTrack(t); pushHistory(t); LOC.load(t.play); mvFor(t); return;
+  }
   if (!t.play) return resolveAndPlay(t);
   if (t.source === 'ytmusic'){
-    SCW.stop(); pauseSystem(); app.classList.remove('clip'); S.src = 'yt'; setTrack(t); pushHistory(t); cardStarting(t, 'Starting on YouTube Music', null, 'ytmusic');
+    SCW.stop(); LOC.stop(); pauseSystem(); app.classList.remove('clip'); S.src = 'yt'; setTrack(t); pushHistory(t); cardStarting(t, 'Starting on YouTube Music', null, 'ytmusic');
     await YTA.load([t.play]); mvFor(t); maybeRadio(); return;
   }
   if (t.source === 'youtube'){   // the clip itself becomes the wallpaper, with sound
-    SCW.stop(); pauseSystem(); YTV.stop(); S.src = 'yt'; setTrack(t); pushHistory(t); cardStarting(t, 'Playing on YouTube', null, 'youtube');
+    SCW.stop(); LOC.stop(); pauseSystem(); YTV.stop(); S.src = 'yt'; setTrack(t); pushHistory(t); cardStarting(t, 'Playing on YouTube', null, 'youtube');
     app.classList.add('clip'); await YTA.load([t.play]); maybeRadio(); return;
   }
   if (t.source === 'soundcloud'){
-    YTA.stop(); pauseSystem(); S.src = 'sc'; setTrack(t); pushHistory(t); cardStarting(t, 'Starting on SoundCloud', null, 'soundcloud');
+    YTA.stop(); LOC.stop(); pauseSystem(); S.src = 'sc'; setTrack(t); pushHistory(t); cardStarting(t, 'Starting on SoundCloud', null, 'soundcloud');
     SCW.load(t.play); mvFor(t); maybeRadio(); return;
   }
   // external apps / web players — Windows media sessions bring "now playing" back here
@@ -1753,6 +1779,7 @@ function togglePlay(){
   if (S.src === 'demo'){ S.demo.playing = !S.demo.playing; renderPlay(); return }
   if (S.src === 'yt'){ YTA.playing() ? YTA.pause() : YTA.play(); setTimeout(renderPlay, 150); return }
   if (S.src === 'sc'){ SCW.playing ? SCW.pause() : SCW.play(); return }
+  if (S.src === 'local'){ LOC.playing() ? LOC.pause() : LOC.play(); return }
   if (S.src === 'system'){ S.sysOptimistic = {v: !isPlaying(), at: Date.now()}; renderPlay(); invoke('media_control', {action: 'toggle'}).catch(e => toast(String(e))); return }
   if (S.queue.length) playTrack(S.queue[Math.max(0, S.qIdx)]); else openSearch();
 }
@@ -1768,8 +1795,66 @@ function seekTo(sec){
   if (S.src === 'demo') S.demo.pos = clamp(sec, 0, getDur());
   else if (S.src === 'yt') YTA.seek(sec);
   else if (S.src === 'sc') SCW.seek(sec);
+  else if (S.src === 'local') LOC.seek(sec);
   else if (S.src === 'system') invoke('media_control', {action: 'seek', value: sec}).catch(() => {});
   setTimeout(mvSync, 300);
+}
+
+/* ════════════════════ my music: songs on this PC ════════════════════ */
+// Folders / files you add stay remembered (paths); they are read again when you open My music.
+const LIB = {paths: store.get('musicPaths', []), tracks: [], loaded: false, busy: false};
+const locTrack = r => ({id: r.path, title: r.title, artist: r.artist || 'Unknown artist', album: r.album, art: '', duration: (r.duration_ms || 0) / 1000, source: 'local', play: r.path});
+const hue = str => [...String(str)].reduce((h, c) => (h * 31 + c.charCodeAt(0)) % 360, 7);
+async function localArt(t){
+  try { const a = await invoke('music_art', {path: t.play}); if (a) return a } catch(e){}
+  const h = hue(t.album || t.artist || t.title);   // no picture in the file: a cover of its own
+  const hex = c => '#' + c.map(v => Math.round(clamp(v, 0, 255)).toString(16).padStart(2, '0')).join('');
+  return makeCover(t.title || 'Untitled', t.artist || '', hex(hsl2rgb(h / 360, .7, .55)), hex(hsl2rgb(((h + 50) % 360) / 360, .6, .22)), ['wave', 'sun', 'pool'][h % 3], h);
+}
+async function fillLocalArt(list){
+  for (const t of list.slice(0, 40)){ if (t.source === 'local' && !t.art){ t.art = await localArt(t); if (FLOW.list && FLOW.list.includes(t)) renderFlow(true) } }
+}
+async function libImport(paths, play){
+  if (!T){ toast('My music works in the Windows app'); return null }
+  LIB.busy = true; renderMusicPop(); toast('Reading your songs…');
+  let r = null; try { r = await invoke('music_import', {paths}) } catch(e){ toast(String(e)) }
+  LIB.busy = false; if (!r){ renderMusicPop(); return null }
+  const fresh = (r.sources || []).filter(p => !LIB.paths.includes(p)); if (fresh.length){ LIB.paths = [...LIB.paths, ...fresh]; store.set('musicPaths', LIB.paths) }
+  const list = (r.tracks || []).map(locTrack);
+  if (list.length){ const have = new Set(LIB.tracks.map(t => t.play)); LIB.tracks = LIB.tracks.concat(list.filter(t => !have.has(t.play))); LIB.loaded = LIB.loaded || !LIB.paths.length || paths === LIB.paths }
+  renderMusicPop();
+  if (play && list.length){ S.qLabel = `My music · ${list.length} songs`; closeMenus(); playTrack(list[0], list); fillLocalArt(list); toast(`${list.length} songs`) }
+  else if (play && !(r.media || []).length) toast('No songs found there');
+  return r;
+}
+async function libPlay(shuffle){
+  if (!LIB.loaded){ LIB.tracks = []; const r = await libImport(LIB.paths, false); if (!r) return; LIB.loaded = true }
+  if (!LIB.tracks.length){ toast('No songs found in your folders'); return }
+  const list = shuffle ? LIB.tracks.slice().sort(() => Math.random() - .5) : LIB.tracks.slice();
+  S.qLabel = `My music · ${list.length} songs`; closeMenus(); playTrack(list[0], list); fillLocalArt(list);
+}
+function renderMusicPop(){
+  const m = $('#musicPop'), n = LIB.tracks.length, name = p => p.split(/[\\/]/).filter(Boolean).pop() || p;
+  m.innerHTML = `<div class="mh">My music</div>` + (LIB.paths.length
+    ? `<button class="mi" data-mu="play">${I.play}<span>Play my music</span><em>${LIB.loaded ? n + ' songs' : ''}</em></button><button class="mi" data-mu="shuffle">${I.shuffle}<span>Shuffle</span></button>`
+    : `<div class="lnote">Play songs from this PC: add a folder, or drop folders and songs onto Wallplayer.</div>`)
+    + `<button class="mi" data-mu="add" ${LIB.busy ? 'disabled' : ''}>${I.folder}<span>${LIB.busy ? 'Reading…' : 'Add a folder…'}</span></button>`
+    + (LIB.paths.length ? `<div class="msep"></div>` + LIB.paths.map((p, i) => `<div class="mf"><span title="${esc(p)}">${esc(name(p))}</span><button class="chip" data-murm="${i}">Remove</button></div>`).join('') : '');
+}
+$('#qMusic').innerHTML = I.folder;
+$('#qMusic').onclick = e => { e.stopPropagation(); const m = $('#musicPop'); if (m.classList.contains('open')){ m.classList.remove('open'); return } closeMenus(m); renderMusicPop(); m.classList.add('open') };
+$('#musicPop').addEventListener('click', async e => {
+  e.stopPropagation(); const b = e.target.closest('[data-mu],[data-murm]'); if (!b) return;
+  if (b.dataset.murm != null){ const p = LIB.paths[+b.dataset.murm]; LIB.paths = LIB.paths.filter(x => x !== p); store.set('musicPaths', LIB.paths); LIB.tracks = LIB.tracks.filter(t => !t.play.startsWith(p)); renderMusicPop(); return }
+  const a = b.dataset.mu;
+  if (a === 'play') libPlay(false); else if (a === 'shuffle') libPlay(true);
+  else if (a === 'add'){ if (!T){ toast('My music works in the Windows app'); return } let p = null; try { p = await invoke('music_pick_folder') } catch(err){} if (p) libImport([p], true) }
+});
+// files dropped on the window (Tauri gives their paths): songs play, a picture or video becomes the wallpaper
+async function dropPaths(paths){
+  const r = await libImport(paths, true); const media = r && r.media && r.media[0]; if (!media) return;
+  try { const blob = await (await fetch(T.core.convertFileSrc(media))).blob(); const name = media.split(/[\\/]/).pop();
+    const type = blob.type || (/\.(mp4|webm|mov|mkv)$/i.test(name) ? 'video/mp4' : 'image/jpeg'); setCustomWallpaper(new File([blob], name, {type})) } catch(e){ toast("Couldn't open that file") }
 }
 
 /* ════════════════════ system now playing (Windows) ════════════════════ */
@@ -1793,7 +1878,7 @@ $('#askPill').addEventListener('click', e => {
 });
 function onMedia(m){
   S.sys = m; S.sysRecv = Date.now(); S.sysOptimistic = null;
-  const internal = S.src === 'yt' || S.src === 'sc';
+  const internal = S.src === 'yt' || S.src === 'sc' || S.src === 'local';
   if (internal && isPlaying()){ if (m.has && m.playing && !MIRROR) askTwoSources(m); return }   // in-app playback wins until you choose
   if (!m.has){ if (S.src === 'system'){ S.src = 'none'; S.sysKey = ''; setTrack(null); YTV.stop() } return }
   if (internal && !m.playing) return;                  // keep the paused in-app track
@@ -2533,7 +2618,7 @@ $('#ambBtn').onclick = e => { e.stopPropagation(); openAppPop() };
 $('#listBtn').onclick = () => { S.qOff = !S.qOff; applyToggles() };
 $('#dimBtn').onclick = () => { S.dim = !S.dim; applyToggles() };
 $('#mvBtn').onclick = toggleMV;
-const setVol = () => { YTA.vol(); SCW.vol(); applyToggles() };
+const setVol = () => { YTA.vol(); SCW.vol(); LOC.vol(); applyToggles() };
 const sysVol = () => !!T && S.src === 'system';
 async function renderVolPop(){
   const sys = sysVol(); let v = S.vol, m = S.muted;
@@ -2858,6 +2943,9 @@ async function boot(){
     listen('media', e => { onMedia(e.payload); wakeLoop() });
     listen('audio-spectrum', e => { AU.feed(e.payload, performance.now()); if (loopTimer && (e.payload[0] || 0) > 1.5e-4) wakeLoop() });
     listen('hotkey-search', () => openSearch());
+    if (LIB.paths.length) invoke('music_allow', {paths: LIB.paths}).catch(() => {});
+    listen('tauri://drag-enter', () => app.classList.add('drag')); listen('tauri://drag-leave', () => app.classList.remove('drag'));
+    listen('tauri://drag-drop', e => { app.classList.remove('drag'); const ps = (e.payload && e.payload.paths) || []; if (ps.length) dropPaths(ps) });
     listen('bind-captured', e => { if (S.binding) applySearchKey(e.payload) });
     invoke('get_search_key').then(k => { S.searchKey = k; if ($('#appPop').classList.contains('open')) renderAppPop() }).catch(() => {});
     listen('desk-mouse', e => deskMouse(e.payload));

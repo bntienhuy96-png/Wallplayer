@@ -4,6 +4,7 @@ mod accounts;
 mod audio;
 mod deskmouse;
 mod desktop;
+mod library;
 mod media;
 mod mirror;
 mod net;
@@ -422,6 +423,29 @@ pub(crate) fn quit(app: &AppHandle) {
     app.exit(0);
 }
 
+/// Folders / files you add or drop: audio is read, pictures and videos come back for the wallpaper.
+#[tauri::command]
+async fn music_import(app: AppHandle, paths: Vec<String>) -> library::Imported {
+    tauri::async_runtime::spawn_blocking(move || library::import(&app, &paths)).await.unwrap_or_default()
+}
+
+/// Re-open access to remembered music folders at start.
+#[tauri::command]
+fn music_allow(app: AppHandle, paths: Vec<String>) {
+    library::allow_all(&app, &paths);
+}
+
+#[tauri::command]
+async fn music_art(path: String) -> Option<String> {
+    tauri::async_runtime::spawn_blocking(move || library::art(&path)).await.ok().flatten()
+}
+
+/// "Add a folder…" (runs off the main thread: the picker blocks).
+#[tauri::command]
+async fn music_pick_folder(app: AppHandle) -> Option<String> {
+    tauri::async_runtime::spawn_blocking(move || library::pick_folder(&app)).await.ok().flatten()
+}
+
 /// Tray icon = the album cover drawn by the UI (32×32 RGBA, base64); None = Wallplayer's own icon.
 #[tauri::command]
 fn set_tray_art(app: AppHandle, rgba: Option<String>) {
@@ -556,6 +580,7 @@ fn main() {
     desktop::set_app_id();
 
     tauri::Builder::default()
+        .plugin(tauri_plugin_dialog::init())
         .plugin(
             tauri_plugin_global_shortcut::Builder::new()
                 .with_handler(move |app, _sc, ev| {
@@ -613,6 +638,10 @@ fn main() {
             lyrics_page,
             translate,
             get_power,
+            music_import,
+            music_allow,
+            music_art,
+            music_pick_folder,
             set_tray_art,
             set_power_prefs,
             update_status,
