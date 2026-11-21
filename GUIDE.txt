@@ -150,8 +150,10 @@ UPDATES (no installer)
   Wallplayer.exe.old until the next start).
 
 MUSIC IN TWO PLACES
-If Wallplayer and another app (Spotify, a browser…) play at the same time, a question at the top asks
-which one to keep; the other one is paused.
+Wallplayer never pauses other apps, and music in another app (Spotify, a browser…) never stops or replaces
+the song playing in Wallplayer: both keep playing. When Wallplayer's song has stayed paused for a minute
+while another app plays, the player shows that app's song (cover, lyrics, controls); play from the
+playlist to come back.
 
 SHORTCUT
 One global shortcut: "Search from anywhere" (Ctrl + Alt + Space by default) opens the search from any app.

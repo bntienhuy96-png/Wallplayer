@@ -3,6 +3,11 @@
 Each section is the release notes of one version. The release workflow publishes
 the section that matches the version in `src-tauri/Cargo.toml`.
 
+## 1.0.5
+
+### Changed
+- Music keeps playing: Wallplayer no longer pauses other apps when it starts a song, no longer asks which one to keep when music plays in two places, and music in another app never stops or replaces the song playing in Wallplayer. When Wallplayer's song has stayed paused for a minute while another app plays, the player shows that app's song.
+
 ## 1.0.4
 
 ### New

@@ -63,7 +63,7 @@ img{display:block}
 .rc .ra .csave.on{color:rgb(var(--accent))}
 .rc .ra .csave .ico{width:1.35rem;height:1.35rem}
 /* mirror (another monitor): same scene, no controls */
-#app.mirror #dock,#app.mirror .menu,#app.mirror #toast,#app.mirror #upPill,#app.mirror #askPill,#app.mirror #upCard,#app.mirror #dropHint,#app.mirror #flowStatus,
+#app.mirror #dock,#app.mirror .menu,#app.mirror #toast,#app.mirror #upPill,#app.mirror #upCard,#app.mirror #dropHint,#app.mirror #flowStatus,
 #app.mirror #editSheet,#app.mirror #restoreBtn{display:none!important}
 #app.mirror,#app.mirror *{pointer-events:none!important}
 
@@ -632,8 +632,6 @@ button.bgv:hover{background:rgba(255,255,255,.08)}
 #toast.on{opacity:1;transform:translate(-50%,0)}
 #upPill{position:absolute;right:1.6rem;top:1.6rem;display:none;align-items:center;gap:.5rem;padding:.45rem .45rem .45rem 1.2rem;border-radius:2rem;font-size:1.12rem;font-weight:600;z-index:31;white-space:nowrap}
 #upPill.on{display:flex}
-#askPill{position:absolute;left:50%;top:1.6rem;transform:translateX(-50%);display:none;align-items:center;gap:.6rem;padding:.45rem .45rem .45rem 1.3rem;border-radius:2rem;font-size:1.12rem;z-index:32;max-width:92vw}
-#askPill.on{display:flex}#askPill span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}#askPill .chip{flex:none}
 #upCard{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:min(38rem,90vw);max-height:80vh;display:none;flex-direction:column;gap:.7rem;padding:1.6rem 1.8rem;border-radius:1.6rem;z-index:40}
 #upCard.on{display:flex}#upCard h3{margin:0;font-size:1.6rem;font-weight:700}
 #upCard .upNotes{overflow:auto;max-height:42vh;padding:.8rem 1rem;border-radius:1rem;background:rgba(255,255,255,.06);font-size:1.15rem;line-height:1.5}
@@ -749,7 +747,6 @@ button.bgv:hover{background:rgba(255,255,255,.08)}
   <div id="toast" class="glass"></div>
   <div id="upPill" class="glass"><span id="upMsg"></span><button class="chip on" id="upGo"></button><button class="chip" id="upX" title="Hide">✕</button></div>
   <div id="upCard" class="glass"></div>
-  <div id="askPill" class="glass"></div>
   <div id="dropHint">Drop songs or a music folder to play them · a picture or video to make it the wallpaper</div>
   <input type="file" id="wpFile" accept="image/*,video/*" hidden>
 </div>
@@ -772,7 +769,7 @@ const I18N = (() => {
   let saved = null; try { saved = (JSON.parse(localStorage.getItem('wp.look') || '{}') || {}).lang } catch(e){}
   const lang = saved || (/^vi\b/i.test(navigator.language || '') ? 'vi' : 'en');
   const V = window.WP_VI || {dict: {}, patterns: []};
-  const NOTR = '#qlist .qm,#flow,#lyrics2,#npTitle,#npSub,#rTop,#rSongs,#rEnt,#rCols,#rSug,#clock,.upNotes,#lyrList .lv,#mvPick .tip,.bgv,#askPill b,#flowLabel,svg,script,style,textarea,.selftest';
+  const NOTR = '#qlist .qm,#flow,#lyrics2,#npTitle,#npSub,#rTop,#rSongs,#rEnt,#rCols,#rSug,#clock,.upNotes,#lyrList .lv,#mvPick .tip,.bgv,#flowLabel,svg,script,style,textarea,.selftest';
   const tr = t => {
     if (lang !== 'vi' || !t) return t; const k = t.trim(); if (!k) return t;
     const v = V.dict[k]; if (v != null) return t.replace(k, v);
@@ -1963,9 +1960,6 @@ const LOC = {
   vol(){ if (this.el){ this.el.volume = clamp(S.vol, 0, 1); this.el.muted = !!S.muted } }
 };
 function stopInternal(){ YTA.stop(); SCW.stop(); LOC.stop(); app.classList.remove('clip') }
-/* when a song ends on its own and the queue moves on, don't pause whatever else the user started meanwhile (e.g. a browser video) */
-let autoAdvanceAt = 0;
-function pauseSystem(){ if (Date.now() - autoAdvanceAt < 15000) return; if (T && S.sys && S.sys.has && S.sys.playing) invoke('media_control', {action: 'pause'}).catch(() => {}) }
 
 /* ════════════════════ track / playback ════════════════════ */
 function getPos(){
@@ -2045,7 +2039,7 @@ function showDots(){}
 function onEnded(){
   if (S.repeat === 'one'){ seekTo(0); if (S.src === 'yt') YTA.play(); else if (S.src === 'sc') SCW.play(); else if (S.src === 'local') LOC.play(); else if (S.src === 'demo') S.demo.playing = true; return }
   if (S.repeat === 'off' && !S.shuffle && S.qIdx >= S.queue.length - 1){ if (S.src === 'demo'){ S.demo.playing = false; S.demo.pos = 0 } renderPlay(); return }
-  autoAdvanceAt = Date.now(); next();
+  next();
 }
 const mapTrack = r => ({id: r.id, title: r.title, artist: r.artist, album: r.album, art: r.art, url: r.url, duration: (r.duration_ms || 0) / 1000, source: r.source, play: r.play});
 async function resolveAndPlay(t){
@@ -2053,7 +2047,7 @@ async function resolveAndPlay(t){
   try { const out = await invoke('search', {platform: plat, query: `${t.title} ${t.artist}`}); const r = (out.tracks || [])[0]; if (r) return playTrack(mapTrack(r)) } catch(e){}
   toast('Not found on ' + platById(plat).name);
 }
-let trackStartAt = 0;   // a song that is still loading must not be replaced by another app's playing media
+let trackStartAt = 0;   // when the last song was started here
 async function playTrack(t, list){
   trackStartAt = Date.now();
   if (list){ S.queue = list.slice(); S.qKind = 'queue'; if (!T && S.queue.length < 6) S.queue = S.queue.concat(DEMO.filter(d => !S.queue.includes(d))) }
@@ -2064,21 +2058,21 @@ async function playTrack(t, list){
     cardStarting(t, `Starting on ${platById(searchPlatform()).name}`, null, searchPlatform()); return;
   }
   if (t.source === 'local'){   // a song on this PC
-    YTA.stop(); SCW.stop(); pauseSystem(); app.classList.remove('clip'); S.src = 'local';
+    YTA.stop(); SCW.stop(); app.classList.remove('clip'); S.src = 'local';
     if (!t.art) t.art = await localArt(t);
     setTrack(t); pushHistory(t); LOC.load(t.play); mvFor(t); return;
   }
   if (!t.play) return resolveAndPlay(t);
   if (t.source === 'ytmusic'){
-    SCW.stop(); LOC.stop(); pauseSystem(); app.classList.remove('clip'); S.src = 'yt'; setTrack(t); pushHistory(t); cardStarting(t, 'Starting on YouTube Music', null, 'ytmusic');
+    SCW.stop(); LOC.stop(); app.classList.remove('clip'); S.src = 'yt'; setTrack(t); pushHistory(t); cardStarting(t, 'Starting on YouTube Music', null, 'ytmusic');
     await YTA.load([t.play]); mvFor(t); maybeRadio(); return;
   }
   if (t.source === 'youtube'){   // the clip itself becomes the wallpaper, with sound
-    SCW.stop(); LOC.stop(); pauseSystem(); YTV.stop(); S.src = 'yt'; setTrack(t); pushHistory(t); cardStarting(t, 'Playing on YouTube', null, 'youtube');
+    SCW.stop(); LOC.stop(); YTV.stop(); S.src = 'yt'; setTrack(t); pushHistory(t); cardStarting(t, 'Playing on YouTube', null, 'youtube');
     app.classList.add('clip'); await YTA.load([t.play]); maybeRadio(); return;
   }
   if (t.source === 'soundcloud'){
-    YTA.stop(); LOC.stop(); pauseSystem(); S.src = 'sc'; setTrack(t); pushHistory(t); cardStarting(t, 'Starting on SoundCloud', null, 'soundcloud');
+    YTA.stop(); LOC.stop(); S.src = 'sc'; setTrack(t); pushHistory(t); cardStarting(t, 'Starting on SoundCloud', null, 'soundcloud');
     SCW.load(t.play); mvFor(t); maybeRadio(); return;
   }
   // external apps / web players — Windows media sessions bring "now playing" back here
@@ -2177,31 +2171,22 @@ async function dropPaths(paths){
 
 /* ════════════════════ system now playing (Windows) ════════════════════ */
 // AUMID / exe name of the other app → a short name for people
-function appName(a){
-  const s = String(a || '').toLowerCase();
-  for (const [k, n] of [['spotify', 'Spotify'], ['msedge', 'Edge'], ['chrome', 'Chrome'], ['firefox', 'Firefox'], ['opera', 'Opera'], ['brave', 'Brave'], ['applemusic', 'Apple Music'], ['itunes', 'iTunes'], ['zunemusic', 'Media Player'], ['vlc', 'VLC'], ['foobar', 'foobar2000'], ['tidal', 'TIDAL'], ['deezer', 'Deezer'], ['amazon', 'Amazon Music']]) if (s.includes(k)) return n;
-  const last = String(a || '').split('!').pop().replace(/\.exe$/i, '').split(/[\\/]/).pop(); return last || 'another app';
+// Music in other apps never stops, pauses or replaces a song in Wallplayer, and Wallplayer never pauses
+// them: both just play. Only when the song here has stayed paused for a minute (you moved on) does the
+// player show what plays elsewhere; the paused song is not stopped, it plays again from the playlist.
+const FOLLOW_AFTER = 60e3;
+function followOther(){
+  if (MIRROR || !(S.src === 'yt' || S.src === 'sc' || S.src === 'local')) return;
+  if (isPlaying()){ S.inPausedAt = 0; return }
+  if (!S.inPausedAt) S.inPausedAt = Date.now();
+  const m = S.sys; if (!m || !m.has || !m.playing) return;
+  if (Date.now() - S.inPausedAt < FOLLOW_AFTER || Date.now() - trackStartAt < FOLLOW_AFTER) return;
+  app.classList.remove('clip'); S.src = 'none'; S.sysKey = ''; S.inPausedAt = 0; onMedia(m);
 }
-// music playing in two places: ask which one to keep, once per pair of songs
-function askTwoSources(m){
-  const key = (S.track ? S.track.title : '') + '|' + m.app + '|' + m.title; if (S.askKey === key) return; S.askKey = key;
-  const box = $('#askPill'), other = appName(m.app);
-  box.innerHTML = `<span><span>Playing in two places:</span> <b>${esc(S.track ? S.track.title : 'Wallplayer')}</b> <span>here,</span> <b>${esc(m.title)}</b> <span>in</span> <span>${esc(other)}</span></span><button class="chip on" data-keep="here">Keep Wallplayer</button><button class="chip" data-keep="other">Keep ${esc(other)}</button>`;
-  box.classList.add('on'); clearTimeout(askTwoSources.t); askTwoSources.t = setTimeout(() => box.classList.remove('on'), 20000);
-}
-$('#askPill').addEventListener('click', e => {
-  e.stopPropagation(); const b = e.target.closest('[data-keep]'); if (!b) return; $('#askPill').classList.remove('on');
-  if (b.dataset.keep === 'here') invoke('media_control', {action: 'pause'}).catch(() => {});   // pauses the other app's song
-  else { const m = S.sys; stopInternal(); S.src = 'none'; S.sysKey = ''; if (m) onMedia(m) }        // follow the other app from now on
-});
 function onMedia(m){
   S.sys = m; S.sysRecv = Date.now(); S.sysOptimistic = null;
-  const internal = S.src === 'yt' || S.src === 'sc' || S.src === 'local';
-  if (internal && isPlaying()){ if (m.has && m.playing && !MIRROR) askTwoSources(m); return }   // in-app playback wins until you choose
-  if (internal && Date.now() - trackStartAt < 12000) return;   // our next song is still loading
+  if (S.src === 'yt' || S.src === 'sc' || S.src === 'local'){ followOther(); return }   // a song here keeps playing
   if (!m.has){ if (S.src === 'system'){ S.src = 'none'; S.sysKey = ''; setTrack(null); YTV.stop() } return }
-  if (internal && !m.playing) return;                  // keep the paused in-app track
-  if (internal) stopInternal();
   S.src = 'system';
   const key = m.title + '|' + m.artist;
   if (key !== S.sysKey){
@@ -3246,7 +3231,7 @@ function frame(now){
 }
 // end screens (suggested-video tiles) sit on the last ~20 s of a music video: fade to the cover there
 function ytEndGuard(){ if (!YTV.p) return; const d = YTV.dur(), t = YTV.time(); $('#ytWrap').classList.toggle('yt-end', d > 40 && d - t < 20) }
-setInterval(() => { renderClock(); if (S.src !== 'demo') renderPlay(); mvSync(); ytEndGuard() }, 1000);
+setInterval(() => { renderClock(); if (S.src !== 'demo') renderPlay(); mvSync(); ytEndGuard(); followOther() }, 1000);
 
 /* ════════════════════ mirror windows (other monitors) ════════════════════ */
 // The other monitors run this same page in mirror mode. They read the same saved

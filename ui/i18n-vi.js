@@ -86,7 +86,6 @@ window.WP_VI = {
     // update card / pills
     'Downloading…': 'Đang tải…', 'Restarting with the new version…': 'Đang mở lại bằng bản mới…', 'Skip': 'Bỏ qua', 'Update': 'Cập nhật',
     'Close': 'Đóng', 'Hide': 'Ẩn', 'No release notes.': 'Không có ghi chú phát hành.', 'Restart': 'Mở lại',
-    'Playing in two places:': 'Đang phát ở hai nơi:', 'here,': 'ở đây,', 'in': 'trên', 'Keep Wallplayer': 'Giữ Wallplayer',
     // lyrics panel
     'Full-lyrics view': 'Xem toàn bộ lời', 'Line 1': 'Dòng 1', 'Line 2': 'Dòng 2', 'Original': 'Bản gốc', 'Off': 'Tắt',
     'Timing': 'Chỉnh giờ', 'This song': 'Bài này', 'All songs': 'Mọi bài', 'Back to 0': 'Về 0',
@@ -177,7 +176,6 @@ window.WP_VI = {
     [/^Couldn't check: (.+)$/, 'Không kiểm tra được: $1'],
     [/^Updated to Wallplayer ([\d.]+)$/, 'Đã cập nhật lên Wallplayer $1'],
     [/^Skipped Wallplayer ([\d.]+)$/, 'Đã bỏ qua Wallplayer $1'],
-    [/^Keep (.+)$/, 'Giữ $1'],
     [/^(.+) · lines without a translation are machine-translated$/, (m, tr) => tr(m[1]) + ' · dòng chưa có bản dịch sẽ được dịch máy'],
     [/^(Player|Search field|Cover flow|Playlist|Clock) (hidden|shown)$/, (m, tr) => tr(m[1]) + (m[2] === 'hidden' ? ': đã ẩn' : ': đã hiện')],
     [/^Lyrics ([\d.]+)s earlier$/, 'Lời sớm hơn $1 giây'],
