@@ -57,6 +57,11 @@ img{display:block}
 #app.clip #deskImg,#app.clip-mirror #deskImg{opacity:0!important}
 
 /* mirror (another monitor): same scene, no controls */
+.rc .ra .csave{position:absolute;left:.4rem;top:.4rem;width:2.5rem;height:2.5rem;background:rgba(0,0,0,.5);-webkit-backdrop-filter:blur(.8rem);backdrop-filter:blur(.8rem);opacity:0;transition:opacity .15s}
+.rc:hover .ra .csave,.rc .ra .csave.on{opacity:1}
+.rc .ra .csave:hover{background:rgba(0,0,0,.72)}
+.rc .ra .csave.on{color:rgb(var(--accent))}
+.rc .ra .csave .ico{width:1.35rem;height:1.35rem}
 #app.mirror #dock,#app.mirror .menu,#app.mirror #toast,#app.mirror #upPill,#app.mirror #askPill,#app.mirror #upCard,#app.mirror #dropHint,#app.mirror #flowStatus,
 #app.mirror #editSheet,#app.mirror #restoreBtn{display:none!important}
 #app.mirror,#app.mirror *{pointer-events:none!important}
@@ -694,7 +699,7 @@ button.bgv:hover{background:rgba(255,255,255,.08)}
   <section id="queue" class="widget">
     <header class="qhead">
       <div class="qt" id="qToggle"><b><span id="qTitle">Continue Playing</span> <svg class="ico" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></b><span id="qsub">Up next</span></div>
-      <span class="qbtns"><button class="qbtn" id="qMusic" title="My music — songs on this PC"></button><button class="qbtn" id="qRefresh" title="Refresh — songs like this"></button><button class="qbtn" id="qHist" title="History — songs you played"></button></span>
+      <span class="qbtns"><button class="qbtn" id="qMusic" title="My music — songs on this PC"></button><button class="qbtn" id="qRefresh" title="Refresh — songs like this"></button><button class="qbtn" id="qSave" title="Save this list to YouTube Music"></button><button class="qbtn" id="qHist" title="History — songs you played"></button></span>
     </header>
     <ol id="qlist"></ol>
   </section>
@@ -2391,16 +2396,52 @@ async function doSearch(q){
   // playlists & albums (every platform) — loaded after the songs so the page shows up fast
   if (T){ try { const cols = await invoke('search_collections', {platform: plat, query: q}); if (seq !== S.searchSeq) return; S.cols = cols || []; renderCols() } catch(e){} }
 }
-const colHTML = (c, i) => `<div class="rc col" data-c="${i}"><div class="ra"><img src="${esc(c.art || '')}" alt="" loading="lazy"><span class="pl">${I.play}</span></div><b>${esc(c.title)}</b><span>${c.kind === 'album' ? 'Album' : 'Playlist'}${c.sub ? ' · ' + esc(c.sub.replace(/^(Album|Playlist|EP|Single)\s*•\s*/i, '')) : ''}</span></div>`;
+const colKey = c => c.source + '|' + c.id;
+const colHTML = (c, i) => `<div class="rc col" data-c="${i}"><div class="ra"><img src="${esc(c.art || '')}" alt="" loading="lazy"><span class="pl">${I.play}</span>${c.source === 'ytmusic' ? `<button class="b sm csave ${S.savedCols.includes(colKey(c)) ? 'on' : ''}" data-save="${i}" title="${S.savedCols.includes(colKey(c)) ? 'Saved in your YouTube Music library' : 'Save to YouTube Music'}">${S.savedCols.includes(colKey(c)) ? I.heartF : I.heart}</button>` : ''}</div><b>${esc(c.title)}</b><span>${c.kind === 'album' ? 'Album' : 'Playlist'}${c.sub ? ' · ' + esc(c.sub.replace(/^(Album|Playlist|EP|Single)\s*•\s*/i, '')) : ''}</span></div>`;
 function renderCols(){ renderTabs(); applyTab() }
+
+/* playlists & albums you played lately: shown when the search opens, next to the recent songs */
+S.recentCols = store.get('recentCols', []); S.savedCols = store.get('savedCols', []);
+function rememberCol(c){
+  if (!c || !c.id) return; const k = colKey(c);
+  S.recentCols = [{id: c.id, kind: c.kind, title: c.title, sub: c.sub || '', art: c.art || '', source: c.source}, ...S.recentCols.filter(x => colKey(x) !== k)].slice(0, 12);
+  store.set('recentCols', S.recentCols);
+}
+// Save a playlist / album to the YouTube Music library (needs YouTube signed in: Settings → Accounts)
+async function saveCol(c, btn){
+  if (!c) return; if (!T) return toast('Saving works in the Windows app');
+  if (S.savedCols.includes(colKey(c))) return toast('Already in your YouTube Music library');
+  try {
+    await invoke('save_playlist', {id: c.id});
+    S.savedCols = [colKey(c), ...S.savedCols].slice(0, 200); store.set('savedCols', S.savedCols);
+    if (btn){ btn.classList.add('on'); btn.innerHTML = I.heartF; btn.title = 'Saved in your YouTube Music library' }
+    toast(`Saved to YouTube Music: ${c.title}`);
+  } catch(e){ toast(String(e) === 'not_signed_in' ? 'Sign in to YouTube (Settings → Accounts) to save playlists' : `Couldn't save: ${e}`) }
+}
+// Save the songs on the left as a new private playlist in YouTube Music
+async function saveQueue(){
+  if (!T) return toast('Saving works in the Windows app');
+  const list = queueList().filter(t => t.play && (t.source === 'ytmusic' || t.source === 'youtube'));
+  if (!list.length) return toast('Only YouTube Music songs can be saved to YouTube Music');
+  const d = new Date(), title = `${(S.qLabel || 'Wallplayer mix').replace(/^(Radio|Picked for you|Playlist|Album) · /, '')} · ${d.toLocaleDateString()}`;
+  toast('Saving to YouTube Music…');
+  try {
+    const id = await invoke('create_playlist', {title, ids: [...new Set(list.map(t => t.play))].slice(0, 200)});
+    const c = {id, kind: 'playlist', title, sub: `Your playlist · ${list.length} songs`, art: list[0].art || '', source: 'ytmusic'};
+    rememberCol(c); S.savedCols = [colKey(c), ...S.savedCols]; store.set('savedCols', S.savedCols);
+    toast(`Saved to YouTube Music: ${title}`);
+  } catch(e){ toast(String(e) === 'not_signed_in' ? 'Sign in to YouTube (Settings → Accounts) to save playlists' : `Couldn't save: ${e}`) }
+}
 // play a whole playlist / album
 async function playCollection(c){
   if (!c) return;
-  if (c.source === 'spotify'){ closeSearch(); stopInternal(); try { const r = await invoke('spotify_play', {uri: c.id}); toast(r === 'played' ? `Playing ${c.title} on Spotify` : `Opened ${c.title} in Spotify`) } catch(e){ openExternal(c.id) } return }
+  if (c.source === 'spotify'){ rememberCol(c); closeSearch(); stopInternal(); try { const r = await invoke('spotify_play', {uri: c.id}); toast(r === 'played' ? `Playing ${c.title} on Spotify` : `Opened ${c.title} in Spotify`) } catch(e){ openExternal(c.id) } return }
   toast(`Loading ${c.title}…`);
   try {
     const list = (await invoke('collection_tracks', {source: c.source, id: c.id})).map(mapTrack);
     if (!list.length) return toast('That one is empty');
+    if (!c.art && list[0].art) c = {...c, art: list[0].art};
+    rememberCol(c);
     S.qLabel = `${c.kind === 'album' ? 'Album' : 'Playlist'} · ${c.title}`; closeSearch(); playTrack(list[0], list);
   } catch(e){ toast(String(e)) }
 }
@@ -2508,6 +2549,13 @@ function applyTab(){
     : t === 'artist' ? `<div class="rgrid">${S.ents.map(artHTML).join('')}</div>`
     : `<div class="rlabel">Singers</div><div class="rrow">${S.ents.map(artHTML).join('')}</div>`;
   // playlists & albums
+  // search just opened (nothing typed): recent playlists under the recent songs
+  if (!$('#q').value.trim() && S.resKind === 'recent'){
+    const rc = S.recentCols || []; S.cols = rc.slice();
+    $('#rColLabel').textContent = 'Recent playlists'; $('#rColLabel').style.display = rc.length ? '' : 'none';
+    $('#rCols').className = 'rrow'; $('#rCols').innerHTML = rc.map(colHTML).join(''); return;
+  }
+  $('#rColLabel').textContent = 'Playlists & albums';
   const colsOn = on && (t === 'all' || t === 'playlist') && S.cols.length;
   $('#rColLabel').style.display = colsOn && t === 'all' ? '' : 'none';
   $('#rCols').className = t === 'playlist' ? 'rgrid' : 'rrow';
@@ -2558,7 +2606,9 @@ $('#rSongs').addEventListener('click', e => {
   const qn = e.target.closest('[data-qn]'), qa = e.target.closest('[data-qa]');
   if (qn || qa){ e.stopPropagation(); queueAdd(S.results[+(qn || qa).dataset[qn ? 'qn' : 'qa']], !!qn); return }   // search stays open: add more
   const c = e.target.closest('.srow'); if (c) chooseResult(+c.dataset.i) });
-$('#rCols').addEventListener('click', e => { const c = e.target.closest('.rc'); if (c) playCollection(S.cols[+c.dataset.c]) });
+$('#rCols').addEventListener('click', e => {
+  const sv = e.target.closest('[data-save]'); if (sv){ e.stopPropagation(); saveCol(S.cols[+sv.dataset.save], sv); return }
+  const c = e.target.closest('.rc'); if (c) playCollection(S.cols[+c.dataset.c]) });
 $('#rCta').addEventListener('click', e => { if (e.target.closest('[data-acc]')){ e.stopPropagation(); openAccounts() } });
 $('#q').addEventListener('keydown', e => {
   if (e.key === 'Escape'){ e.preventDefault(); closeSearch(); return }
@@ -2906,7 +2956,7 @@ function toast(msg){ const t = $('#toast'); t.textContent = msg; t.classList.add
 $('#prevBtn').innerHTML = I.prev; $('#nextBtn').innerHTML = I.next; $('#moreBtn').innerHTML = I.more;
 $('#lyrBtn').innerHTML = I.lyrics; $('#listBtn').innerHTML = I.list; $('#dimBtn').innerHTML = I.moon; $('#qClear').innerHTML = I.xs;
 $('#mvBtn').innerHTML = I.record; $('#focusBtn').innerHTML = I.collapse; $('#eyeBtn').innerHTML = I.flow;
-$('#qRefresh').innerHTML = I.refresh; $('#qHist').innerHTML = I.history; $('#restoreBtn').innerHTML = I.expand;
+$('#qRefresh').innerHTML = I.refresh; $('#qSave').innerHTML = I.addQ; $('#qHist').innerHTML = I.history; $('#restoreBtn').innerHTML = I.expand;
 $('#playBtn').onclick = togglePlay; $('#nextBtn').onclick = next; $('#prevBtn').onclick = prev;
 $('#repBtn').onclick = () => { S.repeat = {off: 'all', all: 'one', one: 'off'}[S.repeat]; applyToggles();
   toast({off: 'Repeat off', all: 'Repeat all', one: 'Looping this song'}[S.repeat]) };
@@ -3121,6 +3171,7 @@ let tbAt = 0;
 addEventListener('mousemove', e => { if (!T || e.clientY < innerHeight - 3) return; const now = performance.now(); if (now - tbAt < 900) return; tbAt = now; invoke('reveal_taskbar').catch(() => {}) });
 $('#qToggle').onclick = () => $('#queue').classList.toggle('collapsed');
 $('#qRefresh').onclick = refreshQueue;
+$('#qSave').onclick = e => { e.stopPropagation(); saveQueue() };
 $('#qHist').onclick = e => { e.stopPropagation(); S.qView = S.qView === 'history' ? 'queue' : 'history'; renderQueue() };
 $('#prog').onclick = e => { const r = e.currentTarget.getBoundingClientRect(); const d = getDur(); if (d) seekTo(clamp((e.clientX - r.left) / r.width, 0, 1) * d) };
 document.addEventListener('click', e => { if (!e.target.closest('.menu')) closeMenus();
