@@ -1,18 +1,72 @@
-name: Build Windows
+name: Build and release
+
+# Every push: build Wallplayer.exe on Windows (download it from the run to test).
+# "Run workflow" with "Publish a release" ticked, or pushing a tag V<version>: build,
+# sign with SignPath (once the SIGNPATH_* settings exist), wait for the approval in
+# SignPath, then publish release V<version> with the notes from CHANGELOG.md.
 
 on:
   push:
     branches: [main, custom]
+    tags: ['V*']
   workflow_dispatch:
+    inputs:
+      publish:
+        description: "Publish a release (version from src-tauri/Cargo.toml, notes from CHANGELOG.md)"
+        type: boolean
+        default: true
 
 permissions:
   contents: write
+  actions: read
 
 jobs:
   build:
     runs-on: windows-latest
+    timeout-minutes: 300
+    env:
+      PUBLISH: ${{ (github.event_name == 'workflow_dispatch' && inputs.publish) || startsWith(github.ref, 'refs/tags/V') }}
+      HAS_SIGNPATH: ${{ secrets.SIGNPATH_API_TOKEN != '' }}
     steps:
       - uses: actions/checkout@v4
+
+      - name: Read version
+        id: ver
+        shell: pwsh
+        run: |
+          $v = (Select-String -Path src-tauri/Cargo.toml -Pattern '^version\s*=\s*"([^"]+)"' | Select-Object -First 1).Matches[0].Groups[1].Value
+          $c = (Get-Content src-tauri/tauri.conf.json -Raw | ConvertFrom-Json).version
+          if ($v -ne $c) { throw "Version mismatch: Cargo.toml says $v, tauri.conf.json says $c" }
+          if ("${{ github.ref_type }}" -eq "tag" -and "${{ github.ref_name }}" -ne "V$v") { throw "Tag ${{ github.ref_name }} does not match the version V$v" }
+          "version=$v" >> $env:GITHUB_OUTPUT
+          Write-Host "Wallplayer $v"
+
+      - name: Check the release does not exist yet
+        if: env.PUBLISH == 'true'
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view "V${{ steps.ver.outputs.version }}" --repo "${{ github.repository }}" *> $null
+          if ($LASTEXITCODE -eq 0) { throw "Release V${{ steps.ver.outputs.version }} already exists: raise the version first." }
+          exit 0
+
+      - name: Release notes from CHANGELOG.md
+        if: env.PUBLISH == 'true'
+        shell: pwsh
+        run: |
+          $v = "${{ steps.ver.outputs.version }}"
+          $out = @(); $on = $false
+          foreach ($l in (Get-Content CHANGELOG.md -Encoding utf8)) {
+            if ($l -match '^## ') {
+              if ($on) { break }
+              if ($l -match ("^## \[?" + [regex]::Escape($v) + "\]?\b")) { $on = $true; continue }
+            }
+            if ($on) { $out += $l }
+          }
+          $notes = ($out -join "`n").Trim()
+          if (-not $notes) { throw "CHANGELOG.md has no '## $v' section." }
+          Set-Content -Path notes.md -Value $notes -Encoding utf8
 
       - uses: dtolnay/rust-toolchain@stable
 
@@ -31,20 +85,61 @@ jobs:
           Copy-Item src-tauri/target/release/wallplayer.exe dist/Wallplayer/Wallplayer.exe
           $dll = Get-ChildItem src-tauri/target/release -Recurse -Filter WebView2Loader.dll -ErrorAction SilentlyContinue | Select-Object -First 1
           if ($dll) { Copy-Item $dll.FullName dist/Wallplayer/ }
-          (Get-Content HUONG-DAN.txt) | Set-Content -Encoding utf8 dist/Wallplayer/HUONG-DAN.txt
+          foreach ($f in "GUIDE.txt", "HUONG-DAN.txt") {
+            $t = [IO.File]::ReadAllText("$PWD/$f") -replace "`r?`n", "`r`n"
+            [IO.File]::WriteAllText("$PWD/dist/Wallplayer/$f", $t, (New-Object Text.UTF8Encoding $false))
+          }
 
-      - uses: actions/upload-artifact@v4
+      - name: Upload build
+        id: upload
+        uses: actions/upload-artifact@v4
         with:
           name: Wallplayer-Windows-x64
-          path: dist/Wallplayer
+          path: dist
 
-      - name: Publish release (custom branch)
+      # Approve the request in SignPath (e-mail / dashboard) within 4 hours.
+      - name: Sign with SignPath
+        if: env.PUBLISH == 'true' && env.HAS_SIGNPATH == 'true'
+        uses: signpath/github-action-submit-signing-request@v3
+        with:
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          organization-id: ${{ vars.SIGNPATH_ORGANIZATION_ID }}
+          project-slug: ${{ vars.SIGNPATH_PROJECT_SLUG }}
+          signing-policy-slug: ${{ vars.SIGNPATH_POLICY_SLUG }}
+          artifact-configuration-slug: ${{ vars.SIGNPATH_ARTIFACT_CONFIGURATION_SLUG }}
+          github-artifact-id: ${{ steps.upload.outputs.artifact-id }}
+          wait-for-completion: true
+          wait-for-completion-timeout-in-seconds: 14400
+          output-artifact-directory: signed
+
+      - name: Zip
+        if: env.PUBLISH == 'true'
+        shell: pwsh
+        run: |
+          $root = "dist"
+          if (Test-Path signed/Wallplayer/Wallplayer.exe) { $root = "signed"; Write-Host "Signed by SignPath" }
+          else { Write-Host "::warning::Unsigned build: SignPath is not set up yet" }
+          Push-Location $root
+          7z a -tzip ../Wallplayer-Windows-x64.zip Wallplayer
+          Pop-Location
+
+      - name: Publish release
+        if: env.PUBLISH == 'true'
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $v = "${{ steps.ver.outputs.version }}"
+          gh release create "V$v" Wallplayer-Windows-x64.zip --repo "${{ github.repository }}" --title "Wallplayer V$v" --notes-file notes.md --target "${{ github.sha }}"
+
+      # custom branch: keep a "latest" release on this fork with the newest build (link to share)
+      - name: Publish latest build (custom branch)
         if: github.ref == 'refs/heads/custom'
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           Compress-Archive -Path dist/Wallplayer -DestinationPath Wallplayer-Windows-x64.zip -Force
-          $notes = "Bản build mới nhất của nhánh custom (commit ${{ github.sha }}). Tải Wallplayer-Windows-x64.zip, giải nén, mở Wallplayer.exe. Chi tiết trong HUONG-DAN.txt."
-          gh release delete latest --yes --cleanup-tag 2>$null
-          gh release create latest Wallplayer-Windows-x64.zip --title "Wallplayer - bản mới nhất (custom)" --notes $notes --target ${{ github.sha }} --latest
+          $notes = "Bản build mới nhất của nhánh custom (commit ${{ github.sha }}). Tải zip, giải nén, mở Wallplayer.exe. Chi tiết trong HUONG-DAN.txt."
+          gh release delete latest --repo "${{ github.repository }}" --yes --cleanup-tag 2>$null
+          gh release create latest Wallplayer-Windows-x64.zip --repo "${{ github.repository }}" --title "Wallplayer - bản mới nhất (custom)" --notes $notes --target ${{ github.sha }} --latest

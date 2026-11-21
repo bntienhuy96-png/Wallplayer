@@ -4,10 +4,14 @@ mod accounts;
 mod audio;
 mod deskmouse;
 mod desktop;
+mod island;
+mod library;
 mod media;
 mod mirror;
 mod net;
+mod power;
 mod settings;
+mod update;
 mod volume;
 
 use std::sync::Mutex;
@@ -23,6 +27,10 @@ pub(crate) struct AppState {
     peek: Mutex<bool>,
     hwnd: Mutex<isize>,
     wall_item: Mutex<Option<CheckMenuItem<tauri::Wry>>>,
+    auto_item: Mutex<Option<CheckMenuItem<tauri::Wry>>>,
+    pub(crate) update_item: Mutex<Option<MenuItem<tauri::Wry>>>,
+    /// tray menu items whose text follows the interface language: (id, set_text)
+    tray_texts: Mutex<Vec<(&'static str, Box<dyn Fn(&str) + Send + Sync>)>>,
     pub(crate) mirrors_installed: Mutex<Vec<isize>>,
 }
 
@@ -112,6 +120,17 @@ pub(crate) fn open_search(app: &AppHandle) {
 
 #[tauri::command]
 fn get_state(app: AppHandle) -> UiState {
+    ui_state(&app)
+}
+
+/// Settings → General → "Start with Windows" (the tray menu has the same switch).
+#[tauri::command]
+fn set_autostart(app: AppHandle, on: bool) -> UiState {
+    let _ = settings::set_autostart(on);
+    let item = app.state::<AppState>().auto_item.lock().unwrap().clone();
+    if let Some(item) = item {
+        let _ = item.set_checked(settings::autostart_enabled());
+    }
     ui_state(&app)
 }
 
@@ -239,6 +258,18 @@ fn set_mirror(app: AppHandle, on: bool) {
 #[tauri::command]
 fn set_monitor(app: AppHandle, id: String) {
     set_monitor_inner(&app, id);
+    island::follow(&app);
+}
+
+/// Dynamic Island: the main window says when it shows; the island asks to grow on hover.
+#[tauri::command]
+fn island_show(app: AppHandle, on: bool) {
+    island::show(&app, on);
+}
+
+#[tauri::command]
+fn island_size(app: AppHandle, open: bool) {
+    island::set_open(&app, open);
 }
 
 #[tauri::command]
@@ -326,6 +357,20 @@ struct Suggest {
     personal: bool,
 }
 
+/// Save a YouTube Music playlist / album to the signed-in library.
+#[tauri::command]
+async fn save_playlist(app: AppHandle, id: String) -> Result<(), String> {
+    net::set_yt_auth(accounts::yt_auth(&app));
+    net::ytm_save_playlist(&id).await
+}
+
+/// Save the playing list (YouTube songs) as a new private playlist in the signed-in library.
+#[tauri::command]
+async fn create_playlist(app: AppHandle, title: String, ids: Vec<String>) -> Result<String, String> {
+    net::set_yt_auth(accounts::yt_auth(&app));
+    net::ytm_create_playlist(&title, &ids).await
+}
+
 /// Radio + the user's YouTube Music picks for one song.
 #[tauri::command]
 async fn suggest(app: AppHandle, id: String) -> Result<Suggest, String> {
@@ -395,6 +440,11 @@ async fn lyrics(artist: String, title: String, duration: Option<f64>) -> Result<
 }
 
 #[tauri::command]
+async fn lyrics_words(artist: String, title: String, duration: Option<f64>, id: Option<i64>) -> Result<Option<String>, String> {
+    net::lyrics_words(&artist, &title, duration, id).await
+}
+
+#[tauri::command]
 async fn lyrics_search(query: String) -> Result<Vec<net::Lyrics>, String> {
     net::lyrics_search(&query).await
 }
@@ -414,9 +464,134 @@ async fn fetch_image(url: String) -> Result<String, String> {
     net::fetch_image(&url).await
 }
 
-fn quit(app: &AppHandle) {
+/// Interface language of the tray menu (the UI tells us which one).
+pub(crate) static UI_VI: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+
+pub(crate) fn tray_label(id: &str) -> String {
+    let vi = UI_VI.load(std::sync::atomic::Ordering::Relaxed);
+    match (id, vi) {
+        ("search", false) => "Search music   Ctrl+Alt+Space",
+        ("search", true) => "Tìm nhạc   Ctrl+Alt+Space",
+        ("wallpaper", false) => "Behind desktop icons",
+        ("wallpaper", true) => "Nằm sau icon desktop",
+        ("icons", false) => "Hide desktop icons",
+        ("icons", true) => "Ẩn icon desktop",
+        ("display", false) => "Move to next display",
+        ("display", true) => "Chuyển sang màn hình kế",
+        ("mirror", false) => "Fill other displays",
+        ("mirror", true) => "Phủ các màn hình khác",
+        ("autostart", false) => "Start with Windows",
+        ("autostart", true) => "Mở cùng Windows",
+        ("reload", false) => "Reload skin",
+        ("reload", true) => "Tải lại giao diện",
+        ("quit", false) => "Quit Wallplayer",
+        ("quit", true) => "Thoát Wallplayer",
+        _ => "",
+    }
+    .to_string()
+}
+
+#[tauri::command]
+fn set_ui_lang(app: AppHandle, lang: String) {
+    UI_VI.store(lang == "vi", std::sync::atomic::Ordering::Relaxed);
+    for (id, set) in app.state::<AppState>().tray_texts.lock().unwrap().iter() {
+        set(&tray_label(id));
+    }
+    update::refresh_tray(&app);
+}
+
+pub(crate) fn quit(app: &AppHandle) {
     desktop::set_icons_hidden(false);   // give the desktop icons back
     app.exit(0);
+}
+
+/// Folders / files you add or drop: audio is read, pictures and videos come back for the wallpaper.
+#[tauri::command]
+async fn music_import(app: AppHandle, paths: Vec<String>) -> library::Imported {
+    tauri::async_runtime::spawn_blocking(move || library::import(&app, &paths)).await.unwrap_or_default()
+}
+
+/// Re-open access to remembered music folders at start.
+#[tauri::command]
+fn music_allow(app: AppHandle, paths: Vec<String>) {
+    library::allow_all(&app, &paths);
+}
+
+#[tauri::command]
+async fn music_art(path: String) -> Option<String> {
+    tauri::async_runtime::spawn_blocking(move || library::art(&path)).await.ok().flatten()
+}
+
+/// "Add a folder…" (runs off the main thread: the picker blocks).
+#[tauri::command]
+async fn music_pick_folder(app: AppHandle) -> Option<String> {
+    tauri::async_runtime::spawn_blocking(move || library::pick_folder(&app)).await.ok().flatten()
+}
+
+/// Tray icon = the album cover drawn by the UI (32×32 RGBA, base64); None = Wallplayer's own icon.
+#[tauri::command]
+fn set_tray_art(app: AppHandle, rgba: Option<String>) {
+    use base64::Engine;
+    let Some(tray) = app.tray_by_id("wallplayer") else { return };
+    let icon = rgba
+        .and_then(|b| base64::engine::general_purpose::STANDARD.decode(b).ok())
+        .filter(|px| px.len() == 32 * 32 * 4)
+        .map(|px| tauri::image::Image::new_owned(px, 32, 32))
+        .or_else(|| app.default_window_icon().cloned());
+    let _ = tray.set_icon(icon);
+}
+
+#[tauri::command]
+fn get_power(app: AppHandle, window: tauri::WebviewWindow) -> power::PowerState {
+    power::current(&app, window.label())
+}
+
+#[tauri::command]
+fn set_power_prefs(cover_pause: bool, low: bool) {
+    power::set_prefs(cover_pause, low);
+}
+
+#[tauri::command]
+fn update_status(app: AppHandle) -> update::UpdateStatus {
+    update::status(&app)
+}
+
+#[tauri::command]
+async fn update_check(app: AppHandle) -> update::UpdateStatus {
+    update::check(app).await
+}
+
+#[tauri::command]
+async fn update_download(app: AppHandle) -> update::UpdateStatus {
+    update::download(app).await
+}
+
+#[tauri::command]
+fn update_set_auto(app: AppHandle, on: bool) -> update::UpdateStatus {
+    {
+        let st = app.state::<AppState>();
+        let mut s = st.settings.lock().unwrap();
+        s.auto_update = on;
+        settings::save(&app, &s);
+    }
+    update::status(&app)
+}
+
+#[tauri::command]
+fn update_skip(app: AppHandle, version: String) -> update::UpdateStatus {
+    {
+        let st = app.state::<AppState>();
+        let mut s = st.settings.lock().unwrap();
+        s.skip_version = version;
+        settings::save(&app, &s);
+    }
+    update::refresh_tray(&app);
+    update::status(&app)
+}
+
+#[tauri::command]
+fn update_restart(app: AppHandle) -> Result<(), String> {
+    update::restart(&app)
 }
 
 #[tauri::command]
@@ -483,9 +658,11 @@ fn capture_mouse_bind(on: bool) {
 // ───────────────────────── main ─────────────────────────
 
 fn main() {
+    update::wait_for_previous();   // started by "Restart to update": let the old one exit first
     desktop::set_app_id();
 
     tauri::Builder::default()
+        .plugin(tauri_plugin_dialog::init())
         .plugin(
             tauri_plugin_global_shortcut::Builder::new()
                 .with_handler(move |app, _sc, ev| {
@@ -500,11 +677,17 @@ fn main() {
             peek: Mutex::new(false),
             hwnd: Mutex::new(0),
             wall_item: Mutex::new(None),
+            auto_item: Mutex::new(None),
+            update_item: Mutex::new(None),
+            tray_texts: Mutex::new(Vec::new()),
             mirrors_installed: Mutex::new(Vec::new()),
         })
         .invoke_handler(tauri::generate_handler![
             get_state,
             set_wallpaper_mode,
+            set_autostart,
+            save_playlist,
+            create_playlist,
             peek,
             open_external,
             reveal_taskbar,
@@ -517,6 +700,8 @@ fn main() {
             set_mute,
             list_monitors,
             set_monitor,
+            island_show,
+            island_size,
             get_mirror,
             set_mirror,
             media_control,
@@ -538,9 +723,24 @@ fn main() {
             suggest,
             lyrics,
             lyrics_search,
+            lyrics_words,
             fetch_image,
             lyrics_page,
             translate,
+            get_power,
+            music_import,
+            music_allow,
+            music_art,
+            music_pick_folder,
+            set_tray_art,
+            set_ui_lang,
+            set_power_prefs,
+            update_status,
+            update_check,
+            update_download,
+            update_skip,
+            update_set_auto,
+            update_restart,
             quit_app
         ])
         .setup(move |app| {
@@ -592,11 +792,34 @@ fn main() {
             let mirror_on = !app.state::<AppState>().settings.lock().unwrap().no_mirror;
             let mirror_i = CheckMenuItem::with_id(app, "mirror", "Fill other displays", true, mirror_on, None::<&str>)?;
             let reload_i = MenuItem::with_id(app, "reload", "Reload skin", true, None::<&str>)?;
+            let update_i = MenuItem::with_id(app, "update", format!("Check for updates   (v{})", update::current()), true, None::<&str>)?;
             let quit_i = MenuItem::with_id(app, "quit", "Quit Wallplayer", true, None::<&str>)?;
             let sep = PredefinedMenuItem::separator(app)?;
-            let menu = Menu::with_items(app, &[&search_i, &wall_i, &icons_i, &display_i, &mirror_i, &auto_i, &sep, &reload_i, &quit_i])?;
+            let menu = Menu::with_items(app, &[&search_i, &wall_i, &icons_i, &display_i, &mirror_i, &auto_i, &sep, &update_i, &reload_i, &quit_i])?;
             let mirror_c = mirror_i.clone();
             *app.state::<AppState>().wall_item.lock().unwrap() = Some(wall_i.clone());
+            *app.state::<AppState>().auto_item.lock().unwrap() = Some(auto_i.clone());
+            *app.state::<AppState>().update_item.lock().unwrap() = Some(update_i.clone());
+            {
+                let st = app.state::<AppState>();
+                let mut tt = st.tray_texts.lock().unwrap();
+                macro_rules! keep {
+                    ($id:expr, $item:expr) => {{
+                        let it = $item.clone();
+                        tt.push(($id, Box::new(move |t: &str| {
+                            let _ = it.set_text(t);
+                        })));
+                    }};
+                }
+                keep!("search", search_i);
+                keep!("wallpaper", wall_i);
+                keep!("icons", icons_i);
+                keep!("display", display_i);
+                keep!("mirror", mirror_i);
+                keep!("autostart", auto_i);
+                keep!("reload", reload_i);
+                keep!("quit", quit_i);
+            }
 
             let auto_c = auto_i.clone();
             let icons_c = icons_i.clone();
@@ -606,6 +829,11 @@ fn main() {
                 .show_menu_on_left_click(false)
                 .on_menu_event(move |app, ev| match ev.id().as_ref() {
                     "search" => open_search(app),
+                    // bring the skin up: it shows the release notes (Skip / Update), checking first if needed
+                    "update" => {
+                        set_peek(app, true);
+                        let _ = app.emit_to("main", "update-check-request", ());
+                    }
                     "wallpaper" => {
                         let on = !app.state::<AppState>().settings.lock().unwrap().wallpaper_mode;
                         set_wallpaper_mode_inner(app, on);
@@ -614,6 +842,7 @@ fn main() {
                         let on = !settings::autostart_enabled();
                         let _ = settings::set_autostart(on);
                         let _ = auto_c.set_checked(settings::autostart_enabled());
+                        let _ = app.emit("mode-changed", ui_state(app));
                     }
                     "display" => {
                         let list = desktop::monitors();
@@ -693,6 +922,9 @@ fn main() {
             // native feeds
             media::spawn(handle.clone());
             audio::spawn(handle.clone());
+            power::spawn(handle.clone());
+            update::mark_started(&handle);
+            update::spawn(handle.clone());
             Ok(())
         })
         .run(tauri::generate_context!())

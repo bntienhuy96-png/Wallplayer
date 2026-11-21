@@ -1,5 +1,6 @@
 WALLPLAYER — Biến hình nền desktop thành trình phát nhạc (Windows 10/11)
 =======================================================================
+(English guide: GUIDE.txt)
 
 CÀI & CHẠY
 1. Giải nén cả thư mục "Wallplayer" (giữ Wallplayer.exe và WebView2Loader.dll cạnh nhau).
@@ -12,18 +13,18 @@ BỐ CỤC
 - Giữa: đồng hồ → cover flow (bài đang phát ở giữa, bài kế bên hai bên) → ô search → thanh player.
 - Trái: playlist "Continue Playing" (nút ↻ làm mới "Songs like …").
 - Lăn chuột trên cover flow để lướt, bấm card để phát.
-- Khi đã ẩn (H, nút ⤢, Full lyrics, tắt Cover flow/Playlist) thì phần bị ẩn không nhận click nữa
+- Khi đã ẩn (H, nút thu gọn, Full lyrics, tắt Cover flow/Playlist) thì phần bị ẩn không nhận click nữa
   → không còn bấm nhầm card vô hình làm chuyển bài.
 
 THANH PLAYER (trái → phải)
 Nền tảng · Lùi · Phát/Dừng · Tới · Repeat (Tắt → Lặp danh sách → LẶP 1 BÀI)
-· Bìa + tên bài (thanh tiến trình bên dưới, bấm để tua) · ♡ · ··· (Shuffle, mở trên nền tảng,
-video nhạc làm nền, hình nền riêng, Accounts, Behind desktop icons, thoát)
-· 💬 Lyrics & phụ đề · ≡ Playlist · ⫶ Appearance · ☾ Làm tối nền
+· Bìa + tên bài (thanh tiến trình bên dưới, bấm để tua) · ♡
+· 💬 Lyrics & phụ đề · Cover flow (sáng khi đang hiện cover flow; bấm để chuyển sang xem toàn bộ lời)
+· ≡ Playlist · ☾ Làm tối nền
 · 🔊 Âm lượng: rê chuột vào để hiện thanh kéo, bấm để tắt tiếng, lăn chuột để chỉnh.
   Phát trong app → chỉnh âm lượng player; phát qua Spotify/app khác → chỉnh âm lượng Windows.
-Mọi nút và bìa album canh giữa theo chiều dọc; thanh thời gian nằm thấp bên dưới bìa.
-Trong ô search: 👁 chế độ Full lyrics · ◎ video nhạc làm nền · ⤢ ẩn toàn bộ UI.
+· ··· Cài đặt (xem mục CÀI ĐẶT).
+Trong ô search: ✕ xoá nhanh chữ đã gõ · ◎ video nhạc làm nền · nút thu gọn = ẩn toàn bộ giao diện (phím H hoặc nhấp đúp hình nền để hiện lại).
 
 SEARCH
 - Bấm vào ô search → hiện panel phía trên: chưa gõ thì là "Recently played";
@@ -34,7 +35,7 @@ SEARCH
 - Rê chuột lên một bài trong "Songs": nút ▶≡ "Play next" (phát ngay sau bài đang nghe) và ≡+ "Add to
   playlist" (thêm vào cuối). Panel vẫn mở để thêm tiếp nhiều bài.
 - Hết playlist: app tự thêm bài tương tự (radio của YouTube Music / SoundCloud) để nhạc chạy liên tục.
-  Tắt/bật ở ··· → "Keep playing similar songs". Nút ↻ cạnh playlist: thay bằng radio của bài đang nghe.
+  Tắt/bật ở Cài đặt → Đang phát → "Tự phát tiếp bài tương tự". Nút ↻ cạnh playlist: thay bằng radio của bài đang nghe.
 
 - Tìm thông minh (YouTube Music): vừa gõ vừa có gợi ý cụm từ (bấm để tìm), kết quả gồm Bài hát, Nghệ sĩ,
   Playlist và Album liên quan. Có 4 tab: All (đầy đủ) / Songs / Singers / Playlists (Playlists gồm cả album, mọi nền tảng). Bấm nghệ sĩ → phát các bài hay nhất của họ; bấm playlist/album → phát cả danh sách.
@@ -47,23 +48,28 @@ NỀN TẢNG (search ngay trên nền tảng đã chọn)
 - Spotify Web Player / Apple Music / Amazon Music: mở bài trên trình duyệt/app.
 Bài phát ở app khác vẫn được nhận qua Windows Media: bìa, lyrics, màu, điều khiển.
 
-TÀI KHOẢN (icon nền tảng → Accounts…)
+TÀI KHOẢN (icon nền tảng → Accounts…, hoặc Cài đặt → Tài khoản)
 - YouTube / YouTube Music: Sign in bằng Google → có Premium thì không quảng cáo.
 - SoundCloud: Sign in (Go+ nghe bản đầy đủ).
 - Spotify: tạo app ở developer.spotify.com/dashboard, thêm Redirect URI
   http://127.0.0.1:43821/callback, dán Client ID → Connect.
 
 LYRICS & PHỤ ĐỀ (nút 💬)
-- Nguồn: LRCLIB (lyrics chạy theo thời gian); không có thì lấy từ Genius
+- Nguồn: LRCLIB, NetEase (lyrics chạy theo thời gian); không có thì lấy từ Genius
   (thời gian ước lượng). Có mục "Search Google for lyrics" mở trình duyệt.
 - Dòng 1 / Dòng 2: chọn ngôn ngữ (Original, Tiếng Việt, English, 日本語, 한국어…).
   Không có bản dịch thì app tự dịch từng dòng của lời gốc (giữ đúng thời gian).
 - Clip YouTube: phụ đề CC của video (YouTube mặc định ẩn) được lấy ra và hiện như lyrics theo kiểu
   của player (font, hiệu ứng, vị trí, dịch sang ngôn ngữ khác). Video không có CC thì dùng lyrics thường.
-- Chế độ Full lyrics (nút 👁 hoặc phím L): ẩn cover flow, lyrics to ở giữa (playlist Continue Playing vẫn giữ).
+- Chế độ Full lyrics (nút cover flow hoặc phím L): ẩn cover flow, lyrics to ở giữa (playlist Continue Playing vẫn giữ).
+- Chạy theo từng chữ: khi NetEase có thời điểm của từng chữ, chữ sáng lên đúng lúc được hát, ở mọi hiệu ứng.
+  File .lrc có ghi giờ trước từng chữ cũng chạy như vậy.
+- Hiệu ứng Apple Music (Cài đặt → Lời bài hát → Hiệu ứng): cả bài thành một cột như Apple Music. Dòng đang hát
+  sáng rõ và tô dần theo từng chữ, các dòng khác mờ nhẹ; cột trượt lên từng dòng, đoạn nhạc dạo dài hiện 3 chấm
+  "thở". Bản dịch nằm ngay dưới mỗi dòng.
 
 CHỈNH ĐỒNG HỒ & LYRICS KIỂU LOCK SCREEN IPHONE
-- Bấm vào đồng hồ (hoặc phím E, hoặc Appearance → "Font, colour & glass…").
+- Bấm vào đồng hồ (hoặc phím E, hoặc Cài đặt → Đồng hồ / Lời bài hát → "Font, colour & glass…").
 - Trên cùng chọn Clock / Lyrics (hoặc bấm thẳng vào khung đồng hồ / lyrics đang viền trắng).
 - Font: lưới ô mẫu "12" / "Aa".  Weight: độ đậm đồng hồ.  Size: cỡ chữ lyrics.
 - Solid / Glass: chữ đặc, hoặc chữ kính (làm mờ và sáng hình nền phía sau, viền sáng).
@@ -72,38 +78,90 @@ CHỈNH ĐỒNG HỒ & LYRICS KIỂU LOCK SCREEN IPHONE
 - Opacity: độ trong suốt.  Glass: độ kính Clear → Frost → Milky (chỉ khi chọn Glass).
 - Bấm Done, Esc, hoặc bấm ra ngoài để xong. Cài đặt được lưu lại.
 
-APPEARANCE (nút ⫶)
-- Theme color: lấy màu từ bìa album theo mật độ (% diện tích):
-  Accent / Dominant / Secondary, hoặc bấm chọn trực tiếp một mảng màu.
-  Màu này dùng cho đồng hồ, ambient light và điểm nhấn UI.
-- Display: chọn màn hình hiển thị khi dùng nhiều màn hình
-  (hoặc khay hệ thống → "Move to next display").
-  Màn hình dọc: giao diện tự xếp dọc, phủ kín màn hình.
-- Nhiều màn hình (khay hệ thống → "Fill other displays"): các màn hình còn lại hiện cùng giao diện
-  (đồng hồ, lyrics, cover flow, playlist, ambient, nền) theo đúng cài đặt của màn chính, không có
-  nút bấm và không phát tiếng. Đổi cài đặt ở màn chính là màn phụ đổi theo ngay. Bỏ chọn để tắt.
-- Background (nền phía sau):
+CÀI ĐẶT (nút ··· ở cuối thanh player)
+Một cửa sổ giống System Settings của macOS: danh sách mục bên trái (gõ vào ô Tìm kiếm để tìm, gõ không dấu
+cũng được), nội dung bên phải. Esc hoặc bấm ra ngoài để đóng.
+- Đang phát: mở bài trên nền tảng, Phát ngẫu nhiên, Tự phát tiếp bài tương tự, MV làm hình nền, ảnh / video làm hình nền.
+- Giao diện: Theme color lấy màu từ bìa album theo mật độ (% diện tích): Accent / Dominant / Secondary,
+  hoặc bấm chọn trực tiếp một mảng màu. Màu này dùng cho đồng hồ, ambient light và điểm nhấn UI. Làm tối nền.
+- Hình nền:
   · Music video / cover: MV của bài đang phát (chạy khớp), không có MV thì bìa album.
   · My video: gõ tìm một video YouTube bất kỳ, chọn là nó chạy nền (tắt tiếng, lặp lại).
   · Surprise me: tự chọn video quay thành phố, thiên nhiên, dạo phố góc nhìn thứ nhất… hợp với
     bài và playlist đang nghe; "New video each song" đổi video mỗi bài, "Another one" đổi ngay.
   · Desktop wallpaper: giữ hình nền Windows của từng màn hình, giao diện vẫn nằm trên.
-  Thanh Blur làm mờ nền (Desktop wallpaper / My video / Surprise me). Nút ◎ bật/tắt video nền.
-  Phụ đề và ô "video tiếp theo" của YouTube luôn được ẩn; lyrics do app hiển thị.
-- Clock: bật/tắt; 7 kiểu Tall, Outline, Thin, Rounded, Serif, Bold, Mono;
+  Thanh Blur làm mờ nền. Nút ◎ bật/tắt video nền. Phụ đề và ô "video tiếp theo" của YouTube luôn được ẩn.
+  Display: chọn màn hình hiển thị (hoặc khay hệ thống → "Move to next display"). Màn hình dọc tự xếp dọc.
+  Nhiều màn hình (khay hệ thống → "Fill other displays"): các màn còn lại hiện cùng giao diện theo cài đặt
+  của màn chính, không có nút bấm và không phát tiếng.
+  Video quality (YouTube): Auto, 360p … 4K (YouTube chọn mức gần nhất mà video thật sự có).
+- Đồng hồ: bật/tắt; 7 kiểu Tall, Outline, Thin, Rounded, Serif, Bold, Mono;
   vị trí Top / Top left / Top right / Bottom left / Bottom right.
-- Lyrics: Style Player (karaoke) hoặc YouTube captions (phụ đề nền đen);
-  Effect Stack / Line / Bounce / Typewriter / Glow
-  và kiểu CapCut: Pop (từng chữ nảy lên), Karaoke fill (tô màu chạy theo chữ), Shake (giật rồi lắng),
-  Jiggle (rung liên tục), Glitch (tách màu RGB giật), Wave (chữ lượn sóng), Zoom (cả dòng phóng to vào),
-  Slide (chữ trượt vào từ hai bên); vị trí Center / Left / Right / Bottom
-  (Left/Right/Bottom hiện cả ở giao diện thường); 5 font, 3 cỡ chữ, chữ thường / Hoa đầu / IN HOA.
-- Video quality (YouTube): Auto, 360p, 480p, 720p, 1080p, 1440p, 4K cho video nhạc làm nền và clip YouTube.
-  YouTube chọn mức gần nhất mà video thật sự có (nhiều video không có 4K).
-- Ambient light: bật/tắt; Colour from = Album cover (màu bìa) hoặc Live video (màu thật của video đang
-  chiếu trên hình nền, đổi theo từng cảnh); Effect Comet (chạy thuận kim đồng hồ) / Pulse (cả viền đập theo nhịp)
-  / Spectrum (cột sóng nhạc quanh viền) / Rainbow / Aurora; Intensity (độ sáng), Blend (độ loang).
-- Layout: bật/tắt Player bar, Search field, Cover flow, Playlist.
+- Lời bài hát: Style Player (karaoke) hoặc YouTube captions (phụ đề nền đen);
+  14 hiệu ứng: Stack, Apple Music, Line, Bounce, Typewriter, Glow, và kiểu CapCut: Pop, Karaoke fill, Shake,
+  Jiggle, Glitch, Wave, Zoom, Slide; vị trí Center / Left / Right / Bottom; 5 font, 3 cỡ chữ,
+  chữ thường / Hoa đầu / IN HOA.
+- Viền sáng: bật/tắt; Colour from = Album cover hoặc Live video (màu thật của video đang chiếu);
+  11 hiệu ứng (rê chuột lên tên để xem trước); Where: cả viền / cạnh dưới / cạnh trên / các góc;
+  bật tắt riêng từng màn hình; Intensity (độ sáng), Blend (độ loang).
+- Bố cục: bật/tắt Player bar, Search field, Cover flow, Playlist, "Album cover as the tray icon".
+- Hiệu năng: xem mục NHẸ MÁY.
+- Tài khoản: xem mục TÀI KHOẢN.
+- Chung: Ngôn ngữ, Behind desktop icons, phím tắt Search from anywhere, Cập nhật, Chính sách quyền riêng tư,
+  Tự kiểm tra, Thoát.
+
+NHẸ MÁY (Cài đặt → Hiệu năng)
+- Dừng nhạc: viền sáng và nền chậm dần rồi đứng yên, app thôi vẽ hẳn. Phát lại là chạy tiếp ngay.
+- Power: Auto (mặc định) = tự nhẹ đi khi laptop chạy pin hoặc bật Energy Saver; Full = luôn đẹp nhất;
+  Saver = luôn nhẹ. Khi nhẹ: 30 khung hình/giây, video nền tối đa 720p.
+- "Rest behind full-screen and maximised windows" (mặc định bật): khi game, phim toàn màn hình hoặc một
+  cửa sổ phóng to che kín màn hình, Wallplayer ngừng vẽ và tạm dừng video nền ở màn hình đó (nhạc vẫn phát).
+  Thu nhỏ cửa sổ là chạy lại. Tắt mục này nếu bạn dùng cửa sổ trong suốt và muốn thấy nền chạy phía sau.
+- Dòng "Now: ..." cho biết app đang ở chế độ nào.
+
+NGÔN NGỮ
+- Cài đặt → Chung → Ngôn ngữ: English / Tiếng Việt. Máy để tiếng Việt thì app tự dùng tiếng Việt. Menu icon khay đổi theo.
+
+NHẠC TRÊN MÁY
+- Bấm nút thư mục cạnh tiêu đề playlist bên trái → "Add a folder…" chọn thư mục nhạc (mp3, m4a, flac, wav, ogg…),
+  hoặc kéo thả thư mục / bài hát vào Wallplayer (khi app đang nổi lên: Ctrl+Alt+Space, hoặc chế độ không nằm sau icon).
+- App đọc tên bài, ca sĩ, ảnh bìa trong file (không có thì lấy từ tên file "Ca sĩ - Tên bài"). Thư mục được nhớ:
+  lần sau chỉ cần bấm "Play my music" hoặc "Shuffle". Bấm Remove để bỏ một thư mục.
+- Kéo thả ảnh hoặc video vào app = đặt làm hình nền.
+
+PLAYLIST BÊN TRÁI
+- Rê chuột lên một bài: nút ▶≡ = phát tiếp theo, nút ✕ = xóa khỏi danh sách. Kéo tay cầm ⋮⋮ bên trái để đổi thứ tự.
+
+LỜI BÀI HÁT: CHỈNH GIỜ, TÌM TAY, ĐOẠN NHẠC DẠO
+- Bấm nút lời bài hát trên thanh phát → mục Timing: "This song" chỉnh riêng bài này, "All songs" chỉnh cho mọi bài
+  (+ = lời hiện sớm hơn). Bấm vào số để về 0. App ghi nhớ. Phím [ và ] vẫn dùng được.
+- Mục Other versions có ô gõ: sửa tên bài / ca sĩ rồi Enter để tìm lời khác.
+- Đoạn nhạc dạo hoặc đoạn không lời dài: hiện nốt ♪ với 3 chấm sáng dần tới câu tiếp theo.
+
+VIỀN SÁNG, ICON KHAY, MV
+- Cài đặt → Viền sáng: 11 hiệu ứng (rê chuột lên tên để xem trước), "Where": cả viền / cạnh dưới / cạnh trên /
+  các góc, và "Light on each display" bật tắt viền sáng riêng từng màn hình.
+- Icon khay đổi thành ảnh bìa bài đang phát với vòng tròn đập theo nhạc (Cài đặt → Bố cục → "Album cover as the tray icon").
+- Khi MV đang làm hình nền: các chấm nhỏ phía trên ô tìm kiếm = MV của bài và MV khác của cùng ca sĩ, bấm để đổi.
+- Nhạc phát ở 2 nơi cùng lúc (Wallplayer và Spotify / trình duyệt): góc trên hiện câu hỏi giữ bên nào, bên kia sẽ dừng.
+
+CẬP NHẬT (không cần file cài)
+- Mỗi lần mở, Wallplayer kiểm tra ngầm một lần, không hiện gì lên màn hình. Có bản mới thì mục trong menu
+  chuột phải biểu tượng khay đổi thành "Update available: vx.y.z".
+- Bấm mục đó (hoặc "Check for updates", hoặc Cài đặt → Chung → Cập nhật): hiện release notes với Skip / Update.
+  Update = tải về rồi tự mở lại bản mới. Skip = bỏ qua bản đó, menu khay không nhắc lại.
+- Tắt việc kiểm tra lúc mở app: Cài đặt → Chung → "Kiểm tra khi mở Wallplayer".
+- Bản mới thay Wallplayer.exe ngay trong thư mục hiện tại (file cũ thành Wallplayer.exe.old, tự xóa lần sau).
+  Nếu để thư mục trong Program Files thì app không ghi được: hãy để thư mục ở chỗ khác (ví dụ Documents).
+
+GỠ BỎ
+- Chuột phải biểu tượng khay: bỏ tick "Start with Windows", rồi "Quit Wallplayer". Xóa thư mục Wallplayer.
+- Xóa luôn cài đặt và đăng nhập: xóa thư mục com.tan.wallplayer trong %APPDATA% và %LOCALAPPDATA%.
+
+QUYỀN RIÊNG TƯ
+- Không có tài khoản, không thống kê, không gửi gì cho tác giả. Chỉ tự kết nối GitHub một lần khi mở để kiểm tra
+  bản mới (tắt được). Các dịch vụ khác (YouTube, SoundCloud, Spotify, lời bài hát, dịch) chỉ dùng khi bạn dùng
+  tính năng đó. Tắt tìm lời bài hát: Cài đặt → Lời bài hát → "Tìm lời bài hát trên mạng". Chi tiết: PRIVACY.md trên GitHub.
 
 CONTINUE PLAYING (danh sách bên trái)
 - Bấm vào MỘT bài lẻ trong kết quả search → bài phát ngay, danh sách bên trái tự thành "Picked for you": gợi ý của YouTube Music
@@ -113,7 +171,7 @@ CONTINUE PLAYING (danh sách bên trái)
 
 PHÍM TẮT
 Chỉ có một phím tắt toàn cục: "Search from anywhere" (mặc định Ctrl+Alt+Space) - gọi ô search từ bất kỳ đâu.
-Đổi phím: Appearance → Search from anywhere → bấm nút → bấm tổ hợp phím mới (bàn phím, cần kèm Ctrl/Alt/Shift,
+Đổi phím: Cài đặt → Chung → Search from anywhere → bấm nút → bấm tổ hợp phím mới (bàn phím, cần kèm Ctrl/Alt/Shift,
 hoặc F1–F24), hoặc nút chuột giữa / nút bên (back, forward), có thể kèm Ctrl/Alt/Shift. Esc để hủy, Reset để về mặc định.
 (Chuột trái và phải không dùng được.)
 
@@ -122,7 +180,7 @@ CHẾ ĐỘ ĐẶT TRÊN DESKTOP (chuột phải biểu tượng khay)
   Nhờ vậy bấm Win + D, Show desktop hay Win + M thì Wallplayer vẫn hiện như hình nền.
   Chuột vẫn dùng được: rê, bấm, kéo, cuộn trên vùng desktop trống (không phải trên icon).
   Khi bấm vào ô search, Wallplayer tạm nổi lên để bạn gõ chữ; bấm ra ngoài thì trở lại nền.
-  Phím tắt đơn (Space, H, L, E...) chỉ dùng được khi Wallplayer đang nổi lên (Ctrl+Alt+Space).
+  Phím tắt đơn (Space, H = ẩn giao diện, L, E...) chỉ dùng được khi Wallplayer đang nổi lên (Ctrl+Alt+Space).
 - Bỏ tick "Behind desktop icons": Wallplayer thành cửa sổ thường nằm sát đáy, che icon desktop,
   bấm trực tiếp mọi nút; khi Win + D thì app tự cố hiện lên thay desktop trống (kém ổn định hơn).
 - "Hide desktop icons" (mặc định bật): tự ẩn toàn bộ icon desktop kể cả Thùng rác khi Wallplayer chạy,
@@ -138,8 +196,8 @@ GIỚI HẠN ĐÃ BIẾT
 
 CUON NGANG: cac hang Top Results, hang mau trong bang chinh sua va playlist o giua deu cuon duoc bang con lan chuot (hoac vuot ngang tren touchpad) va keo-tha chuot de cuon.
 
-KIEM TRA CHUC NANG: bam Ctrl+Shift+D (hoac Appearance > Self-test) de xem tung chuc nang Windows/YouTube co chay khong (am luong, Win+D, mau video, CC, chat luong video). Neu co muc loi, chup man hinh bang nay gui lai de sua.
+KIEM TRA CHUC NANG: bam Ctrl+Shift+D (hoac Cai dat > Chung > Tu kiem tra) de xem tung chuc nang Windows/YouTube co chay khong (am luong, Win+D, mau video, CC, chat luong video). Neu co muc loi, chup man hinh bang nay gui lai de sua.
 
-PLAYLIST BEN TRAI: cuon bang con lan chuot hoac keo len/xuong. Font, mau, co chu, do trong suot, kinh cua dong ho va lyrics chinh tap trung o cua so 'Font, colour & glass...' (bam vao dong ho/lyrics hoac phim E); bang Appearance chi con vi tri, kieu, hieu ung.
+PLAYLIST BEN TRAI: cuon bang con lan chuot hoac keo len/xuong. Font, mau, co chu, do trong suot, kinh cua dong ho va lyrics chinh tap trung o cua so 'Font, colour & glass...' (bam vao dong ho/lyrics hoac phim E); bang Cai dat chi con vi tri, kieu, hieu ung.
 
 LYRICS TU DONG: app tu tim loi bai hat co moc thoi gian tu nhieu nguon (LRCLIB, NetEase), doc ten bai kieu 'Ca si - Ten bai (Official MV)', chon ban khop ten va do dai bai nhat. Neu loi lech: bam ] de loi hien som hon, [ de hien tre hon (moi lan 0.5 giay, nho rieng cho tung bai).

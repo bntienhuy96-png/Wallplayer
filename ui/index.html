@@ -5,9 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <title>Wallplayer</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&family=Anton&family=Nunito:wght@200..1000&family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Space+Mono:wght@400;700&family=Big+Shoulders+Display:wght@100..900&family=Roboto:wght@500&display=swap" rel="stylesheet">
+<link href="fonts/fonts.css" rel="stylesheet">
 <style>
 :root{
   --accent:255,255,255; --accent2:255,255,255; --clock:rgba(255,255,255,.92);
@@ -37,6 +35,9 @@ img{display:block}
 .wart{background-size:cover;background-position:center;filter:blur(4.5rem) saturate(1.6) brightness(.62);transform:scale(1.4);opacity:0;transition:opacity 1.4s ease}
 .wart.on{opacity:1}
 #fx{position:absolute;inset:0;width:100%;height:100%;mix-blend-mode:screen;opacity:.9;transition:opacity 1s}
+/* power: nothing animates where nobody looks (covered), lyric loops hold still at rest */
+#app.asleep *,#app.asleep *::before,#app.asleep *::after{animation-play-state:paused!important}
+#app.rest #lyrics2 *,#app.rest .eq i{animation-play-state:paused}
 .custom{object-fit:cover;width:100%;height:100%;opacity:0;transition:opacity 1s}
 .custom.on{opacity:1}
 #ytWrap{position:absolute;inset:0;overflow:hidden;opacity:0;transition:opacity 1.2s ease;pointer-events:none}
@@ -56,7 +57,7 @@ img{display:block}
 #app.clip #deskImg,#app.clip-mirror #deskImg{opacity:0!important}
 
 /* mirror (another monitor): same scene, no controls */
-#app.mirror #dock,#app.mirror .menu,#app.mirror #toast,#app.mirror #dropHint,#app.mirror #flowStatus,
+#app.mirror #dock,#app.mirror .menu,#app.mirror #toast,#app.mirror #upPill,#app.mirror #askPill,#app.mirror #upCard,#app.mirror #dropHint,#app.mirror #flowStatus,
 #app.mirror #editSheet,#app.mirror #restoreBtn{display:none!important}
 #app.mirror,#app.mirror *{pointer-events:none!important}
 
@@ -112,11 +113,11 @@ img{display:block}
 #lyrics2{--lys:4.4rem;position:absolute;left:50%;top:39%;transform:translateX(-50%);width:46rem;height:34rem;text-align:center;z-index:3;pointer-events:none;opacity:0;transition:opacity .5s}
 #app.lyricsmode #lyrics2{opacity:1}
 #app.lys-s #lyrics2{--lys:3.4rem}#app.lys-l #lyrics2{--lys:5.6rem}
-#app.ly-condensed #lyrics2 .ln{font-family:Anton,Impact,sans-serif;font-weight:400;letter-spacing:.01em}
-#app.ly-serif #lyrics2 .ln{font-family:"Playfair Display",Georgia,serif;font-style:italic;font-weight:600}
-#app.ly-clean #lyrics2 .ln{font-family:Inter,system-ui,sans-serif;font-weight:800;letter-spacing:-.02em}
-#app.ly-mono #lyrics2 .ln{font-family:"Space Mono",ui-monospace,monospace;font-weight:700;font-size:calc(var(--lys) * .8)}
-#app.lc-lower #lyrics2 .w2{text-transform:lowercase}#app.lc-upper #lyrics2 .w2{text-transform:uppercase}
+#app.ly-condensed #lyrics2 .ln,#app.ly-condensed #lyrics2 .al{font-family:Anton,Impact,sans-serif;font-weight:400;letter-spacing:.01em}
+#app.ly-serif #lyrics2 .ln,#app.ly-serif #lyrics2 .al{font-family:"Playfair Display",Georgia,serif;font-style:italic;font-weight:600}
+#app.ly-clean #lyrics2 .ln,#app.ly-clean #lyrics2 .al{font-family:Inter,system-ui,sans-serif;font-weight:800;letter-spacing:-.02em}
+#app.ly-mono #lyrics2 .ln{font-family:"Space Mono",ui-monospace,monospace;font-weight:700;font-size:calc(var(--lys) * .8)}#app.ly-mono #lyrics2 .al{font-family:"Space Mono",ui-monospace,monospace;font-weight:700}
+#app.lc-lower #lyrics2 .w2,#app.lc-lower #lyrics2 .aw{text-transform:lowercase}#app.lc-upper #lyrics2 .w2,#app.lc-upper #lyrics2 .aw{text-transform:uppercase}
 #lyrics2 .tr2{display:block;max-width:40rem;margin:1.1rem auto 0;font:700 calc(var(--lys) * .34)/1.3 Inter,system-ui,sans-serif;font-style:normal;letter-spacing:0;color:rgba(var(--lyc, 255,255,255),calc(.82 * var(--lyA, 1)));text-transform:none}
 /* clock styles */
 #clock{transition:opacity .45s}
@@ -132,8 +133,43 @@ img{display:block}
 #app.nolyr #lyrics2,#app.searching #lyrics2,#app.bare #lyrics2{opacity:0!important}
 #lyrics2 .ln{position:absolute;left:0;right:0;top:0;font:900 var(--lys)/.98 Nunito,"SF Pro Rounded","Arial Rounded MT Bold","Segoe UI Black",system-ui,sans-serif;color:rgba(var(--lyc, 255,255,255),var(--lyA, 1));letter-spacing:-.01em;text-shadow:0 .25rem 1.4rem rgba(0,0,0,calc(.4 * var(--lyA, 1)));transition:opacity .55s,filter .55s,transform .55s}
 #lyrics2 .ln.out{opacity:0;filter:blur(.9rem);transform:translateY(-2.4rem)}
+#lyrics2 .ln.note{display:flex;flex-direction:column;align-items:center;gap:1.4rem}
+#lyrics2 .ln.note .nt{display:block;font:400 calc(var(--lys) * 1.1)/1 Inter,system-ui,sans-serif;animation:notebob 1.8s ease-in-out infinite}
+#lyrics2 .ln.note .nd{display:flex;gap:.9rem}
+#lyrics2 .ln.note .nd i{width:calc(var(--lys) * .2);height:calc(var(--lys) * .2);border-radius:50%;background:rgba(var(--lyc, 255,255,255),.22);transition:background .35s,transform .35s}
+#lyrics2 .ln.note .nd i.on{background:rgba(var(--lyc, 255,255,255),var(--lyA, 1));transform:scale(1.18)}
+@keyframes notebob{50%{transform:translateY(-.5rem) rotate(-6deg)}}
+.tm{display:flex;align-items:center;gap:.5rem}.tm b{min-width:5.2rem;text-align:center;font-variant-numeric:tabular-nums;cursor:pointer}.tm .chip{min-width:2.6rem}
 #lyrics2 .w2{display:block;overflow:clip;overflow-clip-margin:.3em;max-height:calc(var(--lys) * 1.3);opacity:1;transition:max-height .4s ease,opacity .4s,transform .4s,filter .4s}
 #lyrics2 .w2.future{max-height:0;opacity:0;transform:translateY(.9rem) scale(.88);filter:blur(.5rem)}
+/* words that run into the next one (no space between: Chinese, Japanese…) */
+#lyrics2 .w2.j{margin-right:0!important}#lyrics2 .w2.j+.w2{margin-left:0!important}
+/* Apple Music-style view */
+#app.lfx-apple #lyrics2{--apo:50%;-webkit-mask-image:linear-gradient(transparent,#000 13%,#000 74%,transparent);mask-image:linear-gradient(transparent,#000 13%,#000 74%,transparent)}
+#app.lfx-apple.lypos-left #lyrics2,#app.lfx-apple.lypos-right #lyrics2{--apo:0%}
+#app.lfx-apple.lypos-center #lyrics2{top:36%;height:26rem;width:52rem}
+#app.lfx-apple.editing #lyrics2{-webkit-mask-image:none;mask-image:none;overflow:hidden}
+#lyrics2 .ap{position:absolute;left:0;right:0;top:0}
+#lyrics2 .al{padding:calc(var(--lys) * .17) 0;font:800 calc(var(--lys) * .66)/1.16 Nunito,"SF Pro Rounded","Arial Rounded MT Bold","Segoe UI Black",system-ui,sans-serif;letter-spacing:-.01em;
+  color:rgba(var(--lyc, 255,255,255),var(--lyA, 1));text-shadow:0 .2rem 1.2rem rgba(0,0,0,calc(.35 * var(--lyA, 1)));opacity:.3;filter:blur(calc(var(--dist, 1) * .55px));scale:.96;transform-origin:var(--apo) 50%;
+  transition:transform .8s cubic-bezier(.2,.85,.25,1),opacity .55s ease,filter .55s ease,scale .6s cubic-bezier(.2,.85,.25,1)}
+#lyrics2 .al.past{opacity:.2}
+#lyrics2 .al.on{opacity:1;filter:none;scale:1}
+#lyrics2 .al.far{visibility:hidden}
+#lyrics2 .aw{display:inline-block;transition:transform .7s cubic-bezier(.2,.85,.25,1),filter .4s}
+#lyrics2 .al.on.timed .aw{color:transparent;text-shadow:none;background-image:linear-gradient(90deg,rgba(var(--lyc, 255,255,255),var(--lyA, 1)) 45%,rgba(var(--lyc, 255,255,255),calc(.36 * var(--lyA, 1))) 55%);
+  background-size:260% 100%;background-position:calc((1 - var(--f, 0)) * 100%) 0;-webkit-background-clip:text;background-clip:text;padding:.08em 0;margin:-.08em 0}
+#lyrics2 .al.on .aw.up{transform:translateY(-.05em)}
+#lyrics2 .al.on .aw.em.glow{transform:translateY(-.07em) scale(1.06);filter:drop-shadow(0 0 .22em rgba(var(--lyc, 255,255,255),.55))}
+#lyrics2 .al:not(.on):not(.timed) .aw,#lyrics2 .al.on:not(.timed) .aw{color:inherit}
+#lyrics2 .atr{margin-top:.25em;font:600 calc(var(--lys) * .3)/1.3 Inter,system-ui,sans-serif;letter-spacing:0;text-transform:none;opacity:.78}
+#lyrics2 .al.dots{display:flex;gap:calc(var(--lys) * .17);align-items:center;justify-content:var(--apj, center);height:calc(var(--lys) * .9);opacity:0}
+#app.lypos-left #lyrics2 .al.dots,#app.lypos-right #lyrics2 .al.dots{--apj:flex-start}
+#lyrics2 .al.dots.on{opacity:1;animation:apbreathe 2.6s ease-in-out infinite}
+#lyrics2 .al.dots.on.end{animation:none;scale:.6;opacity:0;transition:scale .4s,opacity .4s}
+#lyrics2 .al.dots i{width:calc(var(--lys) * .17);height:calc(var(--lys) * .17);border-radius:50%;background:rgba(var(--lyc, 255,255,255),calc(.3 * var(--lyA, 1)));transition:background .5s}
+#lyrics2 .al.dots i.on{background:rgba(var(--lyc, 255,255,255),var(--lyA, 1))}
+@keyframes apbreathe{0%,100%{scale:.92}50%{scale:1.08}}
 #lyrics2 .w2.gone{max-height:0;opacity:0;transform:translateY(-.9rem) scale(.94);filter:blur(.7rem)}
 
 /* ───────── playlist (left, text-only, tilted toward the centre) ───────── */
@@ -160,6 +196,20 @@ img{display:block}
 .qi span{display:block;font-size:1.12rem;color:var(--txt2);margin-top:.2rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .qi.cur{background:rgba(var(--accent),.28);box-shadow:0 0 0 1px rgba(var(--accent),.45) inset}
 .qi .eq{display:none}
+/* queue items: drag handle, play next, remove (shown on hover) */
+.qi{display:flex;align-items:center;gap:.4rem;position:relative}
+.qi .qm{flex:1;min-width:0}
+.qi .qg{flex:none;width:1.6rem;margin-left:-.5rem;display:grid;place-items:center;opacity:0;cursor:grab;color:var(--txt2);transition:opacity .2s;touch-action:none}
+.qi .qg .ico{width:1.5rem;height:1.5rem}
+.qi .qx{flex:none;display:flex;gap:.35rem;opacity:0;transition:opacity .2s}
+.qi:hover .qg,.qi:hover .qx{opacity:1}
+.qi .qx button{width:2.3rem;height:2.3rem;border-radius:50%;display:grid;place-items:center;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2)}
+.qi .qx button:hover{background:rgba(255,255,255,.22)}
+.qi .qx .ico{width:1.2rem;height:1.2rem}
+.qi.lift{opacity:.45}
+.qi.dropb::before,.qi.dropa::after{content:"";position:absolute;left:.4rem;right:.4rem;height:.22rem;border-radius:.2rem;background:rgb(var(--accent));box-shadow:0 0 .8rem rgba(var(--accent),.8)}
+.qi.dropb::before{top:-.4rem}.qi.dropa::after{bottom:-.4rem}
+#qlist.reorder,#qlist.reorder *{cursor:grabbing!important;user-select:none}
 .qempty{font-size:1.15rem;color:var(--txt2);padding:.4rem 0}
 .eq{display:inline-flex;gap:.18rem;align-items:flex-end;height:1.1rem}
 .eq i{display:block;width:.22rem;height:30%;background:#fff;border-radius:.1rem;animation:eq .9s ease-in-out infinite}
@@ -204,6 +254,10 @@ img{display:block}
 #q{flex:1;min-width:0;background:none;border:0;outline:0;color:#fff;font:500 1.35rem Inter,system-ui,sans-serif;caret-color:rgb(var(--accent));user-select:text;-webkit-user-select:text}
 #q::placeholder{color:rgba(255,255,255,.62)}
 .sbtns{display:flex;gap:.1rem;opacity:.75;transition:opacity .2s}
+#qClear{display:none;width:2.2rem;height:2.2rem;margin-right:-.3rem;background:rgba(255,255,255,.16);color:rgba(255,255,255,.85)}
+#qClear .ico{width:1.2rem;height:1.2rem;stroke-width:2.4}
+#qClear:hover{background:rgba(255,255,255,.28);color:#fff}
+#searchBox:has(#q:not(:placeholder-shown)) #qClear{display:grid}
 #searchBox:hover .sbtns{opacity:1}
 .sbtns .b{width:2.8rem;height:2.8rem}
 .sbtns .b .ico{width:1.5rem;height:1.5rem}
@@ -252,6 +306,15 @@ img{display:block}
 .keybind{display:flex;gap:.8rem;align-items:center}.kbtn{flex:1;text-align:left;padding:.6rem 1rem;border-radius:.9rem;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.16);font:700 1.1rem Inter,system-ui;color:#fff}.kbtn:hover{background:rgba(255,255,255,.18)}.kbtn.rec{background:rgba(var(--accent),.35);border-color:rgba(var(--accent),.9)}
 .keys kbd{justify-self:start;font:700 .95rem Inter,system-ui;color:#fff;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.18);border-radius:.5rem;padding:.12rem .5rem;min-width:1.9rem;text-align:center}
 #dock{transition:opacity .4s}
+/* choose the video on the desktop: the song's own, or another one by the same artist */
+#mvPick{display:none;justify-content:center;gap:.7rem;margin-bottom:-.2rem;position:relative}
+#mvPick.on{display:flex}
+#mvPick button{width:.9rem;height:.9rem;border-radius:50%;background:rgba(255,255,255,.35);box-shadow:0 0 0 1px rgba(0,0,0,.15);transition:transform .2s,background .2s}
+#mvPick button:hover{transform:scale(1.35);background:rgba(255,255,255,.75)}
+#mvPick button.on{background:#fff;transform:scale(1.25)}
+#mvPick .tip{position:absolute;bottom:1.8rem;left:50%;transform:translateX(-50%);padding:.4rem .9rem;border-radius:1rem;font-size:1.05rem;font-weight:600;white-space:nowrap;max-width:36rem;overflow:hidden;text-overflow:ellipsis;opacity:0;pointer-events:none;transition:opacity .2s}
+#mvPick:hover .tip{opacity:1}
+#app.mirror #mvPick,#app.bare #mvPick,#app.lyricsmode #mvPick,#app.searching #mvPick{display:none!important}
 .rem{font-size:1rem;color:var(--txt3)}
 /* search panel (above the search field) */
 #results{position:absolute;left:0;right:0;bottom:calc(100% + .8rem);max-height:41rem;overflow-y:auto;scrollbar-width:none;border-radius:2.2rem;padding:1.4rem 1.4rem 1rem;background:rgba(24,25,30,.55);
@@ -457,7 +520,8 @@ img{display:block}
   background:rgba(40,40,46,.62)}
 .menu.open{opacity:1;pointer-events:auto;transform:none}
 #platMenu{left:0;bottom:6.4rem}
-#moreMenu{right:15rem;bottom:6.4rem;transform-origin:bottom right}
+#musicPop{position:absolute;left:2.2%;top:26%;width:30rem;transform-origin:top left}
+#musicPop .mf{display:flex;align-items:center;gap:.6rem;padding:.35rem .8rem;font-size:1.12rem;color:var(--txt2)}#musicPop .mf span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}#musicPop .mi em{margin-left:auto;font-style:normal;font-size:1.05rem;color:var(--txt2)}
 .mi{display:flex;align-items:center;gap:1rem;width:100%;padding:.75rem .8rem;border-radius:1rem;font-size:1.32rem;font-weight:600;text-align:left;color:#fff;text-decoration:none;transition:background .15s}
 .mi:hover,.mi.sel{background:rgba(255,255,255,.13)}
 .mi .pi{width:2.1rem;height:2.1rem;flex:none}
@@ -466,7 +530,64 @@ img{display:block}
 .mi.sel .ck,.mi.chk .ck{opacity:1}
 .msep{height:1px;background:rgba(255,255,255,.12);margin:.45rem .6rem}
 #lyrPop{right:11rem;bottom:6.4rem;width:36rem;max-height:52rem;overflow:auto;scrollbar-width:none;transform-origin:bottom right;padding:.8rem}
-#appPop{right:5rem;bottom:6.4rem;width:38rem;max-height:56rem;overflow:auto;scrollbar-width:none;transform-origin:bottom right;padding:.8rem 1rem 1rem}
+/* settings window: sidebar + page, like macOS System Settings */
+#appPop{left:50%;top:50%;width:min(70rem,92vw);height:min(48rem,86vh);padding:0;display:flex;overflow:hidden;border-radius:1.5rem;z-index:35;
+  background:rgba(30,30,36,.8);transform:translate(-50%,-48%) scale(.97);transform-origin:center;box-shadow:0 2.4rem 6rem rgba(0,0,0,.5),0 0 0 1px rgba(255,255,255,.08) inset}
+#appPop.open{transform:translate(-50%,-50%)}
+#appPop .snav{width:18.5rem;flex:none;display:flex;flex-direction:column;padding:1rem .8rem;background:rgba(255,255,255,.035);border-right:1px solid rgba(255,255,255,.08)}
+#appPop .stop{height:1.8rem;display:flex;align-items:center;padding:0 .5rem;margin-bottom:.9rem}
+#appPop .sclose{width:1.25rem;height:1.25rem;border-radius:50%;background:#ff5f57;box-shadow:0 0 0 .5px rgba(0,0,0,.25) inset;position:relative}
+#appPop .sclose::after{content:"×";position:absolute;inset:0;display:grid;place-items:center;font:700 1.05rem/1 Inter,system-ui;color:rgba(80,0,0,.75);opacity:0;transition:opacity .15s}
+#appPop .snav:hover .sclose::after{opacity:1}
+#appPop .ssearch{display:flex;align-items:center;gap:.5rem;height:2.7rem;padding:0 .8rem;margin:0 .2rem .9rem;border-radius:.8rem;background:rgba(255,255,255,.08);border:1px solid transparent;cursor:text}
+#appPop .ssearch:focus-within{border-color:rgba(var(--accent),.7)}
+#appPop .ssearch .ico{width:1.3rem;height:1.3rem;color:var(--txt3)}
+#appPop .ssearch input{flex:1;min-width:0;background:none;border:0;outline:0;color:#fff;font:500 1.15rem Inter,system-ui,sans-serif;user-select:text;-webkit-user-select:text}
+#appPop .ssearch input::placeholder{color:var(--txt3)}
+#appPop .slist{flex:1;overflow:auto;scrollbar-width:none;display:flex;flex-direction:column;gap:.1rem}
+#appPop .sn{display:flex;align-items:center;gap:.8rem;padding:.42rem .55rem;border-radius:.75rem;font-size:1.18rem;font-weight:500;text-align:left;color:rgba(255,255,255,.9);transition:background .12s}
+#appPop .sn:hover{background:rgba(255,255,255,.06)}
+#appPop .sn.on{background:rgba(255,255,255,.14);color:#fff;font-weight:600}
+#appPop .sn.hide,#appPop .snsep.hide{display:none}
+#appPop .snsep{height:1px;margin:.5rem .6rem;background:rgba(255,255,255,.08);flex:none}
+.stile{width:2rem;height:2rem;border-radius:.55rem;display:grid;place-items:center;flex:none;box-shadow:0 0 0 .5px rgba(255,255,255,.18) inset,0 .1rem .3rem rgba(0,0,0,.25)}
+.stile svg{width:1.35rem;height:1.35rem;fill:none;stroke:#fff;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+#appPop .sbody{flex:1;min-width:0;overflow:auto;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.18) transparent;padding:1.4rem 2rem 2rem}
+#appPop .sbody h2{font-size:1.75rem;font-weight:700;letter-spacing:-.01em;margin:.15rem 0 1.1rem}
+#appPop .sg{margin-bottom:1.5rem}
+#appPop .sg h4{font-size:1.08rem;font-weight:600;color:var(--txt2);margin:0 0 .5rem .3rem}
+#appPop .sc{border-radius:1rem;background:rgba(255,255,255,.055);border:1px solid rgba(255,255,255,.07);overflow:hidden}
+#appPop .sr{display:flex;align-items:center;justify-content:space-between;gap:1.2rem;min-height:3.6rem;padding:.65rem 1.1rem;font-size:1.18rem;font-weight:500}
+#appPop .sr+.sr,#appPop .sr+#ambMons .sr,#appPop #ambMons .sr+.sr{border-top:1px solid rgba(255,255,255,.07)}
+#appPop .sr.col{flex-direction:column;align-items:stretch;gap:.55rem}
+#appPop .sl{min-width:0;display:flex;flex-direction:column;gap:.15rem}
+#appPop .sl b{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#appPop .sl small{font-size:.98rem;font-weight:400;color:var(--txt3);line-height:1.4}
+#appPop .sr .chips{padding:0}
+#appPop .sr input[type=range]{width:18rem;accent-color:rgb(var(--accent))}
+#appPop .sr .sw{padding:0}
+#appPop .sr .bgq{padding:0}
+#appPop .sr .bgv{width:100%;margin:0}
+#appPop #ambMons .lnote{display:none}
+#appPop #ambMons .lrow{display:flex;min-height:3.4rem;padding:.6rem 1.1rem;border-top:1px solid rgba(255,255,255,.07);font-size:1.18rem;font-weight:500}
+#appPop .abtn{padding:.5rem 1.1rem;font-size:1.05rem}
+#appPop .abtn.warn{background:rgba(255,69,58,.2);color:#ff8a80}
+#appPop .keys{display:flex;gap:.5rem;align-items:center;padding:0}
+#appPop .tg:disabled{opacity:.5}
+#appPop #accMenu.inset{position:static;opacity:1;pointer-events:auto;transform:none;width:auto;padding:0;background:none;box-shadow:none;border:0;-webkit-backdrop-filter:none;backdrop-filter:none}
+#appPop #accMenu.inset>.mh{display:none}
+#appPop #accMenu.inset .acc{background:rgba(255,255,255,.055);padding:1rem 1.1rem;border:1px solid rgba(255,255,255,.07);border-radius:0}
+#appPop #accMenu.inset .acc:first-of-type{border-radius:1rem 1rem 0 0}#appPop #accMenu.inset .acc:last-child{border-radius:0 0 1rem 1rem}
+#appPop #accMenu.inset .acc+.acc{border-top:0}
+/* a little island preview at the top of its page */
+#appPop .isldemo{display:grid;place-items:center;height:7rem;margin-bottom:1.2rem;border-radius:1rem;background:linear-gradient(160deg,rgba(var(--accent),.35),rgba(0,0,0,.25))}
+.ipill{display:flex;align-items:center;gap:.8rem;height:3.2rem;width:24rem;padding:0 1rem 0 .4rem;border-radius:1.6rem;background:rgba(36,38,46,.5);-webkit-backdrop-filter:var(--blur);backdrop-filter:var(--blur);border:1px solid var(--brd);box-shadow:0 .1rem 0 rgba(255,255,255,.06) inset,0 .6rem 1.6rem rgba(0,0,0,.3);font-size:1.1rem;font-weight:600}
+.ipill .ia{width:2.4rem;height:2.4rem;border-radius:50%;background:rgba(255,255,255,.2) center/cover;flex:none}
+.ipill span{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ieq{display:flex;align-items:center;gap:.18rem;height:1.4rem}
+.ieq i{width:.25rem;height:100%;border-radius:.2rem;background:rgb(var(--accent));animation:ieq 1s ease-in-out infinite;transform-origin:center}
+.ieq i:nth-child(2){animation-delay:-.35s}.ieq i:nth-child(3){animation-delay:-.7s}
+@keyframes ieq{0%,100%{transform:scaleY(.35)}50%{transform:scaleY(1)}}
 .lrow{display:flex;align-items:center;justify-content:space-between;gap:1rem;padding:.55rem .8rem;font-size:1.15rem;font-weight:600}
 .lrow select{background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.18);border-radius:.9rem;padding:.4rem .7rem;font:600 1.08rem Inter,system-ui,sans-serif;outline:0}
 .lrow select option{background:#26262c}
@@ -502,6 +623,15 @@ button.bgv:hover{background:rgba(255,255,255,.08)}
 /* ───────── misc ───────── */
 #toast{position:absolute;left:50%;top:3.2rem;transform:translate(-50%,-1rem);padding:.8rem 1.5rem;border-radius:2rem;font-size:1.2rem;font-weight:600;opacity:0;transition:.35s;z-index:30;pointer-events:none;white-space:nowrap}
 #toast.on{opacity:1;transform:translate(-50%,0)}
+#upPill{position:absolute;right:1.6rem;top:1.6rem;display:none;align-items:center;gap:.5rem;padding:.45rem .45rem .45rem 1.2rem;border-radius:2rem;font-size:1.12rem;font-weight:600;z-index:31;white-space:nowrap}
+#upPill.on{display:flex}
+#askPill{position:absolute;left:50%;top:1.6rem;transform:translateX(-50%);display:none;align-items:center;gap:.6rem;padding:.45rem .45rem .45rem 1.3rem;border-radius:2rem;font-size:1.12rem;z-index:32;max-width:92vw}
+#askPill.on{display:flex}#askPill span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}#askPill .chip{flex:none}
+#upCard{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:min(38rem,90vw);max-height:80vh;display:none;flex-direction:column;gap:.7rem;padding:1.6rem 1.8rem;border-radius:1.6rem;z-index:40}
+#upCard.on{display:flex}#upCard h3{margin:0;font-size:1.6rem;font-weight:700}
+#upCard .upNotes{overflow:auto;max-height:42vh;padding:.8rem 1rem;border-radius:1rem;background:rgba(255,255,255,.06);font-size:1.15rem;line-height:1.5}
+#upCard .upNotes h4{margin:.6rem 0 .2rem;font-size:1.2rem}#upCard .upNotes p{margin:.25rem 0}#upCard .upNotes li{margin:.15rem 0 .15rem 1.1rem}
+#upCard .chips{justify-content:flex-end}
 #dropHint{position:absolute;inset:2rem;border:.2rem dashed rgba(255,255,255,.5);border-radius:2.4rem;display:grid;place-items:center;font-size:2rem;font-weight:700;background:rgba(0,0,0,.35);opacity:0;pointer-events:none;transition:.25s;z-index:40}
 #app.drag #dropHint{opacity:1}
 .pi{display:block;border-radius:.55rem}
@@ -564,10 +694,11 @@ button.bgv:hover{background:rgba(255,255,255,.08)}
   <section id="queue" class="widget">
     <header class="qhead">
       <div class="qt" id="qToggle"><b><span id="qTitle">Continue Playing</span> <svg class="ico" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></b><span id="qsub">Up next</span></div>
-      <span class="qbtns"><button class="qbtn" id="qRefresh" title="Refresh — songs like this"></button><button class="qbtn" id="qHist" title="History — songs you played"></button></span>
+      <span class="qbtns"><button class="qbtn" id="qMusic" title="My music — songs on this PC"></button><button class="qbtn" id="qRefresh" title="Refresh — songs like this"></button><button class="qbtn" id="qHist" title="History — songs you played"></button></span>
     </header>
     <ol id="qlist"></ol>
   </section>
+  <div id="musicPop" class="glass menu"></div>
 
   <div id="flowWrap" class="widget">
     <div id="flowLabel"></div>
@@ -576,13 +707,14 @@ button.bgv:hover{background:rgba(255,255,255,.08)}
   </div>
 
   <div id="dock">
+    <div id="mvPick"></div>
     <div id="results" class="glass">
       <div id="rCta"></div><div class="rsug" id="rSug"></div><div class="rtabs" id="rTabs"></div><div class="rlabel" id="rTopLabel">Top Results</div><div class="rrow" id="rTop"></div><div id="rEnt"></div>
       <div class="rlabel" id="rColLabel" style="display:none">Playlists &amp; albums</div><div class="rrow" id="rCols"></div>
       <div class="rlabel" id="rSongsLabel">Songs</div><div id="rSongs"></div>
     </div>
-    <div id="searchBox"><span id="sIco"></span><input id="q" placeholder="Search YouTube Music" spellcheck="false" autocomplete="off">
-      <span class="sbtns"><button class="b" id="eyeBtn" type="button"></button><button class="b" id="mvBtn" type="button" title="Music video wallpaper"></button><button class="b" id="focusBtn" type="button" title="Hide UI  (H)"></button></span></div>
+    <div id="searchBox"><span id="sIco"></span><input id="q" placeholder="Search YouTube Music" spellcheck="false" autocomplete="off"><button class="b" id="qClear" type="button" title="Clear"></button>
+      <span class="sbtns"><button class="b" id="mvBtn" type="button" title="Music video wallpaper"></button><button class="b" id="focusBtn" type="button" title="Hide UI  (H)"></button></span></div>
     <div id="bar" class="glass">
       <button class="b" id="platBtn" title="Platform"></button>
       <button class="b" id="prevBtn" title="Previous"></button>
@@ -590,29 +722,33 @@ button.bgv:hover{background:rgba(255,255,255,.08)}
       <button class="b" id="nextBtn" title="Next"></button>
       <button class="b sm" id="repBtn" title="Repeat"></button>
       <div id="np"><img id="npArt" class="none" alt=""><div class="npt"><b id="npTitle">Not Playing</b><span id="npSub">Play something in Music</span></div>
-        <button class="b sm" id="likeBtn" title="Like"></button><button class="b sm" id="moreBtn" title="More"></button><div id="prog"><i></i></div></div>
+        <button class="b sm" id="likeBtn" title="Like"></button><div id="prog"><i></i></div></div>
       <button class="b sm" id="lyrBtn" title="Lyrics &amp; subtitles"></button>
+      <button class="b sm" id="eyeBtn" title="Cover flow"></button>
       <button class="b sm" id="listBtn" title="Playlist"></button>
-      <button class="b sm" id="ambBtn" title="Appearance &amp; ambient light"></button>
       <button class="b sm" id="dimBtn" title="Dim wallpaper"></button>
       <button class="b sm" id="volBtn" title="Volume (scroll)"></button>
+      <button class="b sm" id="moreBtn" title="Settings"></button>
     </div>
     <div id="platMenu" class="glass menu"></div>
-    <div id="moreMenu" class="glass menu"></div>
     <div id="accMenu" class="glass menu"></div>
     <div id="lyrPop" class="glass menu"></div>
-    <div id="appPop" class="glass menu"></div>
     <div id="volPop" class="glass menu"></div>
   </div>
+  <div id="appPop" class="glass menu"></div>
   <div id="editSheet" class="glass"></div>
   <button id="restoreBtn" class="glass" title="Show UI  (H)"></button>
 
   <div id="toast" class="glass"></div>
-  <div id="dropHint">Drop an image or video to set it as wallpaper</div>
+  <div id="upPill" class="glass"><span id="upMsg"></span><button class="chip on" id="upGo"></button><button class="chip" id="upX" title="Hide">✕</button></div>
+  <div id="upCard" class="glass"></div>
+  <div id="askPill" class="glass"></div>
+  <div id="dropHint">Drop songs or a music folder to play them · a picture or video to make it the wallpaper</div>
   <input type="file" id="wpFile" accept="image/*,video/*" hidden>
 </div>
 <div id="rotateHint">Desktop skin · best viewed full-screen on a computer</div>
 
+<script src="i18n-vi.js"></script>
 <script>
 "use strict";
 /* ════════════════════ env ════════════════════ */
@@ -621,6 +757,42 @@ const invoke = (c, a) => T ? T.core.invoke(c, a) : Promise.reject('no-tauri');
 const listen = (e, f) => T ? T.event.listen(e, f) : null;
 const $ = s => document.querySelector(s);
 const app = $('#app');
+
+/* ════════════════════ interface language ════════════════════ */
+// English in the code; Vietnamese is swapped in as texts appear (i18n-vi.js). Songs, artists,
+// lyrics and results stay as they are. Default: Vietnamese when Windows is in Vietnamese.
+const I18N = (() => {
+  let saved = null; try { saved = (JSON.parse(localStorage.getItem('wp.look') || '{}') || {}).lang } catch(e){}
+  const lang = saved || (/^vi\b/i.test(navigator.language || '') ? 'vi' : 'en');
+  const V = window.WP_VI || {dict: {}, patterns: []};
+  const NOTR = '#qlist .qm,#flow,#lyrics2,#npTitle,#npSub,#rTop,#rSongs,#rEnt,#rCols,#rSug,#clock,.upNotes,#lyrList .lv,#mvPick .tip,.bgv,#askPill b,#flowLabel,svg,script,style,textarea,.selftest';
+  const tr = t => {
+    if (lang !== 'vi' || !t) return t; const k = t.trim(); if (!k) return t;
+    const v = V.dict[k]; if (v != null) return t.replace(k, v);
+    for (const [re, rp] of V.patterns){ const m = k.match(re); if (m) return t.replace(k, typeof rp === 'function' ? rp(m, tr) : k.replace(re, rp)) }
+    return t;
+  };
+  const skip = el => !el || (el.closest && el.closest(NOTR));
+  const ATTRS = ['title', 'placeholder', 'aria-label'];
+  const doText = n => { if (skip(n.parentElement)) return; const v = tr(n.nodeValue); if (v !== n.nodeValue) n.nodeValue = v };
+  const doAttr = (el, a) => { const o = el.getAttribute(a); if (o == null || skip(el)) return; const v = tr(o); if (v !== o) el.setAttribute(a, v) };
+  const doTree = root => {
+    if (root.nodeType === 3){ doText(root); return } if (root.nodeType !== 1 || skip(root)) return;
+    for (const a of ATTRS) if (root.hasAttribute(a)) doAttr(root, a);
+    root.querySelectorAll('[title],[placeholder],[aria-label]').forEach(el => { for (const a of ATTRS) if (el.hasAttribute(a)) doAttr(el, a) });
+    const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT); let n; while ((n = w.nextNode())) doText(n);
+  };
+  if (lang === 'vi'){
+    document.documentElement.lang = 'vi';
+    doTree(document.body);
+    new MutationObserver(ms => { for (const m of ms){
+      if (m.type === 'childList') m.addedNodes.forEach(doTree);
+      else if (m.type === 'characterData') doText(m.target);
+      else doAttr(m.target, m.attributeName);
+    } }).observe(document.body, {subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ATTRS});
+  }
+  return {lang, tr};
+})();
 // Mirror = this page running on another monitor as a display-only copy of the main window.
 // It reads the same saved settings and follows what the main window plays; it never saves.
 const MIRROR = !!window.__WP_MIRROR__ || new URLSearchParams(location.search).has('mirror');
@@ -637,6 +809,9 @@ const enc = encodeURIComponent;
 const I = {
   playNext:'<svg class="ico" viewBox="0 0 24 24"><path d="M4 6.5h11M4 12h7M4 17.5h7"/><path d="M14.5 10.5v8.5l6.5-4.25z" fill="currentColor" stroke="none"/></svg>',
   addQ:'<svg class="ico" viewBox="0 0 24 24"><path d="M4 6.5h11M4 12h11M4 17.5h7M17.5 14.5v7M14 18h7"/></svg>',
+  folder:'<svg class="ico" viewBox="0 0 24 24"><path d="M3.5 7.5V18a1.5 1.5 0 0 0 1.5 1.5h14a1.5 1.5 0 0 0 1.5-1.5V9.5A1.5 1.5 0 0 0 19 8h-7l-2-2.5H5A1.5 1.5 0 0 0 3.5 7v.5Z"/><path d="M12 11v5M9.5 13.5h5"/></svg>',
+  xs:'<svg class="ico" viewBox="0 0 24 24"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></svg>',
+  grip:'<svg class="ico" viewBox="0 0 24 24"><g fill="currentColor" stroke="none"><circle cx="9" cy="6.5" r="1.4"/><circle cx="15" cy="6.5" r="1.4"/><circle cx="9" cy="12" r="1.4"/><circle cx="15" cy="12" r="1.4"/><circle cx="9" cy="17.5" r="1.4"/><circle cx="15" cy="17.5" r="1.4"/></g></svg>',
   prev:'<svg class="ico f" viewBox="0 0 24 24"><path d="M11.5 6.2v11.6L3.6 12zM20.4 6.2v11.6L12.5 12z"/></svg>',
   next:'<svg class="ico f" viewBox="0 0 24 24"><path d="M12.5 6.2v11.6l7.9-5.8zM3.6 6.2v11.6l7.9-5.8z"/></svg>',
   play:'<svg class="ico f" viewBox="0 0 24 24"><path d="M7 4.8v14.4c0 .8.9 1.3 1.6.9l11.3-7.2c.6-.4.6-1.4 0-1.8L8.6 3.9C7.9 3.5 7 4 7 4.8z"/></svg>',
@@ -654,6 +829,8 @@ const I = {
   search:'<svg class="ico" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/></svg>',
   record:'<svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="3" fill="currentColor"/></svg>',
   expand:'<svg class="ico" viewBox="0 0 24 24"><path d="M14 4h6v6M20 4l-6.5 6.5M10 20H4v-6M4 20l6.5-6.5"/></svg>',
+  collapse:'<svg class="ico" viewBox="0 0 24 24"><path d="M20 10h-6V4M14 10l6.5-6.5M4 14h6v6M10 14l-6.5 6.5"/></svg>',
+  flow:'<svg class="ico" viewBox="0 0 24 24"><rect x="8.3" y="4.5" width="7.4" height="15" rx="1.6"/><path d="M5.6 7 2.8 8.1v7.8l2.8 1.1M18.4 7l2.8 1.1v7.8l-2.8 1.1"/></svg>',
   eye:'<svg class="ico" viewBox="0 0 24 24"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="3"/></svg>',
   eyeOff:'<svg class="ico" viewBox="0 0 24 24"><path d="M3 3l18 18M10.6 6.1c.5-.1.9-.1 1.4-.1 6 0 9.5 6 9.5 6a17 17 0 0 1-2.9 3.6M6.6 6.6C3.9 8.4 2.5 12 2.5 12S6 18.5 12 18.5c1.6 0 3-.4 4.2-1.1"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>',
   check:'<svg class="ico ck" viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>',
@@ -718,7 +895,7 @@ const S = {
   acc: null, mvKey: '', tgtA: [255, 255, 255], tgtB: [255, 255, 255],
   repeat: store.get('repeat', 'off'), qLabel: '', lyrSource: '', lyrTr: {}, trCache: {},
   sub: store.get('sub', {l1: 'orig', l2: 'vi'}),
-  look: Object.assign({clock: true, ck: 'tall', ly: 'rounded', lys: 'm', lc: 'lower', ambK: 1, ambW: 1.35, theme: 'accent', pickIdx: 0, ckpos: 'top', lypos: 'center', lyst: 'player', lfx: 'stack', afx: 'comet', acol: 'art', vq: 'auto', ckwt: {}, lysz: 0, bg: 'auto', wpBlur: 0, bgEach: true, bgVid: null}, store.get('look', {})),
+  look: Object.assign({clock: true, ck: 'tall', ly: 'rounded', lys: 'm', lc: 'lower', ambK: 1, ambW: 1.35, theme: 'accent', pickIdx: 0, ckpos: 'top', lypos: 'center', lyst: 'player', lfx: 'stack', afx: 'comet', acol: 'art', vq: 'auto', pwr: 'auto', pcov: true, ckwt: {}, lysz: 0, bg: 'auto', wpBlur: 0, bgEach: true, bgVid: null}, store.get('look', {})),
   pal: null,
   qOff: store.get('qOff', false),
   hide: Object.assign({bar: false, search: false, flow: false}, store.get('hide', {}))
@@ -836,14 +1013,44 @@ function setAccent(p){
   S.tgtA = a; S.tgtB = a.map((v, i) => Math.round(v * .55 + b[i] * .45));
   FX.setColors(a, b);
 }
+/* ════════════════════ power: rest in silence, lighter on battery, sleep when covered ════════════════════ */
+// rest   = no music and no sound for a moment: the motion eases to a stop, then nothing is drawn
+// asleep = another window covers the screen (or the page is hidden): nothing is drawn, the video pauses
+// low    = on battery / Energy Saver (Auto) or Saver chosen: 30 fps, 720p video, half-rate sound updates
+const PW = {
+  battery: false, saver: false, full: false, max: false, monitor: '', preview: false,
+  motion: 1, quiet: 0, until: 0, wasLow: null, wasAsleep: false,
+  asleep(){ return document.hidden || (S.look.pcov !== false && (this.full || this.max)) },
+  low(){ const m = S.look.pwr || 'auto'; return m === 'saver' || (m === 'auto' && (this.battery || this.saver)) },
+  // settings / colours changed while resting: draw for a moment so the frozen frame is the new one
+  kick(){ this.until = performance.now() + 1400; if (typeof wakeLoop === 'function') wakeLoop() },
+  set(st){ const mon = st.monitor || ''; const moved = mon !== this.monitor; Object.assign(this, {battery: !!st.battery, saver: !!st.saver, full: !!st.full, max: !!st.max, monitor: mon}); if (moved && typeof applyToggles === 'function') applyToggles(); this.apply(); if (typeof islandSync === 'function') islandSync() },
+  apply(){
+    const low = this.low(), asleep = this.asleep();
+    if (low !== this.wasLow){ this.wasLow = low; app.classList.toggle('lowpow', low); if (typeof YTV !== 'undefined') reapplyQuality(); if (T && !MIRROR) invoke('set_power_prefs', {coverPause: S.look.pcov !== false, low}).catch(() => {}) }
+    if (asleep !== this.wasAsleep){ this.wasAsleep = asleep; app.classList.toggle('asleep', asleep); if (!asleep){ this.kick(); if (typeof mvSync === 'function') mvSync() } else if (typeof mvSync === 'function') mvSync() }
+    if ($('#appPop') && $('#appPop').classList.contains('open') && $('#pwrNow')) $('#pwrNow').textContent = pwrNow();
+  },
+  prefs(){ this.wasLow = null; this.apply() }   // apply() then tells the app the new preferences
+};
+function pwrNow(){
+  if (PW.asleep() && !document.hidden) return 'Now: resting, a window covers this screen';
+  if (PW.low()) return S.look.pwr === 'saver' ? 'Now: lighter' : (PW.saver ? 'Now: lighter, Energy Saver is on' : 'Now: lighter, running on battery');
+  return 'Now: full quality';
+}
+document.addEventListener('visibilitychange', () => PW.apply());
+
 /* ════════════════════ wallpaper / fx ════════════════════ */
 const FX = (() => {
   const cv = $('#fx'), x = cv.getContext('2d'); let W = 0, H = 0, c1 = [120, 80, 255], c2 = [255, 80, 160], t = 0, last = 0;
   const stars = Array.from({length: 70}, () => ({x: Math.random(), y: Math.random() * .75, r: Math.random() * 1.4 + .3, p: Math.random() * 6.28, s: .5 + Math.random()}));
   function size(){ const r = app.getBoundingClientRect(); W = cv.width = Math.max(320, Math.round(r.width / 2)); H = cv.height = Math.max(180, Math.round(r.height / 2)) }
   function blob(cx, cy, rad, col, a){ const g = x.createRadialGradient(cx, cy, 0, cx, cy, rad); g.addColorStop(0, `rgba(${col},${a})`); g.addColorStop(1, `rgba(${col},0)`); x.fillStyle = g; x.fillRect(0, 0, W, H) }
-  function draw(now){
-    requestAnimationFrame(draw); if (document.hidden || now - last < 33) return; const dt = Math.min(.1, (now - last) / 1000); last = now; t += dt * (.25 + S.amb * .5);
+  // driven by the main loop: ~30 fps, ~15 fps when lighter; motion eases to 0 at rest
+  function draw(now, motion){
+    if (now - last < (PW.low() ? 66 : 33)) return; const dt = Math.min(.1, (now - last) / 1000); last = now;
+    if (app.classList.contains('deskbg')) return;   // invisible behind the Windows wallpaper
+    t += dt * (.25 + S.amb * .5) * motion;
     x.clearRect(0, 0, W, H); x.globalCompositeOperation = 'lighter'; const k = .14 + Math.min(S.amb, 1) * .12;
     blob(W * (.25 + .12 * Math.sin(t * .7)), H * (.75 + .08 * Math.cos(t * .5)), W * .55, c1, k);
     blob(W * (.75 + .1 * Math.cos(t * .6)), H * (.3 + .1 * Math.sin(t * .8)), W * .5, c2, k * .9);
@@ -851,8 +1058,8 @@ const FX = (() => {
     x.globalCompositeOperation = 'source-over';
     for (const s of stars){ const a = (.35 + .65 * Math.abs(Math.sin(t * s.s * 2 + s.p))) * (.4 + S.amb * .6); x.fillStyle = `rgba(255,255,255,${a})`; x.beginPath(); x.arc(s.x * W, s.y * H, s.r, 0, 6.29); x.fill() }
   }
-  addEventListener('resize', size); size(); requestAnimationFrame(draw);
-  return {setColors(a, b){ c1 = a.join(','); c2 = b.join(',') }};
+  addEventListener('resize', () => { size(); PW.kick() }); size();
+  return {draw, setColors(a, b){ c1 = a.join(','); c2 = b.join(','); PW.kick() }};
 })();
 let artFlip = false;
 function setWallArt(url){
@@ -919,7 +1126,8 @@ function clockSVG(str, st, w, mode){   // mode: 'solid' | 'rim' | 'mask'
 }
 function renderClock(){
   const d = new Date(); const h = d.getHours() % 12 || 12; const str = `${h}:${String(d.getMinutes()).padStart(2, '0')}`;
-  const ds = d.toLocaleDateString('en-US', {weekday: 'short', month: 'short', day: 'numeric'}).replace(',', '');
+  const ds = I18N.lang === 'vi' ? d.toLocaleDateString('vi-VN', {weekday: 'long', day: 'numeric', month: 'long'}).replace(/^./, c => c.toUpperCase())
+    : d.toLocaleDateString('en-US', {weekday: 'short', month: 'short', day: 'numeric'}).replace(',', '');
   const dateChanged = $('#date').textContent !== ds; if (dateChanged) $('#date').textContent = ds;
   if (!S.look.ckc || !S.look.lyc) for (const k of ['ckc', 'lyc']) S.look[k] = Object.assign({}, INK0, S.look[k] || {});
   const L = S.look, glass = L.ckc.mat === 'glass', w = ckW(L.ck);
@@ -1007,12 +1215,23 @@ const LY_CASE = [['lower', 'abc'], ['orig', 'Abc'], ['upper', 'ABC']];
 const CK_POS = [['top', 'Top'], ['tl', 'Top left'], ['tr', 'Top right'], ['bl', 'Bottom left'], ['br', 'Bottom right']];
 const LY_POS = [['center', 'Center'], ['left', 'Left'], ['right', 'Right'], ['bottom', 'Bottom']];
 const LY_ST = [['player', 'Player'], ['yt', 'YouTube captions']];
-const LY_FX = [['stack', 'Stack'], ['line', 'Line'], ['bounce', 'Bounce'], ['type', 'Typewriter'], ['glow', 'Glow'], ['pop', 'Pop'], ['karaoke', 'Karaoke fill'], ['shake', 'Shake'], ['jiggle', 'Jiggle'], ['glitch', 'Glitch'], ['wave', 'Wave'], ['zoom', 'Zoom'], ['slide', 'Slide']];
+S.lyrOffAll = store.get('lyroffAll', 0);
+const offTxt = v => (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v).toFixed(2).replace(/0$/, '') + ' s';
+// + = the words come earlier
+function setLyrOff(kind, v){
+  v = Math.round(clamp(v, -10, 10) * 100) / 100;
+  if (kind === 'all'){ S.lyrOffAll = v; store.set('lyroffAll', v) }
+  else if (S.track){ S.lyrOff = v; const m = store.get('lyroff', {}) || {}; const k = S.track.title + '|' + S.track.artist; if (v) m[k] = v; else delete m[k]; store.set('lyroff', m) }
+  S.lyrIdx = -2; const a = $('#tmS'), b = $('#tmA'); if (a) a.textContent = offTxt(S.lyrOff || 0); if (b) b.textContent = offTxt(S.lyrOffAll || 0);
+}
+const LY_FX = [['stack', 'Stack'], ['apple', 'Apple Music'], ['line', 'Line'], ['bounce', 'Bounce'], ['type', 'Typewriter'], ['glow', 'Glow'], ['pop', 'Pop'], ['karaoke', 'Karaoke fill'], ['shake', 'Shake'], ['jiggle', 'Jiggle'], ['glitch', 'Glitch'], ['wave', 'Wave'], ['zoom', 'Zoom'], ['slide', 'Slide']];
 const VQ = [['auto', 'Auto'], ['medium', '360p'], ['large', '480p'], ['hd720', '720p'], ['hd1080', '1080p'], ['hd1440', '1440p'], ['hd2160', '4K']];
 const VQ_ORDER = ['tiny', 'small', 'medium', 'large', 'hd720', 'hd1080', 'hd1440', 'hd2160', 'highres'];
 // YouTube treats this as a request, not an order: it picks the closest quality the video really has
 function applyQuality(p){
-  if (!p || !p.p) return; const want = S.look.vq || 'auto';
+  if (!p || !p.p) return; let want = S.look.vq || 'auto';
+  // lighter mode: the wallpaper video stays at 720p at most
+  if (PW.low() && (want === 'auto' || VQ_ORDER.indexOf(want) > VQ_ORDER.indexOf('hd720'))) want = 'hd720';
   try {
     if (want === 'auto'){ p.p.setPlaybackQualityRange && p.p.setPlaybackQualityRange('default', 'default'); p.p.setPlaybackQuality && p.p.setPlaybackQuality('default'); return }
     const have = (p.p.getAvailableQualityLevels && p.p.getAvailableQualityLevels()) || [];
@@ -1031,7 +1250,9 @@ function applyVqSize(){
 addEventListener('resize', () => applyVqSize());
 const reapplyQuality = () => { applyVqSize(); for (const pl of [YTV, YTA]){ if (pl === YTA && !app.classList.contains('clip')) continue; applyQuality(pl); setTimeout(() => applyQuality(pl), 900) } };
 const AMB_COL = [['art', 'Album cover'], ['video', 'Live video']];
-const AMB_FX = [['comet', 'Comet'], ['pulse', 'Pulse'], ['bars', 'Spectrum'], ['rainbow', 'Rainbow'], ['aurora', 'Aurora']];
+const AMB_FX = [['comet', 'Comet'], ['pulse', 'Pulse'], ['bars', 'Spectrum'], ['rainbow', 'Rainbow'], ['aurora', 'Aurora'], ['fire', 'Fire'], ['lava', 'Lava'], ['snake', 'Snake'], ['sparkle', 'Sparkle'], ['neon', 'Neon'], ['wave', 'Wave']];
+const AMB_POS = [['all', 'Whole frame'], ['bottom', 'Bottom'], ['top', 'Top'], ['corners', 'Corners']];
+const PWR = [['auto', 'Auto'], ['full', 'Full'], ['saver', 'Saver']];
 const BG_MODES = [['auto', 'Music video / cover'], ['video', 'My video'], ['surprise', 'Surprise me'], ['desktop', 'Desktop wallpaper']];
 const bgVid = () => S.look.bg === 'video' || S.look.bg === 'surprise';   // a looping video, not tied to the song
 const BGQ = {q: '', res: [], busy: false};   // My video: search box state in Appearance
@@ -1136,60 +1357,170 @@ setInterval(() => { if ((S.look.bg === 'desktop' || deskFill()) && T) applyBg() 
 function applyLook(){
   const L = S.look; app.className = app.className.replace(/\b(ckpos|lypos|lyst|lfx|ck|ly|lys|lc)-\S+/g, '').replace(/\s+/g, ' ').trim();
   app.classList.add('ck-' + L.ck, 'ly-' + L.ly, 'lys-' + L.lys, 'lc-' + L.lc, 'ckpos-' + L.ckpos, 'lypos-' + L.lypos, 'lyst-' + L.lyst, 'lfx-' + L.lfx); S.lyrIdx = -2; app.classList.toggle('noclock', !L.clock);
-  store.set('look', L); applyInk(); if (typeof YTV !== 'undefined') reapplyQuality(); if (app.classList.contains('editing')) setTimeout(sampleLine, 30);
+  store.set('look', L); applyInk(); PW.kick(); if (typeof islandSync === 'function') islandSync(); if (typeof YTV !== 'undefined') reapplyQuality(); if (app.classList.contains('editing')) setTimeout(sampleLine, 30);
 }
+/* ════════════════════ settings: one window, sidebar + pages (like macOS System Settings) ════════════════════ */
+// glyphs for the coloured tiles in the sidebar (white on colour)
+const SG = {
+  play: '<path d="M8.5 6.3v11.4c0 .7.8 1.1 1.4.7l8.6-5.7c.5-.3.5-1.1 0-1.4L9.9 5.6c-.6-.4-1.4 0-1.4.7z" fill="#fff" stroke="none"/>',
+  look: '<circle cx="12" cy="12" r="7.5"/><circle cx="9" cy="9.6" r="1.2" fill="#fff"/><circle cx="13.6" cy="8.4" r="1.2" fill="#fff"/><circle cx="16" cy="12.2" r="1.2" fill="#fff"/><path d="M12 19.5c-1.6 0-2-1.4-1.2-2.4.9-1.1.1-2.3-1.3-2.1"/>',
+  wall: '<rect x="4" y="5.5" width="16" height="13" rx="2.2"/><circle cx="9" cy="10" r="1.5" fill="#fff"/><path d="m5 16.5 4.2-3.6 3.3 2.8 2.2-1.7 4.3 3"/>',
+  clock: '<circle cx="12" cy="12" r="7.5"/><path d="M12 7.8V12l2.8 1.8"/>',
+  lyrics: '<path d="M5 6.5A2 2 0 0 1 7 4.5h10a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2h-5.5L7.5 19v-3.5h-.5a2 2 0 0 1-2-2z"/><path d="M8.6 8.6h6.8M8.6 11.4h4.2"/>',
+  amb: '<path d="M12 4.5 13.6 9l4.6 1.5-4.6 1.6L12 16.5l-1.6-4.4L5.8 10.5 10.4 9z" fill="#fff" stroke="none"/><path d="M17.5 15.5l.7 1.8 1.8.7-1.8.7-.7 1.8-.7-1.8-1.8-.7 1.8-.7z" fill="#fff" stroke="none"/>',
+  island: '<rect x="4" y="9" width="16" height="6" rx="3" fill="#fff" stroke="none"/><circle cx="7.3" cy="12" r="1.5" fill="#1c1c1e" stroke="none"/>',
+  layout: '<rect x="4.5" y="4.5" width="6.5" height="6.5" rx="1.4"/><rect x="13" y="4.5" width="6.5" height="6.5" rx="1.4"/><rect x="4.5" y="13" width="15" height="6.5" rx="1.4"/>',
+  perf: '<path d="M13.2 3.8 6.5 13h5l-1 7.2L17.5 11h-5z" fill="#fff" stroke="none"/>',
+  acc: '<circle cx="12" cy="9" r="3.4"/><path d="M5.5 19a6.5 6.5 0 0 1 13 0"/>',
+  general: '<circle cx="12" cy="12" r="2.6"/><path d="M12 3.8v2.4M12 17.8v2.4M3.8 12h2.4M17.8 12h2.4M6.2 6.2l1.7 1.7M16.1 16.1l1.7 1.7M6.2 17.8l1.7-1.7M16.1 7.9l1.7-1.7"/>'
+};
+// [id, title, tile colours, words the sidebar search also finds]
+const SET_TABS = [
+  ['play', 'Now Playing', '#ff4f6d|#e3264b', 'shuffle similar songs open music video wallpaper image ngẫu nhiên tương tự mv hình nền'],
+  null,
+  ['look', 'Appearance', '#4fa3ff|#1f6fe0', 'theme colour color accent dominant màu chủ đề làm tối dim'],
+  ['wall', 'Wallpaper', '#3fd0d8|#1597a8', 'background display monitor video quality blur desktop nền màn hình chất lượng mờ'],
+  ['clock', 'Clock', '#ffae3d|#f07c12', 'time date font glass giờ ngày kính'],
+  ['lyrics', 'Lyrics', '#b07cff|#7b44e6', 'subtitles karaoke effect apple words translation phụ đề hiệu ứng dịch từng chữ'],
+  ['amb', 'Ambient Light', '#5ddf7d|#25a94a', 'edge light neon glow intensity viền đèn cường độ'],
+  ['island', 'Dynamic Island', '#3a3a3f|#151517', 'collapse mini player top đảo thu gọn'],
+  ['layout', 'Layout', '#a3a3aa|#6e6e76', 'player bar search cover flow playlist tray bố cục thanh khay'],
+  null,
+  ['perf', 'Performance', '#ffd23d|#e8a90c', 'power battery saver energy pin tiết kiệm năng lượng'],
+  ['acc', 'Accounts', '#5aa8ff|#2a6fdc', 'youtube soundcloud spotify sign in đăng nhập tài khoản'],
+  ['general', 'General', '#a3a3aa|#6e6e76', 'language english vietnamese updates shortcut quit privacy desktop icons ngôn ngữ tiếng việt cập nhật phím tắt thoát']
+];
+const SET = {q: ''};
+const ISL_MODES = [['auto', 'Automatic'], ['button', 'Only when collapsed'], ['off', 'Off']];
+function setTile(id, colors){ const [a, b] = colors.split('|'); return `<i class="stile" style="background:linear-gradient(${a},${b})"><svg viewBox="0 0 24 24">${SG[id]}</svg></i>` }
 function renderAppPop(){
-  const L = S.look; setTimeout(loadMonitors, 0);
+  const L = S.look, tab = S.setTab || 'look', pop = $('#appPop');
+  const oldBody = pop.querySelector('.sbody'), keep = oldBody && oldBody.dataset.tab === tab ? oldBody.scrollTop : 0;
+  if ($('#accMenu').closest('#appPop')){ $('#accMenu').classList.remove('inset'); $('#dock').appendChild($('#accMenu')) }   // keep the accounts panel (and its clicks) alive
   const chips = (key, opts, font) => opts.length > 5 && !['lfx', 'afx'].includes(key)
     ? `<div class="chips"><select class="dd" data-k="${key}">${opts.map(([v, n, f]) => `<option value="${v}" ${L[key] === v ? 'selected' : ''} ${font && f ? `style="font-family:${f.replace(/"/g, '&quot;')}"` : ''}>${n}</option>`).join('')}</select></div>`
     : `<div class="chips">${opts.map(([v, n, f]) => `<button class="chip ${L[key] === v ? 'on' : ''}" data-k="${key}" data-v="${v}" ${font && f ? `style="font-family:${f.replace(/"/g, '&quot;')}"` : ''}>${n}</button>`).join('')}</div>`;
-  const P = S.pal, role = w => !P ? '' : w === P.accent ? 'Accent' : w === P.dominant ? 'Dominant' : w === P.secondary ? 'Secondary' : '';
-  const picked = P ? (L.theme === 'dominant' ? P.dominant : L.theme === 'secondary' ? P.secondary : L.theme === 'manual' ? P.swatches[Math.min(L.pickIdx, P.swatches.length - 1)] : P.accent) : null;
-  const theme = `<div class="mh">Theme color</div>${chips('theme', [['accent', 'Accent'], ['dominant', 'Dominant'], ['secondary', 'Secondary']])}
-    <div class="sw">${P ? P.swatches.map((w, i) => `<button class="swc ${w === picked ? 'on' : ''}" data-sw="${i}" style="--c:rgb(${w.rgb.join(',')})" title="rgb(${w.rgb.join(', ')})"><i></i><small>${Math.round(w.pct * 100)}%</small><em>${role(w)}</em></button>`).join('') : '<div class="lnote">Play a song to read its cover colours</div>'}</div>
-    <div class="msep"></div><div class="mh">Display</div><div class="chips" id="monList"><span class="lnote">${T ? 'Looking for displays…' : 'This screen'}</span></div><div class="msep"></div>`;
-  const blurRow = `<div class="lrow"><span>Blur</span><input type="range" min="0" max="40" step="1" value="${L.wpBlur || 0}" data-r="wpBlur"></div>`;
-  const bgExtra = L.bg === 'desktop' ? blurRow + `<div class="lnote">Your Windows wallpaper stays; clock, lyrics and player sit on top.</div>`
-    : L.bg === 'video' ? `<div class="bgq"><input id="bgQ" placeholder="Search YouTube for a background video…" spellcheck="false" autocomplete="off" value="${esc(BGQ.q)}"></div>
-      ${L.bgVid ? `<div class="bgv cur"><img src="${esc(L.bgVid.art || '')}" alt=""><span><b>${esc(L.bgVid.title || '')}</b><small>Playing now · muted · loops</small></span></div>` : '<div class="lnote">Search, then pick a video. It plays muted behind everything.</div>'}
-      ${BGQ.busy ? '<div class="lnote">Searching…</div>' : BGQ.res.map((v, i) => `<button class="bgv" data-bgv="${i}"><img src="${esc(v.art || '')}" alt="" loading="lazy"><span><b>${esc(v.title)}</b><small>${esc(v.artist || '')}</small></span></button>`).join('')}
-      ${blurRow}`
-    : L.bg === 'surprise' ? `<div class="lnote">City, nature and first-person walk videos, picked to fit the songs in your playlist.</div>
-      <div class="lrow"><span>New video each song</span><button class="tg ${L.bgEach ? 'on' : ''}" data-t="bgEach"></button></div>
-      <div class="chips"><button class="chip on" data-bgnext="1">Another one</button></div>${blurRow}`
-    : '';
-  const editBtn = t => `<button class="chip on wide" data-edit="${t}">Font, colour &amp; glass…</button>`;
-  $('#appPop').innerHTML = theme + `<div class="mh">Background</div>${chips('bg', BG_MODES)}${bgExtra}
-    <div class="msep"></div><div class="mh">Clock</div>
-    <div class="lrow"><span>Show clock</span><button class="tg ${L.clock ? 'on' : ''}" data-t="clock"></button></div>
-    <div class="lnote">Position</div>${chips('ckpos', CK_POS)}
-    <div class="chips">${editBtn('clock')}</div>
-    <div class="msep"></div><div class="mh">Lyrics</div>
-    <div class="lnote">Style</div>${chips('lyst', LY_ST)}
-    <div class="lnote">Effect</div>${chips('lfx', LY_FX)}
-    <div class="lnote">Position</div>${chips('lypos', LY_POS)}
-    <div class="lrow"><span>Case</span>${chips('lc', LY_CASE)}</div>
-    <div class="chips">${editBtn('lyrics')}</div>
-    <div class="msep"></div><div class="mh">Ambient light</div>
-    <div class="lrow"><span>Edge light</span><button class="tg ${S.ambOn ? 'on' : ''}" data-t="amb"></button></div>
-    <div class="lnote">Colour from</div>${chips('acol', AMB_COL)}
-    <div class="lnote">Effect</div>${chips('afx', AMB_FX)}
-    <div class="lrow"><span>Intensity</span><input type="range" min="0.4" max="1.8" step="0.05" value="${L.ambK}" data-r="ambK"></div>
-    <div class="lrow"><span>Blend</span><input type="range" min="0.6" max="2.2" step="0.05" value="${L.ambW}" data-r="ambW"></div>
-    <div class="msep"></div><div class="mh">Video</div>
-    <div class="lnote">Quality (YouTube)</div>${chips('vq', VQ)}
-    <div class="msep"></div><div class="mh">Layout</div>
-    <div class="lrow"><span>Player bar</span><button class="tg ${S.hide.bar ? '' : 'on'}" data-h="bar"></button></div>
-    <div class="lrow"><span>Search field</span><button class="tg ${S.hide.search ? '' : 'on'}" data-h="search"></button></div>
-    <div class="lrow"><span>Cover flow</span><button class="tg ${S.hide.flow ? '' : 'on'}" data-h="flow"></button></div>
-    <div class="lrow"><span>Playlist</span><button class="tg ${S.qOff ? '' : 'on'}" data-h="queue"></button></div>
-    <div class="msep"></div><div class="mh">Search from anywhere</div>
-    <div class="keys keybind"><button class="kbtn ${S.binding ? 'rec' : ''}" id="bindBtn">${S.binding ? 'Press a key or mouse button…' : keyLabel(S.searchKey)}</button><button class="chip" id="bindReset" title="Back to Ctrl Alt Space">Reset</button></div>
-    <div class="msep"></div><div class="chips"><button class="chip" id="selfTestBtn">Self-test (Ctrl+Shift+D)</button></div>`;
+  const tg = (on, attr) => `<button class="tg ${on ? 'on' : ''}" ${attr}></button>`;
+  const row = (label, ctl, note) => `<div class="sr"><span class="sl">${label}${note ? `<small>${note}</small>` : ''}</span>${ctl || ''}</div>`;
+  const col = (label, ctl, note) => `<div class="sr col"><span class="sl">${label}${note ? `<small>${note}</small>` : ''}</span>${ctl}</div>`;
+  const grp = (title, rows) => `<section class="sg">${title ? `<h4>${title}</h4>` : ''}<div class="sc">${rows}</div></section>`;
+  const editBtn = t => `<button class="abtn" data-edit="${t}">Font, colour &amp; glass…</button>`;
+  let body = '';
+  if (tab === 'play'){
+    const t = S.track, p = platById(effectivePlatform());
+    body = grp('', (t ? row(`<b>${esc(t.title)}</b>`, `<button class="abtn" data-sa="open">Open in ${esc(p.name)}</button>`, esc(t.artist || '')) : row('Nothing playing', ''))
+        + row('Shuffle', tg(S.shuffle, 'data-sa="shuf"'))
+        + row('Keep playing similar songs', tg(S.radioOn, 'data-sa="radio"'), 'When the playlist ends'))
+      + grp('Wallpaper', row('Music video wallpaper', tg(S.mvOn, 'data-sa="mv"'), "The song's video plays behind everything, muted")
+        + row('Wallpaper image or video', `<button class="abtn" data-sa="wall">Choose…</button>`)
+        + (app.classList.contains('hasCustom') ? row('Use the album art again', `<button class="abtn" data-sa="unwall">Use album art</button>`) : ''));
+  } else if (tab === 'look'){
+    const P = S.pal, role = w => !P ? '' : w === P.accent ? 'Accent' : w === P.dominant ? 'Dominant' : w === P.secondary ? 'Secondary' : '';
+    const picked = P ? (L.theme === 'dominant' ? P.dominant : L.theme === 'secondary' ? P.secondary : L.theme === 'manual' ? P.swatches[Math.min(L.pickIdx, P.swatches.length - 1)] : P.accent) : null;
+    body = grp('Theme color', col('Taken from the album cover', chips('theme', [['accent', 'Accent'], ['dominant', 'Dominant'], ['secondary', 'Secondary']]))
+      + col('Or pick one', `<div class="sw">${P ? P.swatches.map((w, i) => `<button class="swc ${w === picked ? 'on' : ''}" data-sw="${i}" style="--c:rgb(${w.rgb.join(',')})" title="rgb(${w.rgb.join(', ')})"><i></i><small>${Math.round(w.pct * 100)}%</small><em>${role(w)}</em></button>`).join('') : '<div class="lnote">Play a song to read its cover colours</div>'}</div>`))
+      + grp('Dim', row('Dim wallpaper', tg(S.dim, 'data-sa="dim"'), 'Darker behind the clock and lyrics'));
+  } else if (tab === 'wall'){
+    const blurRow = row('Blur', `<input type="range" min="0" max="40" step="1" value="${L.wpBlur || 0}" data-r="wpBlur">`);
+    const bgExtra = L.bg === 'desktop' ? blurRow + row('Your Windows wallpaper stays; clock, lyrics and player sit on top.', '')
+      : L.bg === 'video' ? col('Background video', `<div class="bgq"><input id="bgQ" placeholder="Search YouTube for a background video…" spellcheck="false" autocomplete="off" value="${esc(BGQ.q)}"></div>
+        ${L.bgVid ? `<div class="bgv cur"><img src="${esc(L.bgVid.art || '')}" alt=""><span><b>${esc(L.bgVid.title || '')}</b><small>Playing now · muted · loops</small></span></div>` : '<div class="lnote">Search, then pick a video. It plays muted behind everything.</div>'}
+        ${BGQ.busy ? '<div class="lnote">Searching…</div>' : BGQ.res.map((v, i) => `<button class="bgv" data-bgv="${i}"><img src="${esc(v.art || '')}" alt="" loading="lazy"><span><b>${esc(v.title)}</b><small>${esc(v.artist || '')}</small></span></button>`).join('')}`) + blurRow
+      : L.bg === 'surprise' ? row('New video each song', tg(L.bgEach, 'data-t="bgEach"'), 'City, nature and first-person walk videos, picked to fit the songs in your playlist.')
+        + row('Another video', `<button class="abtn" data-bgnext="1">Another one</button>`) + blurRow
+      : '';
+    body = grp('Background', col('Behind the clock and player', chips('bg', BG_MODES)) + bgExtra)
+      + grp('Display', col('Show Wallplayer on', `<div class="chips" id="monList"><span class="lnote">${T ? 'Looking for displays…' : 'This screen'}</span></div>`))
+      + grp('Video', col('Quality (YouTube)', chips('vq', VQ)));
+  } else if (tab === 'clock'){
+    body = grp('', row('Show clock', tg(L.clock, 'data-t="clock"')) + col('Position', chips('ckpos', CK_POS)) + row('Style', editBtn('clock'), 'Pick the font and colour on the clock itself'));
+  } else if (tab === 'lyrics'){
+    body = grp('', row('Find lyrics online', tg(L.lyNet !== false, 'data-t="lynet"'), 'LRCLIB, NetEase and Genius. Word-by-word timing when NetEase has it')
+        + row('Full-lyrics view', tg(app.classList.contains('lyricsmode'), 'data-sa="lymode"'), 'Hide the cover flow, lyrics in the middle'))
+      + grp('Look', col('Style', chips('lyst', LY_ST)) + col('Effect', chips('lfx', LY_FX)) + col('Position', chips('lypos', LY_POS)) + col('Case', chips('lc', LY_CASE)) + row('Font', editBtn('lyrics')))
+      + grp('Subtitles', row('Translations, timing and other versions', `<button class="abtn" data-sa="lyrpanel">Open…</button>`));
+  } else if (tab === 'amb'){
+    body = grp('', row('Edge light', tg(S.ambOn, 'data-t="amb"')) + col('Colour from', chips('acol', AMB_COL)) + col('Effect', chips('afx', AMB_FX), 'Point at one to preview it') + col('Where', chips('apos', AMB_POS)) + '<div id="ambMons"></div>')
+      + grp('Strength', row('Intensity', `<input type="range" min="0.4" max="1.8" step="0.05" value="${L.ambK}" data-r="ambK">`) + row('Blend', `<input type="range" min="0.6" max="2.2" step="0.05" value="${L.ambW}" data-r="ambW">`));
+  } else if (tab === 'island'){
+    body = `<div class="isldemo"><div class="ipill"><i class="ia" style="${S.track && S.track.art ? `background-image:url('${esc(S.track.art)}')` : ''}"></i><span>${esc(S.track ? S.track.title : 'Not Playing')}</span><b class="ieq"><i></i><i></i><i></i></b></div></div>`
+      + grp('', col('Show the island', chips('isl', ISL_MODES), {auto: 'Appears at the top of the screen when a maximised window covers the wallpaper, or when you collapse the player. Point at it for the controls.', button: 'Appears only when you collapse the player with the collapse button or H.', off: 'Never shown.'}[L.isl || 'auto'])
+        + row('Show the lyrics line', tg(L.islLyr !== false, 'data-sa="isllyr"'), 'The line being sung, instead of the song title'))
+      + grp('', row('Games, films and slideshows', '', 'The island stays out of the way of full-screen apps.'));
+  } else if (tab === 'layout'){
+    body = grp('Show', row('Player bar', tg(!S.hide.bar, 'data-h="bar"')) + row('Search field', tg(!S.hide.search, 'data-h="search"')) + row('Cover flow', tg(!S.hide.flow, 'data-h="flow"')) + row('Playlist', tg(!S.qOff, 'data-h="queue"')))
+      + grp('Tray', row('Album cover as the tray icon', tg(L.trayArt !== false, 'data-t="trayart"')));
+  } else if (tab === 'perf'){
+    body = grp('Power', col('Mode', chips('pwr', PWR), {auto: 'Lighter by itself on battery or with Energy Saver on.', full: 'Always full quality, even on battery.', saver: 'Always lighter: 30 fps, video up to 720p.'}[L.pwr || 'auto'])
+        + row('Rest behind full-screen and maximised windows', tg(L.pcov !== false, 'data-t="pcov"'))
+        + `<div class="sr"><span class="sl"><small id="pwrNow">${pwrNow()}</small></span></div>`);
+  } else if (tab === 'acc'){
+    body = `<div id="accSlot"></div>`;
+  } else {
+    body = grp('Language', `<div class="sr"><div class="chips"><button class="chip ${I18N.lang === 'en' ? 'on' : ''}" data-lang="en">English</button><button class="chip ${I18N.lang === 'vi' ? 'on' : ''}" data-lang="vi">Tiếng Việt</button></div></div>`)
+      + (T ? grp('Desktop', row('Start with Windows', tg(!!S.ui.autostart, 'data-sa="autostart"'), 'Opens by itself when you turn on the PC') + row('Behind desktop icons', tg(S.ui.wallpaper_mode, 'data-sa="behind"'), 'Off: an interactive desktop window')) : '')
+      + grp('Search from anywhere', row('Shortcut', `<span class="keys keybind"><button class="kbtn ${S.binding ? 'rec' : ''}" id="bindBtn">${S.binding ? 'Press a key or mouse button…' : keyLabel(S.searchKey)}</button><button class="chip" id="bindReset" title="Back to Ctrl Alt Space">Reset</button></span>`))
+      + grp('Updates', row('Check when Wallplayer starts', tg(UP.auto, 'data-t="autoup"')) + `<div class="sr col"><span class="sl"><small id="upNow">${upText()}</small></span><div class="chips" id="upBtns">${upBtns()}</div></div>`)
+      + grp('', row('Privacy policy', `<button class="abtn" id="privBtn">Open</button>`) + row('Self-test', `<button class="abtn" id="selfTestBtn">Run (Ctrl+Shift+D)</button>`) + (T ? row('Quit Wallplayer', `<button class="abtn warn" data-sa="quit">Quit</button>`) : ''));
+  }
+  const nav = SET_TABS.filter(x => !x || x[0] !== 'island' || ISLAND_ENABLED).map(x => x ? `<button class="sn ${x[0] === tab ? 'on' : ''}" data-tab="${x[0]}" data-kw="${esc(plainText(x[1] + ' ' + x[3] + ' ' + ((window.WP_VI && WP_VI.dict[x[1]]) || '')))}">${setTile(x[0], x[2])}<span>${x[1]}</span></button>` : '<div class="snsep"></div>').join('');
+  const title = (SET_TABS.find(x => x && x[0] === tab) || [])[1] || '';
+  pop.innerHTML = `<nav class="snav"><div class="stop"><button class="sclose" title="Close"></button></div>
+      <label class="ssearch">${I.search}<input id="setQ" placeholder="Search" spellcheck="false" autocomplete="off" value="${esc(SET.q)}"></label>
+      <div class="slist">${nav}</div></nav>
+    <div class="sbody" data-tab="${tab}"><h2>${title}</h2>${body}</div>`;
+  filterSettings();
+  pop.querySelector('.sbody').scrollTop = keep;
+  if (tab === 'acc'){ const acc = $('#accMenu'); acc.classList.add('inset'); $('#accSlot').appendChild(acc); renderAccounts(); refreshAccounts() }
+  if (tab === 'wall' || tab === 'amb') setTimeout(loadMonitors, 0);
+}
+// lower case, no accents: "loi" finds "Lời bài hát"
+const plainText = t => String(t).normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'D').toLowerCase();
+function filterSettings(){
+  const q = plainText(SET.q.trim()); let first = null;
+  $('#appPop').querySelectorAll('.sn').forEach(b => { const hit = !q || b.dataset.kw.includes(q); b.classList.toggle('hide', !hit); if (hit && !first) first = b });
+  $('#appPop').querySelectorAll('.snsep').forEach(s => s.classList.toggle('hide', !!q));
+  return first;
+}
+function openAppPop(tab){
+  const m = $('#appPop');
+  if (tab) S.setTab = tab; else if (m.classList.contains('open')){ m.classList.remove('open'); return }
+  closeMenus(m); app.classList.remove('searching'); renderAppPop(); m.classList.add('open');
 }
 
 /* ════════════════════ lyrics ════════════════════ */
-function parseLRC(s){ const out = []; for (const line of String(s).split(/\r?\n/)){ const tags = [...line.matchAll(/\[(\d+):(\d+(?:\.\d+)?)\]/g)]; const text = line.replace(/\[[^\]]*\]/g, '').trim(); for (const m of tags) out.push({t: +m[1] * 60 + +m[2], text}) } return out.sort((a, b) => a.t - b.t) }
+// timed words: { t: start (s), d: length (s), s: the word with its spaces }. Spaces-only pieces join the word before.
+function tidyWords(ws){ const w = []; for (const x of ws){ if (!x.s.trim()){ if (w.length) w[w.length - 1].s += x.s; continue } w.push({t: x.t, d: Math.max(.04, x.d), s: x.s}) } return w }
+// LRC, and "enhanced" LRC with a time before each word: [00:12.00]<00:12.00>Hello <00:12.50>world
+function parseLRC(s){
+  const out = [];
+  for (const line of String(s).split(/\r?\n/)){
+    const tags = [...line.matchAll(/\[(\d+):(\d+(?:\.\d+)?)\]/g)]; let body = line.replace(/\[[^\]]*\]/g, ''), w = null;
+    if (/<\d+:\d+(?:\.\d+)?>/.test(body)){
+      const p = body.split(/<(\d+):(\d+(?:\.\d+)?)>/), raw = [];
+      for (let k = 1; k < p.length; k += 3) raw.push({t: +p[k] * 60 + +p[k + 1], s: p[k + 2] || ''});
+      raw.forEach((x, k) => x.d = (raw[k + 1] ? raw[k + 1].t : x.t + .6) - x.t);
+      w = tidyWords(raw); body = w.map(x => x.s).join(''); if (!w.length) w = null;
+    }
+    const text = body.trim();
+    for (const m of tags){ const L = {t: +m[1] * 60 + +m[2], text}; if (w){ L.w = w; L.e = w[w.length - 1].t + w[w.length - 1].d } out.push(L) }
+  }
+  return out.sort((a, b) => a.t - b.t);
+}
+// NetEase "YRC": [lineStart,lineLength](wordStart,wordLength,0)word… in milliseconds
+const LY_CREDIT = /^\s*(作词|作曲|编曲|制作人?|混音|母带|和声|吉他|贝斯|鼓|录音|监制|出品|Lyrics|Composer|Arranger|Producer)\s*[:：]/i;
+function parseYRC(s){
+  const out = [];
+  for (const raw of String(s).split(/\r?\n/)){
+    const line = raw.trim(), h = line.match(/^\[(\d+),(\d+)\]/); if (!h) continue;
+    const p = line.slice(h[0].length).split(/\((\d+),(\d+)(?:,-?\d+)?\)/), ws = [];
+    for (let k = 1; k < p.length; k += 3) ws.push({t: +p[k] / 1000, d: +p[k + 1] / 1000, s: p[k + 2] || ''});
+    const w = tidyWords(ws); if (!w.length) continue;
+    const text = w.map(x => x.s).join('').trim(); if (!text || LY_CREDIT.test(text)) continue;
+    out.push({t: Math.min(+h[1] / 1000, w[0].t), e: Math.max((+h[1] + +h[2]) / 1000, w[w.length - 1].t + w[w.length - 1].d), text, w});
+  }
+  return out.sort((a, b) => a.t - b.t);
+}
 function lyricsFromObj(L, dur){
   if (!L) return [];
   if (L.synced) return parseLRC(L.synced);
@@ -1198,7 +1529,7 @@ function lyricsFromObj(L, dur){
 }
 const LANGS = [['orig', 'Original'], ['vi', 'Tiếng Việt'], ['en', 'English'], ['ja', '日本語'], ['ko', '한국어'], ['zh-CN', '中文'], ['es', 'Español'], ['fr', 'Français'], ['th', 'ไทย'], ['id', 'Indonesia']];
 function setLyrics(arr, t, source){
-  S.lyr = arr || []; S.lyrIdx = -2; S.lyrTr = {}; S.lyrSource = source || ''; S.lyrSeq++;
+  S.lyr = arr || []; S.lyrIdx = -2; S.lyrTr = {}; S.lyrSource = source || ''; S.lyrSeq++; AP.key = '';
   $('#lyrics2').innerHTML = ''; applySubs();
 }
 async function loadLyrics(t){
@@ -1208,7 +1539,16 @@ async function loadLyrics(t){
   if (t.source === 'youtube' && t.play){   // YouTube clip: its own CC (hidden by YouTube) becomes the lyrics
     try { const cc = await invoke('yt_captions', {videoId: t.play}); if (seq !== S.lyrSeq) return; if (cc && cc.length){ setLyrics(cc.map(c => ({t: c.t, text: c.text})), t, 'YouTube CC'); return } } catch(e){}
   }
-  try { const L = await invoke('lyrics', {artist: t.artist, title: t.title, duration: t.duration || null}); if (seq === S.lyrSeq) setLyrics(lyricsFromObj(L, t.duration), t, L && L.source) } catch(e){}
+  if (S.look.lyNet === false) return;   // "Find lyrics online" off: nothing is sent to the lyrics sites
+  let L = null;
+  try { L = await invoke('lyrics', {artist: t.artist, title: t.title, duration: t.duration || null}); if (seq === S.lyrSeq) setLyrics(lyricsFromObj(L, t.duration), t, L && L.source) } catch(e){}
+  // then, word by word when NetEase has the song: the same words light up as they are sung
+  if (seq !== S.lyrSeq || (L && L.source === 'genius') || S.lyr.some(l => l.w)) return;
+  try {
+    const y = await invoke('lyrics_words', {artist: t.artist, title: t.title, duration: t.duration || null, id: L && L.source === 'netease' ? L.id : null});
+    const words = y ? parseYRC(y) : [];
+    if (seq === S.lyrSeq && words.length >= 3) setLyrics(words, t, 'netease-words');
+  } catch(e){}
 }
 const trKey = lang => (S.track ? S.track.title + '|' + S.track.artist : '') + '|' + S.lyrSource + '|' + lang;
 async function ensureTr(lang){
@@ -1221,49 +1561,136 @@ async function ensureTr(lang){
 }
 function applySubs(){ ensureTr(S.sub.l1); ensureTr(S.sub.l2); S.lyrIdx = -2 }
 function lineIn(i, lang){ const L = S.lyr[i]; if (!L) return ''; if (!lang || lang === 'orig') return L.text; const tr = S.lyrTr[lang]; return tr && tr[i] ? tr[i] : '' }
+// the words of a line, and whether each one runs into the next (Chinese, Japanese… have no spaces)
+function lineToks(l1, timed){
+  return timed ? timed.map((w, k) => ({s: w.s.trim(), j: !/\s$/.test(w.s) && !(timed[k + 1] && /^\s/.test(timed[k + 1].s))}))
+    : (l1 || '♪').split(/\s+/).filter(Boolean).map(s => ({s, j: false}));
+}
 function renderLine2(i, sample){
   const box = $('#lyrics2'); for (const old of box.querySelectorAll('.ln:not(.out)')){ old.classList.add('out'); setTimeout(() => old.remove(), 650) }
   const l1 = sample ? sample[0] : lineIn(i, S.sub.l1) || lineIn(i, 'orig'); let l2 = sample ? sample[1] : S.sub.l2 === 'off' ? '' : lineIn(i, S.sub.l2);
   if (l2 && l2.trim().toLowerCase() === l1.trim().toLowerCase()) l2 = '';
-  const ln = document.createElement('div'); ln.className = 'ln';
+  const L = !sample && i >= 0 ? S.lyr[i] : null, timed = L && L.w && l1 === L.text ? L.w : null;   // the timing belongs to the original words
+  const ln = document.createElement('div'); ln.className = 'ln'; ln._w = timed;
   if (S.look.lyst === 'yt'){
     ln.innerHTML = (l1 ? `<span class="cap">${esc(l1)}</span>` : '') + (l2 ? `<br><span class="cap cap2">${esc(l2)}</span>` : '');
   } else {
-    const words = (l1 || '♪').split(/\s+/).filter(Boolean);
+    const toks = lineToks(l1, timed);
     ln.innerHTML = (S.look.lfx === 'type'
-      ? words.map(w => `<span class="wd">${[...w].map(c => `<span class="c2">${esc(c)}</span>`).join('')}</span>`).join(' ')
-      : words.map((w, k) => `<span class="w2 future" style="--i:${k}"><span class="gw">${esc(w)}</span></span>`).join('')) + (l2 ? `<span class="tr2">${esc(l2)}</span>` : '');
+      ? toks.map((w, k) => `<span class="wd">${[...w.s].map(c => `<span class="c2">${esc(c)}</span>`).join('')}</span>` + (w.j || k === toks.length - 1 ? '' : ' ')).join('')
+      : toks.map((w, k) => `<span class="w2 future${w.j ? ' j' : ''}" style="--i:${k}"><span class="gw">${esc(w.s)}</span></span>`).join('')) + (l2 ? `<span class="tr2">${esc(l2)}</span>` : '');
   }
   box.appendChild(ln); if (app.classList.contains('lyglass')) requestAnimationFrame(() => glassWords(ln));
   return ln;
 }
-function tick2(p){
+// p: share of the line sung, estimated from the line length. pos: song time, for lines with timed words
+function tick2(p, pos){
   if (S.look.lyst === 'yt') return;
-  const ln = $('#lyrics2 .ln:not(.out)'); if (!ln) return; const done = p >= 1;
+  const ln = $('#lyrics2 .ln:not(.out)'); if (!ln) return; const tw = pos != null ? ln._w : null;
   if (S.look.lfx === 'type'){
-    const cs = ln.querySelectorAll('.c2'), n = cs.length, on = done ? n : Math.min(n, Math.floor(p * n * 1.08) + 1);
+    if (tw){ ln.querySelectorAll('.wd').forEach((wd, k) => { const w = tw[k], cs = wd.querySelectorAll('.c2'), f = w ? clamp((pos - w.t) / w.d, 0, 1) : 1, on = Math.ceil(f * cs.length);
+      cs.forEach((c, j) => { c.classList.toggle('on', j < on); c.classList.toggle('tip', j === on - 1 && f < 1) }) }); return }
+    const done = p >= 1, cs = ln.querySelectorAll('.c2'), n = cs.length, on = done ? n : Math.min(n, Math.floor(p * n * 1.08) + 1);
     for (let k = 0; k < n; k++){ cs[k].classList.toggle('on', k < on); cs[k].classList.toggle('tip', k === on - 1 && !done) } return;
   }
   const ws = ln.querySelectorAll('.w2'), n = ws.length; if (!n) return;
-  const on = Math.min(n - 1, Math.floor(p * n));
+  let on, fr, done;
+  if (tw && tw.length === n){
+    on = -1; for (let k = 0; k < n; k++){ if (tw[k].t <= pos) on = k; else break }
+    const last = tw[n - 1]; done = pos >= last.t + last.d;
+    if (on < 0){ on = 0; fr = 0 } else fr = clamp((pos - tw[on].t) / tw[on].d, 0, 1);
+  } else { done = p >= 1; on = Math.min(n - 1, Math.floor(p * n)); fr = clamp(p * n - on, 0, 1) }
   if (S.look.lfx === 'stack'){
-    for (let k = 0; k < n; k++){ const vis = done ? k >= n - 3 : (k <= on && k > on - 3); ws[k].className = 'w2 ' + (vis ? '' : (k > on && !done ? 'future' : 'gone')) }
+    for (let k = 0; k < n; k++){ const vis = done ? k >= n - 3 : (k <= on && k > on - 3); ws[k].className = 'w2 ' + (ws[k].classList.contains('j') ? 'j ' : '') + (vis ? '' : (k > on && !done ? 'future' : 'gone')) }
     return;
   }
-  for (let k = 0; k < n; k++) ws[k].className = 'w2 ' + (done || k < on ? 'sung' : k === on ? 'cur' : 'future');
-  if (S.look.lfx === 'karaoke'){ const fr = clamp(p * n - on, 0, 1); for (let k = 0; k < n; k++) ws[k].style.setProperty('--f', done || k < on ? 1 : k === on ? fr.toFixed(3) : 0) }
+  for (let k = 0; k < n; k++) ws[k].className = 'w2 ' + (ws[k].classList.contains('j') ? 'j ' : '') + (done || k < on ? 'sung' : k === on ? 'cur' : 'future');
+  if (S.look.lfx === 'karaoke'){ for (let k = 0; k < n; k++) ws[k].style.setProperty('--f', done || k < on ? 1 : k === on ? fr.toFixed(3) : 0) }
 }
 function sampleLine(){
-  if (!app.classList.contains('editing') || $('#lyrics2 .ln:not(.out)')) return;
+  if (!app.classList.contains('editing') || $('#lyrics2 .ln:not(.out)') || $('#lyrics2 .ap')) return;
+  if (S.look.lfx === 'apple' && S.look.lyst !== 'yt'){ apTick(0); return }
   renderLine2(-1, ['Lyrics look like this', S.sub.l2 === 'off' ? '' : 'Lời bài hát trông như thế này']).classList.add('sample'); tick2(.62);
 }
+// instrumental part: a music note, and three dots that fill up until the next line
+function renderNote(){
+  const box = $('#lyrics2'); for (const old of box.querySelectorAll('.ln:not(.out)')){ old.classList.add('out'); setTimeout(() => old.remove(), 650) }
+  const ln = document.createElement('div'); ln.className = 'ln note'; ln.innerHTML = '<span class="nt">♪</span><span class="nd"><i></i><i></i><i></i></span>'; box.appendChild(ln);
+}
+function tickNote(p){ $('#lyrics2 .ln.note:not(.out) .nd i') && document.querySelectorAll('#lyrics2 .ln.note:not(.out) .nd i').forEach((d, k) => d.classList.toggle('on', p >= (k + 1) / 4)) }
+// where a long pause after line i (or before the first line, i = -1) starts, or null
+function pauseAfter(i){
+  const L = S.lyr[i], nx = S.lyr[i + 1]; if (!nx || S.lyrSource === 'genius') return null;
+  const from = i < 0 ? 1 : L.e ? L.e + .6 : L.t + Math.max(.6, Math.min(nx.t - L.t, 7) * .82) + 1.2;
+  return nx.t - from >= 3.5 ? from : null;
+}
 function lyricsTick(pos){
+  pos += (S.lyrOff || 0) + (S.lyrOffAll || 0);   // timing: this song ( [ and ] keys, lyrics panel ) + all songs
+  if (S.look.lfx === 'apple' && S.look.lyst !== 'yt'){ apTick(pos); return }
+  if (AP.key){ AP.key = ''; S.lyrIdx = -2; $('#lyrics2').innerHTML = '' }   // left the Apple view
   if (!S.lyr.length){ if (S.lyrIdx !== -3){ S.lyrIdx = -3; $('#lyrics2').innerHTML = ''; sampleLine() } return }
-  pos += S.lyrOff || 0;   // per-song sync offset ( [ and ] keys )
   let i = -1; for (let k = 0; k < S.lyr.length; k++){ if (S.lyr[k].t <= pos + .12) i = k; else break }
+  // a long pause before the first line or after a line: show the note and count down to the next one
+  const from = S.look.lyst !== 'yt' ? pauseAfter(i) : null, nx = S.lyr[i + 1];
+  if (from != null && pos >= from){ if (S.lyrIdx !== 'n' + i){ S.lyrIdx = 'n' + i; renderNote() } tickNote((pos - from) / (nx.t - .12 - from)); return }
   if (i !== S.lyrIdx){ S.lyrIdx = i; if (i >= 0) renderLine2(i); else { $('#lyrics2').innerHTML = ''; sampleLine() } }
-  if (i < 0) return; const L = S.lyr[i], end = S.lyr[i + 1] ? S.lyr[i + 1].t : L.t + 5;
-  tick2(clamp((pos - L.t) / Math.max(.6, Math.min(end - L.t, 7) * .82), 0, 1.01));
+  if (i < 0) return; const L = S.lyr[i], end = nx ? nx.t : L.t + 5;
+  tick2(clamp((pos - L.t) / Math.max(.6, Math.min(end - L.t, 7) * .82), 0, 1.01), pos);
+}
+
+/* Apple Music-style lyrics: the whole song as a column. The line being sung is bright and fills in word by word
+   (when the timing is known), the others are dim and softly blurred; the column glides up line by line,
+   lower lines following a beat later. Long pauses get three breathing dots. */
+var AP = {key: '', rows: [], cur: -2};   // var: setLyrics() may run before this line
+function apBuild(){
+  const box = $('#lyrics2'), editing = app.classList.contains('editing'), sample = !S.lyr.length;
+  const key = S.lyrSeq + '|' + S.sub.l1 + '|' + S.sub.l2 + '|' + Object.keys(S.lyrTr).join(',') + '|' + S.lyr.length + '|' + (sample && editing ? 'e' : '');
+  if (AP.key === key && box.querySelector('.ap')) return true;
+  AP.key = key; AP.cur = -2; AP.rows = [];
+  if (sample && !editing){ box.innerHTML = ''; return false }
+  const lines = sample ? [{t: 0, text: 'Lyrics look like this', s2: 'Lời bài hát trông như thế này'}, {t: 9, text: 'line by line, word by word'}, {t: 18, text: 'with the next ones waiting below'}] : S.lyr;
+  const html = [];
+  const dots = (t, end) => { AP.rows.push({kind: 'dots', t, end}); html.push('<div class="al dots"><i></i><i></i><i></i></div>') };
+  if (!sample){ const f = pauseAfter(-1); if (f != null) dots(f, lines[0].t) }
+  lines.forEach((L, i) => {
+    const l1 = sample ? L.text : lineIn(i, S.sub.l1) || L.text; let l2 = sample ? (S.sub.l2 === 'off' ? '' : L.s2 || '') : S.sub.l2 === 'off' ? '' : lineIn(i, S.sub.l2);
+    if (l2 && l2.trim().toLowerCase() === l1.trim().toLowerCase()) l2 = '';
+    const timed = L.w && l1 === L.text ? L.w : null;
+    const toks = lineToks(l1, timed), words = toks.map((w, k) => `<span class="aw${timed && timed[k].d >= 1 && w.s.length <= 12 ? ' em' : ''}">${esc(w.s)}</span>` + (w.j || k === toks.length - 1 ? '' : ' ')).join('');
+    AP.rows.push({kind: 'line', i, t: L.t, timed});
+    html.push(`<div class="al${timed ? ' timed' : ''}"><div class="at">${words}</div>${l2 ? `<div class="atr">${esc(l2)}</div>` : ''}</div>`);
+    if (!sample){ const f = pauseAfter(i); if (f != null) dots(f, lines[i + 1].t) }
+  });
+  box.innerHTML = `<div class="ap">${html.join('')}</div>`;
+  box.querySelectorAll('.ap > .al').forEach((el, k) => { AP.rows[k].el = el; AP.rows[k].ws = el.querySelectorAll('.aw') });
+  return true;
+}
+function apMove(r){
+  const box = $('#lyrics2'); AP.cur = r;
+  const R0 = AP.rows[Math.max(0, r)]; if (!R0) return;
+  const y = box.clientHeight * (app.classList.contains('lypos-bottom') ? .2 : .3) - R0.el.offsetTop;
+  AP.rows.forEach((R, k) => {
+    const d = k - r, el = R.el;
+    el.classList.toggle('on', k === r); el.classList.toggle('past', k < r); el.classList.toggle('far', Math.abs(d) > 8);
+    el.style.setProperty('--dist', Math.min(Math.abs(d), 4));
+    el.style.transitionDelay = d > 0 ? Math.min(d, 6) * 55 + 'ms' : '0ms';   // the lines below follow a beat later
+    el.style.transform = `translateY(${y.toFixed(1)}px)`;
+    if (k !== r && R.ws) R.ws.forEach(w => { if (w._f !== undefined){ w._f = undefined; w.style.removeProperty('--f'); w.classList.remove('up', 'glow') } });
+  });
+}
+function apTick(pos){
+  if (!apBuild()) return;
+  const sample = !S.lyr.length;
+  let r = -1; for (let k = 0; k < AP.rows.length; k++){ if (AP.rows[k].t <= pos + .12) r = k; else break }
+  if (sample) r = 0;
+  if (r !== AP.cur) apMove(r);
+  const R = AP.rows[r]; if (!R) return;
+  if (R.kind === 'dots'){ const p = clamp((pos - R.t) / Math.max(.5, R.end - .4 - R.t), 0, 1); R.el.querySelectorAll('i').forEach((d, k) => d.classList.toggle('on', p >= (k + 1) / 4)); R.el.classList.toggle('end', R.end - pos < .5); return }
+  if (sample){ R.ws.forEach((w, k) => { const f = clamp(1.6 - k * .7, 0, 1); w.style.setProperty('--f', f); w.classList.toggle('up', f > 0) }); return }
+  if (!R.timed) return;   // only line timing: the whole line lights up
+  const tw = R.timed;
+  R.ws.forEach((el, k) => { const w = tw[k]; if (!w) return; const f = Math.round(clamp((pos - w.t) / w.d, 0, 1) * 500) / 500;
+    if (el._f === f) return; el._f = f; el.style.setProperty('--f', f); el.classList.toggle('up', f > 0); if (el.classList.contains('em')) el.classList.toggle('glow', f > 0 && f < 1) });
 }
 
 /* ════════════════════ audio analysis → energy / beats ════════════════════ */
@@ -1314,7 +1741,7 @@ precision highp float;
 #else
 precision mediump float;
 #endif
-uniform vec2 uRes;uniform float uT,uE,uB,uS,uPh,uRot,uK,uW,uMode;uniform vec3 uA,uC;uniform sampler2D uSpec;
+uniform vec2 uRes;uniform float uT,uE,uB,uS,uPh,uRot,uK,uW,uMode,uPlace;uniform vec3 uA,uC;uniform sampler2D uSpec;
 float h1(float n){return fract(sin(n)*43758.5453);}
 float nz(vec2 x){vec2 p=floor(x),f=fract(x);f=f*f*(3.-2.*f);float n=p.x+p.y*57.;return mix(mix(h1(n),h1(n+1.),f.x),mix(h1(n+57.),h1(n+58.),f.x),f.y);}
 /* s: position around the frame, 0..1, increasing CLOCKWISE (bottom-centre → left → top → right).
@@ -1353,10 +1780,41 @@ vec3 edge(float d,float s,float side){
     float comet=smoothstep(0.,.05,t1)*exp(-max(t1-.05,0.)*4.);
     col=hue(fract(s*2.-uT*.06));
     amp=(.3+spec*.8+comet*(.6+uE)+uB*.55)*side; wc=.0025+spec*.002+uB*.002; wb=.016+spec*.03+comet*.016; wh=.07+uE*.04; hot=.2+comet*.2;
-  } else {                                                   /* AURORA: soft wide waves drifting clockwise */
+  } else if(uMode<4.5){                                      /* AURORA: soft wide waves drifting clockwise */
     float wv=.5+.5*sin(6.2832*(s*2.-uPh*.35))*sin(6.2832*(s*3.+uT*.05));
     amp=(.22+.55*wv+uE*.5+uB*.3)*side; wc=.0012; wb=.04+wv*.03+uE*.03; wh=.13+wv*.06+uE*.06; hot=.1;
     col=mix(uA,uC,wv);
+  } else if(uMode<5.5){                                      /* FIRE: flames rising from the edge, taller when loud */
+    float n1=nz(vec2(s*60.,uT*2.5)),n2=nz(vec2(s*140.,uT*5.));
+    float fh=(.02+.06*n1*n1+.03*n2)*(.6+uE*.9+uB*.6);
+    float ft=clamp(d/max(fh,.001),0.,1.);
+    vec3 fc=mix(mix(vec3(1.,.95,.75),uA,.35),mix(uC,vec3(.85,.2,.02),.5),ft);
+    float body=(1.-smoothstep(0.,1.,ft))*(.7+.5*nz(vec2(s*90.,d*60.-uT*9.)));
+    return (fc*body*1.1+uA*exp(-d/(.05*uW))*.18*(.4+uE))*side*uK*fade;
+  } else if(uMode<6.5){                                      /* LAVA: slow molten blobs along the frame */
+    float lb=nz(vec2(s*14.-uT*.25,uT*.15))*.6+nz(vec2(s*35.+uT*.3,1.7))*.4;
+    float th=.006+.032*lb*lb*(.7+uE*.6);
+    float inl=1.-smoothstep(th-.006,th+.003,d);
+    vec3 lc=mix(uC,uA,lb);
+    return (lc*inl*(.3+.55*lb)+mix(lc,vec3(1.,.9,.6),.4)*exp(-max(d-th,0.)/.01)*.45*lb+uA*exp(-d/(.07*uW))*.1)*side*uK*fade;
+  } else if(uMode<7.5){                                      /* SNAKE: three snakes chasing clockwise */
+    float sn=0.;
+    for(int k=0;k<3;k++){float tt=fract(uPh*.45+float(k)/3.-s);float L=.09+uE*.05;sn=max(sn,smoothstep(0.,.006,tt)*(1.-smoothstep(L*.6,L,tt))*(1.-tt/L*.6));}
+    amp=(.1+sn*(1.1+uB*.8))*side; wc=.002+sn*.003; wb=.012+sn*.02; wh=.06; hot=.25+sn*.3; col=mix(uC,uA,sn);
+  } else if(uMode<8.5){                                      /* SPARKLE: twinkling points, brighter on the beat */
+    float N=180.,cell=floor(s*N),f=fract(s*N);
+    float r=h1(cell*7.13),tw=fract(r*13.+uT*(.6+r*1.4));
+    float on=smoothstep(0.,.08,tw)*(1.-smoothstep(.08,.35,tw))*(.4+uB*1.2+spec);
+    float dt_=exp(-pow((f-.5)*7.,2.))*exp(-pow((d-.012-r*.03)/.006,2.));
+    return (mix(uA,vec3(1.),.5)*dt_*on*2.+uA*exp(-d/(.05*uW))*.12*(.4+uE))*side*uK*fade;
+  } else if(uMode<9.5){                                      /* NEON: a steady glass tube that flickers now and then */
+    float flk=.82+.18*step(.07,h1(floor(uT*14.)));
+    amp=(.55+uE*.35+uB*.25)*flk*side; wc=.0016; wb=.01; wh=.05; hot=.55; col=mix(uA,uC,.5+.5*sin(s*12.566+uT*.3));
+  } else {                                                   /* WAVE: a line that ripples with the bass */
+    float y=.02+(.012+spec*.03+uB*.015)*(.5+.5*sin(s*150.8-uT*3.+bp*4.));
+    float ln=exp(-pow((d-y)/(.0025+spec*.002),2.));
+    float under=(1.-smoothstep(y-.002,y+.002,d))*.18;
+    return (mix(uA,vec3(1.),.3)*ln*1.3+uA*under+uC*exp(-d/(.05*uW))*.12*(.4+uE))*side*uK*fade;
   }
   amp*=(.85+.3*fl)*uK;
   return (col*exp(-dn/(wb*uW))*.62*amp + col*exp(-dn/(wh*uW))*.2*(.35+amp*.65) + mix(col,vec3(1.),hot)*exp(-dn/wc)*1.2*amp)*fade;
@@ -1365,11 +1823,15 @@ void main(){
   vec2 p=gl_FragCoord.xy;float W=uRes.x,H=uRes.y,m=min(W,H),P=2.*(W+H);
   float db=p.y/m,dt=(H-p.y)/m,dl=p.x/m,dr=(W-p.x)/m;
   if(min(min(db,dt),min(dl,dr))>min(.4*uW,.62)){gl_FragColor=vec4(0.);return;}
+  /* placement: 0 whole frame, 1 bottom, 2 top, 3 corners */
+  float cnr=step(2.5,uPlace);
+  float mB=uPlace<.5||cnr>.5||(uPlace>.5&&uPlace<1.5)?1.:0.,mT=uPlace<.5||cnr>.5||(uPlace>1.5&&uPlace<2.5)?1.:0.,mS=uPlace<.5||cnr>.5?1.:0.;
+  float cH=mix(1.,1.-smoothstep(.05,.22,min(p.x,W-p.x)/W),cnr),cV=mix(1.,1.-smoothstep(.05,.22,min(p.y,H-p.y)/H),cnr);
   vec3 c=vec3(0.);
-  c+=edge(db,(p.x<=W*.5?W*.5-p.x:P-(p.x-W*.5))/P,1.);
-  c+=edge(dl,(W*.5+p.y)/P,.9);
-  c+=edge(dt,(W*.5+H+p.x)/P,1.);
-  c+=edge(dr,(W*.5+H+W+(H-p.y))/P,.9);
+  if(mB*cH>0.) c+=edge(db,(p.x<=W*.5?W*.5-p.x:P-(p.x-W*.5))/P,1.)*mB*cH;
+  if(mS*cV>0.) c+=edge(dl,(W*.5+p.y)/P,.9)*mS*cV;
+  if(mT*cH>0.) c+=edge(dt,(W*.5+H+p.x)/P,1.)*mT*cH;
+  if(mS*cV>0.) c+=edge(dr,(W*.5+H+W+(H-p.y))/P,.9)*mS*cV;
   c=min(c,vec3(1.));gl_FragColor=vec4(c,max(max(c.r,c.g),c.b));
 }`;
   const sh = (t, src) => { const o = gl.createShader(t); gl.shaderSource(o, src); gl.compileShader(o); if (!gl.getShaderParameter(o, gl.COMPILE_STATUS)) throw gl.getShaderInfoLog(o); return o };
@@ -1385,21 +1847,21 @@ void main(){
   const spec = new Uint8Array(32); gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
   gl.texImage2D(gl.TEXTURE_2D, 0, gl.LUMINANCE, 32, 1, 0, gl.LUMINANCE, gl.UNSIGNED_BYTE, spec);
   const U = n => gl.getUniformLocation(pr, n);
-  const uRes = U('uRes'), uT = U('uT'), uE = U('uE'), uB = U('uB'), uS = U('uS'), uPh = U('uPh'), uRot = U('uRot'), uK = U('uK'), uW = U('uW'), uMode = U('uMode'), uA = U('uA'), uC = U('uC');
+  const uPlace = U('uPlace'), uRes = U('uRes'), uT = U('uT'), uE = U('uE'), uB = U('uB'), uS = U('uS'), uPh = U('uPh'), uRot = U('uRot'), uK = U('uK'), uW = U('uW'), uMode = U('uMode'), uA = U('uA'), uC = U('uC');
   gl.uniform1i(U('uSpec'), 0);
   function size(){ const r = app.getBoundingClientRect(); cv.width = Math.max(2, Math.round(r.width * .5)); cv.height = Math.max(2, Math.round(r.height * .5)); gl.viewport(0, 0, cv.width, cv.height) }
-  addEventListener('resize', size); size(); host.classList.add('gl');
+  addEventListener('resize', () => { size(); PW.kick() }); size(); host.classList.add('gl');
   let t = 0, ph = 0, rot = 0; const ca = [1, 1, 1], cc = [1, 1, 1];
   return {
-    render(dt, A, C){
-      t += dt;
+    render(dt, A, C, motion = 1){
+      const md = dt * motion; t += md;
       // clockwise: comets speed up with loudness and surge on every kick; the spectrum layout drifts slowly
-      ph += dt * (.1 + AU.energy * .35 + AU.beat * 1.2);
-      rot += dt * (.02 + AU.energy * .06);
+      ph += md * (.1 + AU.energy * .35 + AU.beat * 1.2);
+      rot += md * (.02 + AU.energy * .06);
       const k = Math.min(1, dt * 2.2); for (let i = 0; i < 3; i++){ ca[i] += (A[i] / 255 - ca[i]) * k; cc[i] += (C[i] / 255 - cc[i]) * k }
       for (let i = 0; i < 32; i++) spec[i] = Math.round(clamp(AU.lvl[i], 0, 1) * 255);
       gl.bindTexture(gl.TEXTURE_2D, tex); gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, 32, 1, gl.LUMINANCE, gl.UNSIGNED_BYTE, spec);
-      gl.uniform2f(uRes, cv.width, cv.height); gl.uniform1f(uT, t); gl.uniform1f(uE, clamp(AU.energy, 0, 1)); gl.uniform1f(uB, AU.beat); gl.uniform1f(uS, AU.snare); gl.uniform1f(uPh, ph); gl.uniform1f(uRot, rot); gl.uniform1f(uK, +S.look.ambK || 1); gl.uniform1f(uW, +S.look.ambW || 1); gl.uniform1f(uMode, Math.max(0, AMB_FX.findIndex(a => a[0] === S.look.afx)));
+      gl.uniform2f(uRes, cv.width, cv.height); gl.uniform1f(uT, t); gl.uniform1f(uE, clamp(AU.energy, 0, 1)); gl.uniform1f(uB, AU.beat); gl.uniform1f(uS, AU.snare); gl.uniform1f(uPh, ph); gl.uniform1f(uRot, rot); gl.uniform1f(uK, +S.look.ambK || 1); gl.uniform1f(uW, +S.look.ambW || 1); gl.uniform1f(uMode, Math.max(0, AMB_FX.findIndex(a => a[0] === (S.afxPreview || S.look.afx)))); gl.uniform1f(uPlace, Math.max(0, AMB_POS.findIndex(a => a[0] === (S.look.apos || 'all'))));
       gl.uniform3f(uA, ca[0], ca[1], ca[2]); gl.uniform3f(uC, cc[0], cc[1], cc[2]);
       gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT); gl.drawArrays(gl.TRIANGLES, 0, 3);
     }
@@ -1478,7 +1940,22 @@ const SCW = {
   seek(s){ if (!this.w) return; this.w.seekTo(s * 1000); this.pos = s * 1000; this.posAt = performance.now() },
   vol(){ this.w && this.w.setVolume(S.muted ? 0 : Math.round(S.vol * 100)) }
 };
-function stopInternal(){ YTA.stop(); SCW.stop(); app.classList.remove('clip') }
+/* your own songs: an <audio> player reading files through the asset protocol (see library.rs) */
+const LOC = {
+  el: null,
+  ensure(){ if (!this.el){ const a = this.el = new Audio(); a.preload = 'auto';
+    a.addEventListener('ended', () => { if (S.src === 'local') onEnded() });
+    a.addEventListener('play', () => renderPlay()); a.addEventListener('pause', () => renderPlay());
+    a.addEventListener('error', () => { if (S.src === 'local' && a.getAttribute('src')) toast("Couldn't play that file") }) } return this.el },
+  load(path){ const a = this.ensure(); a.src = T.core.convertFileSrc(path); this.vol(); a.play().catch(() => {}) },
+  play(){ this.el && this.el.play().catch(() => {}) }, pause(){ this.el && this.el.pause() },
+  stop(){ if (this.el && this.el.getAttribute('src')){ this.el.pause(); this.el.removeAttribute('src'); this.el.load() } },
+  time(){ return this.el ? this.el.currentTime || 0 : 0 }, dur(){ return this.el && isFinite(this.el.duration) ? this.el.duration : 0 },
+  playing(){ return !!this.el && !this.el.paused && !this.el.ended },
+  seek(sec){ if (this.el) this.el.currentTime = sec },
+  vol(){ if (this.el){ this.el.volume = clamp(S.vol, 0, 1); this.el.muted = !!S.muted } }
+};
+function stopInternal(){ YTA.stop(); SCW.stop(); LOC.stop(); app.classList.remove('clip') }
 /* when a song ends on its own and the queue moves on, don't pause whatever else the user started meanwhile (e.g. a browser video) */
 let autoAdvanceAt = 0;
 function pauseSystem(){ if (Date.now() - autoAdvanceAt < 15000) return; if (T && S.sys && S.sys.has && S.sys.playing) invoke('media_control', {action: 'pause'}).catch(() => {}) }
@@ -1489,12 +1966,13 @@ function getPos(){
   if (S.src === 'demo') return S.demo.pos;
   if (S.src === 'yt') return YTA.time();
   if (S.src === 'sc') return SCW.time();
+  if (S.src === 'local') return LOC.time();
   if (S.src === 'system' && S.sys){ const m = S.sys; const base = m.updated_ms > 0 ? m.updated_ms : S.sysRecv; let p = m.position_ms / 1000; if (isPlaying()) p += Math.max(0, (Date.now() - base) / 1000); return m.duration_ms ? Math.min(p, m.duration_ms / 1000) : p }
   return 0;
 }
 function getDur(){
   const td = (S.track && S.track.duration) || 0;
-  if (S.src === 'yt') return YTA.dur() || td; if (S.src === 'sc') return SCW.dur || td;
+  if (S.src === 'yt') return YTA.dur() || td; if (S.src === 'sc') return SCW.dur || td; if (S.src === 'local') return LOC.dur() || td;
   if (S.src === 'system' && S.sys) return S.sys.duration_ms / 1000; return td;
 }
 function isPlaying(){
@@ -1502,6 +1980,7 @@ function isPlaying(){
   if (S.src === 'demo') return S.demo.playing;
   if (S.src === 'yt') return YTA.playing();
   if (S.src === 'sc') return SCW.playing;
+  if (S.src === 'local') return LOC.playing();
   if (S.src === 'system' && S.sys){ if (S.sysOptimistic && Date.now() - S.sysOptimistic.at < 1500) return S.sysOptimistic.v; return !!S.sys.playing }
   return false;
 }
@@ -1512,10 +1991,10 @@ async function artForColor(url){
 let artSeq = 0;
 async function applyArt(url){
   const seq = ++artSeq; const np = $('#npArt');
-  if (!url){ np.removeAttribute('src'); np.classList.add('none'); S.pal = null; setAccent(null); setWallArt(null); return }
+  if (!url){ np.removeAttribute('src'); np.classList.add('none'); S.pal = null; S.artImg = null; setAccent(null); setWallArt(null); return }
   np.src = url; np.classList.remove('none');
   const local = await artForColor(url); if (seq !== artSeq) return;
-  const img = new Image(); img.onload = () => { if (seq !== artSeq) return; S.pal = palette2(img); applyTheme(); setWallArt(local); if ($('#appPop').classList.contains('open')) renderAppPop() }; img.onerror = () => setWallArt(url); img.src = local;
+  const img = new Image(); img.onload = () => { if (seq !== artSeq) return; S.pal = palette2(img); S.artImg = img; TRAY.key = ''; applyTheme(); setWallArt(local); if ($('#appPop').classList.contains('open')) renderAppPop() }; img.onerror = () => setWallArt(url); img.src = local;
 }
 function setTrack(t){
   S.track = t;
@@ -1531,7 +2010,7 @@ function pushHistory(t){
 }
 function renderPlay(){
   const pl = isPlaying(); $('#playBtn').innerHTML = pl ? I.pause : I.play; app.classList.toggle('playing', pl);
-  $('#queue').classList.toggle('playing', pl);
+  $('#queue').classList.toggle('playing', pl); islandSync();
 }
 const searchPlatform = () => S.platform === 'auto' ? 'ytmusic' : S.platform;
 function effectivePlatform(){
@@ -1557,7 +2036,7 @@ function cardStarting(t, label, extUrl, plat){
 }
 function showDots(){}
 function onEnded(){
-  if (S.repeat === 'one'){ seekTo(0); if (S.src === 'yt') YTA.play(); else if (S.src === 'sc') SCW.play(); else if (S.src === 'demo') S.demo.playing = true; return }
+  if (S.repeat === 'one'){ seekTo(0); if (S.src === 'yt') YTA.play(); else if (S.src === 'sc') SCW.play(); else if (S.src === 'local') LOC.play(); else if (S.src === 'demo') S.demo.playing = true; return }
   if (S.repeat === 'off' && !S.shuffle && S.qIdx >= S.queue.length - 1){ if (S.src === 'demo'){ S.demo.playing = false; S.demo.pos = 0 } renderPlay(); return }
   autoAdvanceAt = Date.now(); next();
 }
@@ -1577,17 +2056,22 @@ async function playTrack(t, list){
     YTV.stop(); S.src = 'demo'; S.demo = {pos: 0, playing: true}; setTrack(t); pushHistory(t);
     cardStarting(t, `Starting on ${platById(searchPlatform()).name}`, null, searchPlatform()); return;
   }
+  if (t.source === 'local'){   // a song on this PC
+    YTA.stop(); SCW.stop(); pauseSystem(); app.classList.remove('clip'); S.src = 'local';
+    if (!t.art) t.art = await localArt(t);
+    setTrack(t); pushHistory(t); LOC.load(t.play); mvFor(t); return;
+  }
   if (!t.play) return resolveAndPlay(t);
   if (t.source === 'ytmusic'){
-    SCW.stop(); pauseSystem(); app.classList.remove('clip'); S.src = 'yt'; setTrack(t); pushHistory(t); cardStarting(t, 'Starting on YouTube Music', null, 'ytmusic');
+    SCW.stop(); LOC.stop(); pauseSystem(); app.classList.remove('clip'); S.src = 'yt'; setTrack(t); pushHistory(t); cardStarting(t, 'Starting on YouTube Music', null, 'ytmusic');
     await YTA.load([t.play]); mvFor(t); maybeRadio(); return;
   }
   if (t.source === 'youtube'){   // the clip itself becomes the wallpaper, with sound
-    SCW.stop(); pauseSystem(); YTV.stop(); S.src = 'yt'; setTrack(t); pushHistory(t); cardStarting(t, 'Playing on YouTube', null, 'youtube');
+    SCW.stop(); LOC.stop(); pauseSystem(); YTV.stop(); S.src = 'yt'; setTrack(t); pushHistory(t); cardStarting(t, 'Playing on YouTube', null, 'youtube');
     app.classList.add('clip'); await YTA.load([t.play]); maybeRadio(); return;
   }
   if (t.source === 'soundcloud'){
-    YTA.stop(); pauseSystem(); S.src = 'sc'; setTrack(t); pushHistory(t); cardStarting(t, 'Starting on SoundCloud', null, 'soundcloud');
+    YTA.stop(); LOC.stop(); pauseSystem(); S.src = 'sc'; setTrack(t); pushHistory(t); cardStarting(t, 'Starting on SoundCloud', null, 'soundcloud');
     SCW.load(t.play); mvFor(t); maybeRadio(); return;
   }
   // external apps / web players — Windows media sessions bring "now playing" back here
@@ -1606,6 +2090,7 @@ function togglePlay(){
   if (S.src === 'demo'){ S.demo.playing = !S.demo.playing; renderPlay(); return }
   if (S.src === 'yt'){ YTA.playing() ? YTA.pause() : YTA.play(); setTimeout(renderPlay, 150); return }
   if (S.src === 'sc'){ SCW.playing ? SCW.pause() : SCW.play(); return }
+  if (S.src === 'local'){ LOC.playing() ? LOC.pause() : LOC.play(); return }
   if (S.src === 'system'){ S.sysOptimistic = {v: !isPlaying(), at: Date.now()}; renderPlay(); invoke('media_control', {action: 'toggle'}).catch(e => toast(String(e))); return }
   if (S.queue.length) playTrack(S.queue[Math.max(0, S.qIdx)]); else openSearch();
 }
@@ -1621,15 +2106,91 @@ function seekTo(sec){
   if (S.src === 'demo') S.demo.pos = clamp(sec, 0, getDur());
   else if (S.src === 'yt') YTA.seek(sec);
   else if (S.src === 'sc') SCW.seek(sec);
+  else if (S.src === 'local') LOC.seek(sec);
   else if (S.src === 'system') invoke('media_control', {action: 'seek', value: sec}).catch(() => {});
   setTimeout(mvSync, 300);
 }
 
+/* ════════════════════ my music: songs on this PC ════════════════════ */
+// Folders / files you add stay remembered (paths); they are read again when you open My music.
+const LIB = {paths: store.get('musicPaths', []), tracks: [], loaded: false, busy: false};
+const locTrack = r => ({id: r.path, title: r.title, artist: r.artist || 'Unknown artist', album: r.album, art: '', duration: (r.duration_ms || 0) / 1000, source: 'local', play: r.path});
+const hue = str => [...String(str)].reduce((h, c) => (h * 31 + c.charCodeAt(0)) % 360, 7);
+async function localArt(t){
+  try { const a = await invoke('music_art', {path: t.play}); if (a) return a } catch(e){}
+  const h = hue(t.album || t.artist || t.title);   // no picture in the file: a cover of its own
+  const hex = c => '#' + c.map(v => Math.round(clamp(v, 0, 255)).toString(16).padStart(2, '0')).join('');
+  return makeCover(t.title || 'Untitled', t.artist || '', hex(hsl2rgb(h / 360, .7, .55)), hex(hsl2rgb(((h + 50) % 360) / 360, .6, .22)), ['wave', 'sun', 'pool'][h % 3], h);
+}
+async function fillLocalArt(list){
+  for (const t of list.slice(0, 40)){ if (t.source === 'local' && !t.art){ t.art = await localArt(t); if (FLOW.list && FLOW.list.includes(t)) renderFlow(true) } }
+}
+async function libImport(paths, play){
+  if (!T){ toast('My music works in the Windows app'); return null }
+  LIB.busy = true; renderMusicPop(); toast('Reading your songs…');
+  let r = null; try { r = await invoke('music_import', {paths}) } catch(e){ toast(String(e)) }
+  LIB.busy = false; if (!r){ renderMusicPop(); return null }
+  const fresh = (r.sources || []).filter(p => !LIB.paths.includes(p)); if (fresh.length){ LIB.paths = [...LIB.paths, ...fresh]; store.set('musicPaths', LIB.paths) }
+  const list = (r.tracks || []).map(locTrack);
+  if (list.length){ const have = new Set(LIB.tracks.map(t => t.play)); LIB.tracks = LIB.tracks.concat(list.filter(t => !have.has(t.play))); LIB.loaded = LIB.loaded || !LIB.paths.length || paths === LIB.paths }
+  renderMusicPop();
+  if (play && list.length){ S.qLabel = `My music · ${list.length} songs`; closeMenus(); playTrack(list[0], list); fillLocalArt(list); toast(`${list.length} songs`) }
+  else if (play && !(r.media || []).length) toast('No songs found there');
+  return r;
+}
+async function libPlay(shuffle){
+  if (!LIB.loaded){ LIB.tracks = []; const r = await libImport(LIB.paths, false); if (!r) return; LIB.loaded = true }
+  if (!LIB.tracks.length){ toast('No songs found in your folders'); return }
+  const list = shuffle ? LIB.tracks.slice().sort(() => Math.random() - .5) : LIB.tracks.slice();
+  S.qLabel = `My music · ${list.length} songs`; closeMenus(); playTrack(list[0], list); fillLocalArt(list);
+}
+function renderMusicPop(){
+  const m = $('#musicPop'), n = LIB.tracks.length, name = p => p.split(/[\\/]/).filter(Boolean).pop() || p;
+  m.innerHTML = `<div class="mh">My music</div>` + (LIB.paths.length
+    ? `<button class="mi" data-mu="play">${I.play}<span>Play my music</span><em>${LIB.loaded ? n + ' songs' : ''}</em></button><button class="mi" data-mu="shuffle">${I.shuffle}<span>Shuffle</span></button>`
+    : `<div class="lnote">Play songs from this PC: add a folder, or drop folders and songs onto Wallplayer.</div>`)
+    + `<button class="mi" data-mu="add" ${LIB.busy ? 'disabled' : ''}>${I.folder}<span>${LIB.busy ? 'Reading…' : 'Add a folder…'}</span></button>`
+    + (LIB.paths.length ? `<div class="msep"></div>` + LIB.paths.map((p, i) => `<div class="mf"><span title="${esc(p)}">${esc(name(p))}</span><button class="chip" data-murm="${i}">Remove</button></div>`).join('') : '');
+}
+$('#qMusic').innerHTML = I.folder;
+$('#qMusic').onclick = e => { e.stopPropagation(); const m = $('#musicPop'); if (m.classList.contains('open')){ m.classList.remove('open'); return } closeMenus(m); renderMusicPop(); m.classList.add('open') };
+$('#musicPop').addEventListener('click', async e => {
+  e.stopPropagation(); const b = e.target.closest('[data-mu],[data-murm]'); if (!b) return;
+  if (b.dataset.murm != null){ const p = LIB.paths[+b.dataset.murm]; LIB.paths = LIB.paths.filter(x => x !== p); store.set('musicPaths', LIB.paths); LIB.tracks = LIB.tracks.filter(t => !t.play.startsWith(p)); renderMusicPop(); return }
+  const a = b.dataset.mu;
+  if (a === 'play') libPlay(false); else if (a === 'shuffle') libPlay(true);
+  else if (a === 'add'){ if (!T){ toast('My music works in the Windows app'); return } let p = null; try { p = await invoke('music_pick_folder') } catch(err){} if (p) libImport([p], true) }
+});
+// files dropped on the window (Tauri gives their paths): songs play, a picture or video becomes the wallpaper
+async function dropPaths(paths){
+  const r = await libImport(paths, true); const media = r && r.media && r.media[0]; if (!media) return;
+  try { const blob = await (await fetch(T.core.convertFileSrc(media))).blob(); const name = media.split(/[\\/]/).pop();
+    const type = blob.type || (/\.(mp4|webm|mov|mkv)$/i.test(name) ? 'video/mp4' : 'image/jpeg'); setCustomWallpaper(new File([blob], name, {type})) } catch(e){ toast("Couldn't open that file") }
+}
+
 /* ════════════════════ system now playing (Windows) ════════════════════ */
+// AUMID / exe name of the other app → a short name for people
+function appName(a){
+  const s = String(a || '').toLowerCase();
+  for (const [k, n] of [['spotify', 'Spotify'], ['msedge', 'Edge'], ['chrome', 'Chrome'], ['firefox', 'Firefox'], ['opera', 'Opera'], ['brave', 'Brave'], ['applemusic', 'Apple Music'], ['itunes', 'iTunes'], ['zunemusic', 'Media Player'], ['vlc', 'VLC'], ['foobar', 'foobar2000'], ['tidal', 'TIDAL'], ['deezer', 'Deezer'], ['amazon', 'Amazon Music']]) if (s.includes(k)) return n;
+  const last = String(a || '').split('!').pop().replace(/\.exe$/i, '').split(/[\\/]/).pop(); return last || 'another app';
+}
+// music playing in two places: ask which one to keep, once per pair of songs
+function askTwoSources(m){
+  const key = (S.track ? S.track.title : '') + '|' + m.app + '|' + m.title; if (S.askKey === key) return; S.askKey = key;
+  const box = $('#askPill'), other = appName(m.app);
+  box.innerHTML = `<span><span>Playing in two places:</span> <b>${esc(S.track ? S.track.title : 'Wallplayer')}</b> <span>here,</span> <b>${esc(m.title)}</b> <span>in</span> <span>${esc(other)}</span></span><button class="chip on" data-keep="here">Keep Wallplayer</button><button class="chip" data-keep="other">Keep ${esc(other)}</button>`;
+  box.classList.add('on'); clearTimeout(askTwoSources.t); askTwoSources.t = setTimeout(() => box.classList.remove('on'), 20000);
+}
+$('#askPill').addEventListener('click', e => {
+  e.stopPropagation(); const b = e.target.closest('[data-keep]'); if (!b) return; $('#askPill').classList.remove('on');
+  if (b.dataset.keep === 'here') invoke('media_control', {action: 'pause'}).catch(() => {});   // pauses the other app's song
+  else { const m = S.sys; stopInternal(); S.src = 'none'; S.sysKey = ''; if (m) onMedia(m) }        // follow the other app from now on
+});
 function onMedia(m){
   S.sys = m; S.sysRecv = Date.now(); S.sysOptimistic = null;
-  const internal = S.src === 'yt' || S.src === 'sc';
-  if (internal && isPlaying()) return;                 // in-app playback wins
+  const internal = S.src === 'yt' || S.src === 'sc' || S.src === 'local';
+  if (internal && isPlaying()){ if (m.has && m.playing && !MIRROR) askTwoSources(m); return }   // in-app playback wins until you choose
   if (internal && Date.now() - trackStartAt < 12000) return;   // our next song is still loading
   if (!m.has){ if (S.src === 'system'){ S.src = 'none'; S.sysKey = ''; setTrack(null); YTV.stop() } return }
   if (internal && !m.playing) return;                  // keep the paused in-app track
@@ -1646,17 +2207,42 @@ async function mvFor(t){
   if (S.look.bg === 'desktop'){ YTV.stop(); return }
   if (bgVid()) return bgVideo(t, false);
   if (!S.mvOn || !T || app.classList.contains('hasCustom') || !t){ YTV.stop(); return }
-  const key = t.title + '|' + t.artist; S.mvKey = key;
-  try { const ids = await invoke('youtube_search', {query: `${t.title} ${t.artist} official music video`}); if (S.mvKey !== key) return; await YTV.load(ids.slice(0, 6), getPos()) } catch(e){}
+  const key = t.title + '|' + t.artist; S.mvKey = key; S.mvPick = null; MVP.key = ''; MVP.list = []; renderMvPick();
+  try { const ids = await invoke('youtube_search', {query: `${t.title} ${t.artist} official music video`}); if (S.mvKey !== key) return; await YTV.load(ids.slice(0, 6), getPos()); mvPickLoad(t) } catch(e){}
 }
+// the dots above the player: this song's video, then up to five other videos by the artist
+const MVP = {key: '', list: [], cur: 0};
+async function mvPickLoad(t){
+  if (!T || MIRROR || !t || !t.artist) return; const key = t.title + '|' + t.artist; if (MVP.key === key) return; MVP.key = key;
+  try {
+    const out = await invoke('search', {platform: 'youtube', query: `${t.artist} official music video`}); if (MVP.key !== key) return;
+    const own = YTV.ids[YTV.i] || YTV.ids[0], tl = t.title.toLowerCase();
+    const more = (out.tracks || []).filter(v => v.id && v.id !== own && !(v.title || '').toLowerCase().includes(tl)).slice(0, 5);
+    MVP.list = [{id: own, title: `${t.title} · this song's video`, own: true}, ...more.map(v => ({id: v.id, title: v.title}))]; MVP.cur = 0; renderMvPick();
+  } catch(e){}
+}
+function renderMvPick(){
+  const box = $('#mvPick'), show = MVP.list.length > 1 && S.mvOn && !bgVid() && S.look.bg !== 'desktop' && !app.classList.contains('clip');
+  box.classList.toggle('on', show); if (!show){ box.innerHTML = ''; return }
+  box.innerHTML = MVP.list.map((v, i) => `<button class="${i === MVP.cur ? 'on' : ''}" data-mvp="${i}" aria-label="${esc(v.title)}"></button>`).join('') + `<span class="tip glass">${esc(MVP.list[MVP.cur].title)}</span>`;
+}
+$('#mvPick').addEventListener('pointerover', e => { const b = e.target.closest('[data-mvp]'); if (b) $('#mvPick .tip').textContent = MVP.list[+b.dataset.mvp].title });
+$('#mvPick').addEventListener('pointerout', () => { const tp = $('#mvPick .tip'); if (tp && MVP.list[MVP.cur]) tp.textContent = MVP.list[MVP.cur].title });
+$('#mvPick').addEventListener('click', e => {
+  e.stopPropagation(); const b = e.target.closest('[data-mvp]'); if (!b) return; const i = +b.dataset.mvp, v = MVP.list[i]; if (!v || i === MVP.cur) return;
+  MVP.cur = i; renderMvPick();
+  if (v.own){ S.mvPick = null; YTV.load([v.id], getPos()) } else { S.mvPick = v.id; YTV.load([v.id], 0) }   // another video plays on its own, not kept in time with the song
+});
 function mvSync(){
   if (!YTV.p || !$('#ytWrap').classList.contains('on')) return;
+  // covered by another window: pause the wallpaper video (it is the music only in clip mode)
+  if (PW.asleep() && !app.classList.contains('clip')){ if (YTV.playing()) YTV.pause(); return }
   if (MIRROR){   // follow the main window's video, whatever it is
     const want = MS.vt + (MS.vpl ? (performance.now() - MS.at) / 1000 : 0);
     if (!MS.vpl && YTV.playing()) YTV.pause(); if (MS.vpl && !YTV.playing()) YTV.play();
     if (Math.abs(YTV.time() - want) > 2.5 && YTV.dur() > want) YTV.seek(want); return;
   }
-  if (bgVid()){ if (!YTV.playing()) YTV.play(); return }   // background video keeps running, not tied to the song
+  if (bgVid() || S.mvPick){ if (!YTV.playing()) YTV.play(); return }   // background video / another video of the artist keeps running, not tied to the song
   if (!(S.src === 'system' || S.src === 'yt' || S.src === 'sc')) return;
   const pl = isPlaying(); if (!pl && YTV.playing()) YTV.pause(); if (pl && !YTV.playing()) YTV.play();
   const pos = getPos(); if (Math.abs(YTV.time() - pos) > 2.5 && YTV.dur() > pos) YTV.seek(pos);
@@ -1672,9 +2258,15 @@ function renderQueue(){
   $('#qTitle').textContent = hist ? 'History Playing' : 'Continue Playing'; $('#qHist').classList.toggle('on', hist);
   $('#qHist').title = hist ? 'Back to Continue Playing' : 'History — songs you played';
   $('#qsub').textContent = hist ? (S.history.length ? `${S.history.length} songs you played` : 'Nothing played yet') : S.qKind === 'history' || !S.queue.length ? (S.history.length ? 'Recently played' : 'Nothing yet') : (S.qLabel || `Up next on ${platById(effectivePlatform()).name}`);
-  const ol = $('#qlist');
-  ol.innerHTML = list.length ? list.slice(0, 100).map((t, i) => `<li class="qi ${isCurrent(t) ? 'cur' : ''}" data-i="${i}"><b>${esc(t.title)}</b><span>${esc(t.artist)}</span></li>`).join('') : `<li class="qempty">${hist ? 'Songs you play will show up here' : 'Press Ctrl+Alt+Space to search'}</li>`;
-  ol.onclick = e => { const li = e.target.closest('.qi'); if (!li) return; const t = list[+li.dataset.i]; if (!t) return; if (hist) playTrack(t); else playTrack(t, list) };
+  const ol = $('#qlist'), isQ = !hist && list === S.queue && !MIRROR;   // a real queue: reorder, play next, remove
+  ol.innerHTML = list.length ? list.slice(0, 100).map((t, i) => { const cur = isCurrent(t);
+    return `<li class="qi ${cur ? 'cur' : ''}" data-i="${i}">${isQ ? `<span class="qg" title="Drag to reorder">${I.grip}</span>` : ''}<div class="qm"><b>${esc(t.title)}</b><span>${esc(t.artist)}</span></div>${MIRROR || cur ? '' : `<span class="qx">${isQ ? `<button data-qnext title="Play next">${I.playNext}</button>` : ''}<button data-qrm title="${isQ ? 'Remove from the playlist' : 'Remove from history'}">${I.xs}</button></span>`}</li>` }).join('')
+    : `<li class="qempty">${hist ? 'Songs you play will show up here' : 'Press Ctrl+Alt+Space to search'}</li>`;
+  ol.onclick = e => { const li = e.target.closest('.qi'); if (!li) return; const i = +li.dataset.i, t = list[i]; if (!t) return;
+    if (e.target.closest('[data-qrm]')){ e.stopPropagation(); queueRemove(list, i); return }
+    if (e.target.closest('[data-qnext]')){ e.stopPropagation(); queueAdd(t, true); return }
+    if (e.target.closest('.qg')) return;
+    if (hist) playTrack(t); else playTrack(t, list) };
   const cur = ol.querySelector('.cur'); if (cur) cur.scrollIntoView({block: 'nearest'});
 }
 async function refreshQueue(){
@@ -1825,6 +2417,37 @@ function queueAdd(t, playNext){
   toast(playNext ? `Plays next: ${t.title}` : `Added to playlist: ${t.title}`);
 }
 
+function queueRemove(list, i){
+  const t = list[i]; if (!t || isCurrent(t)) return;
+  list.splice(i, 1);
+  if (list === S.queue){ S.qIdx = Math.max(0, S.queue.findIndex(isCurrent)) }
+  else if (list === S.history) store.set('history', S.history.map(h => ({...h, lyrics: undefined})));
+  renderQueue(); renderFlow(true);
+}
+// drag the ⋮⋮ handle to move a song in the playlist
+$('#qlist').addEventListener('pointerdown', e => {
+  const g = e.target.closest('.qg'); if (!g || e.button !== 0) return;
+  e.stopPropagation(); e.preventDefault();
+  const ol = $('#qlist'), li = g.closest('.qi'), from = +li.dataset.i; let to = from, moved = false, scrollT = 0;
+  const items = () => [...ol.querySelectorAll('.qi')];
+  const mark = () => { items().forEach(x => x.classList.remove('dropb', 'dropa')); if (!moved) return; const all = items();
+    if (to < all.length) all[to].classList.add('dropb'); else all[all.length - 1].classList.add('dropa') };
+  const mv = ev => {
+    if (!moved && Math.abs(ev.clientY - e.clientY) < 4) return; moved = true; li.classList.add('lift'); ol.classList.add('reorder');
+    const all = items(); to = all.length;
+    for (let k = 0; k < all.length; k++){ const r = all[k].getBoundingClientRect(); if (ev.clientY < r.top + r.height / 2){ to = k; break } }
+    const r = ol.getBoundingClientRect(); clearInterval(scrollT);   // near the edges: scroll
+    if (ev.clientY < r.top + 30) scrollT = setInterval(() => ol.scrollTop -= 12, 30); else if (ev.clientY > r.bottom - 50) scrollT = setInterval(() => ol.scrollTop += 12, 30);
+    mark() };
+  const up = () => { removeEventListener('pointermove', mv); removeEventListener('pointerup', up); removeEventListener('pointercancel', up); clearInterval(scrollT);
+    ol.classList.remove('reorder'); li.classList.remove('lift'); mark();
+    if (!moved) return; dragMoved = performance.now();
+    if (to === from || to === from + 1){ renderQueue(); return }
+    const [t] = S.queue.splice(from, 1); S.queue.splice(to > from ? to - 1 : to, 0, t);
+    S.qIdx = Math.max(0, S.queue.findIndex(isCurrent)); renderQueue(); renderFlow(true) };
+  addEventListener('pointermove', mv); addEventListener('pointerup', up); addEventListener('pointercancel', up);
+});
+
 /* radio: when the playlist is about to run out, add songs like the one playing */
 async function maybeRadio(force){
   const t = S.track; if (!T || !t || (!S.radioOn && !force)) return false;
@@ -1968,7 +2591,7 @@ $('#platBtn').onclick = e => { e.stopPropagation(); const m = $('#platMenu'); cl
 
 /* accounts */
 async function refreshAccounts(){ if (!T) return; try { S.acc = await invoke('account_status') } catch(e){} renderPlatMenu(); if ($('#accMenu').classList.contains('open')) renderAccounts() }
-function openAccounts(){ const m = $('#accMenu'); closeMenus(m); m.classList.add('open'); renderAccounts(); refreshAccounts() }
+function openAccounts(){ openAppPop('acc') }
 function renderAccounts(){
   const a = S.acc || {};
   const row = (pid, title, sub, ok, btn, extra = '') => `<div class="acc">${platById(pid).icon}<div class="acc-t"><b>${title}</b><span class="${ok ? 'ok' : ''}">${sub}</span>${extra}</div>${btn || ''}</div>`;
@@ -1999,37 +2622,6 @@ $('#accMenu').addEventListener('click', async e => {
   refreshAccounts();
 });
 
-function renderMoreMenu(){
-  const t = S.track; const p = platById(effectivePlatform());
-  const items = [];
-  if (t) items.push(`<a class="mi" data-a="open" href="#">${I.ext}<span>Open in ${esc(p.name)}</span></a>`);
-  items.push(`<button class="mi ${S.mvOn ? 'chk' : ''}" data-a="mv">${I.disc}<span>Music video wallpaper</span>${I.check}</button>`);
-  items.push(`<button class="mi" data-a="wall">${I.image}<span>Set wallpaper image / video…</span></button>`);
-  if (app.classList.contains('hasCustom')) items.push(`<button class="mi" data-a="unwall">${I.layers}<span>Use album-art wallpaper</span></button>`);
-  items.push(`<button class="mi ${S.shuffle ? 'chk' : ''}" data-a="shuf">${I.shuffle}<span>Shuffle</span>${I.check}</button>`);
-  items.push(`<button class="mi ${S.radioOn ? 'chk' : ''}" data-a="radio">${I.refresh}<span>Keep playing similar songs</span>${I.check}</button>`);
-  items.push(`<button class="mi" data-a="lyr">${I.lyrics}<span>Lyrics &amp; subtitles…</span></button>`);
-  items.push(`<button class="mi" data-a="look">${I.sliders}<span>Appearance…</span></button>`);
-  items.push(`<button class="mi" data-a="acc">${I.user}<span>Accounts…</span></button>`);
-  if (T){ items.push('<div class="msep"></div>'); items.push(`<button class="mi ${S.ui.wallpaper_mode ? 'chk' : ''}" data-a="behind">${I.layers}<span>Behind desktop icons</span>${I.check}</button>`);
-    items.push(`<button class="mi" data-a="quit">${I.power}<span>Quit Wallplayer</span></button>`) }
-  $('#moreMenu').innerHTML = items.join('');
-}
-$('#moreBtn').onclick = e => { e.stopPropagation(); renderMoreMenu(); const m = $('#moreMenu'); closeMenus(m); m.classList.toggle('open') };
-$('#moreMenu').addEventListener('click', async e => {
-  const b = e.target.closest('.mi'); if (!b) return; e.preventDefault(); e.stopPropagation(); closeMenus(); const a = b.dataset.a;
-  if (a === 'open' && S.track) openExternal(platformUrl(effectivePlatform(), S.track));
-  if (a === 'mv') toggleMV();
-  if (a === 'wall') $('#wpFile').click();
-  if (a === 'unwall'){ applyCustom(null); IDB.del('wall').then(() => T && T.event.emit('wall-changed', {}).catch(() => {})) }
-  if (a === 'acc') openAccounts();
-  if (a === 'lyr') openLyricsPanel();
-  if (a === 'look') openAppPop();
-  if (a === 'radio'){ S.radioOn = !S.radioOn; store.set('radioOn', S.radioOn); toast(S.radioOn ? 'Keeps playing similar songs when the playlist ends' : 'Stops when the playlist ends'); if (S.radioOn) maybeRadio() }
-  if (a === 'shuf'){ if (S.src === 'system') invoke('media_control', {action: 'shuffle'}).catch(err => toast(String(err))); else { S.shuffle = !S.shuffle; toast(S.shuffle ? 'Shuffle on' : 'Shuffle off') } }
-  if (a === 'behind'){ try { S.ui = await invoke('set_wallpaper_mode', {on: !S.ui.wallpaper_mode}); toast(S.ui.wallpaper_mode ? 'Behind desktop icons — Ctrl+Alt+Space to search' : 'Interactive desktop mode') } catch(err){ toast(String(err)) } }
-  if (a === 'quit') invoke('quit_app');
-});
 $('#wpFile').onchange = e => { const f = e.target.files[0]; if (f) setCustomWallpaper(f); e.target.value = '' };
 
 /* lyrics panel: full-lyrics view, two subtitle lines, versions (LRCLIB / Genius), Google */
@@ -2043,14 +2635,29 @@ async function openLyricsPanel(){
     <div class="lrow"><span>Line 1</span>${sel('subL1', S.sub.l1, false)}</div>
     <div class="lrow"><span>Line 2</span>${sel('subL2', S.sub.l2, true)}</div>
     <div class="lnote">${esc(src)} · lines without a translation are machine-translated</div>
-    <div class="msep"></div><div class="mh">Other versions</div><div id="lyrList"><div class="lnote">Looking for lyrics…</div></div>`;
+    <div class="msep"></div><div class="mh">Timing</div>
+    <div class="lrow"><span>This song</span><span class="tm"><button class="chip" data-tm="s" data-d="-.25">−</button><b id="tmS" data-tm0="s" title="Back to 0">${offTxt(S.lyrOff || 0)}</b><button class="chip" data-tm="s" data-d=".25">+</button></span></div>
+    <div class="lrow"><span>All songs</span><span class="tm"><button class="chip" data-tm="a" data-d="-.25">−</button><b id="tmA" data-tm0="a" title="Back to 0">${offTxt(S.lyrOffAll || 0)}</b><button class="chip" data-tm="a" data-d=".25">+</button></span></div>
+    <div class="lnote">+ shows the words earlier, − later. Wallplayer remembers it. Keys [ and ] also move this song.</div>
+    <div class="msep"></div><div class="mh">Other versions</div>
+    <div class="bgq"><input id="lyrQ" placeholder="Search lyrics: title and artist…" spellcheck="false" autocomplete="off"></div>
+    <div id="lyrList"><div class="lnote">Looking for lyrics…</div></div>`;
+  pop.querySelectorAll('[data-tm]').forEach(b => b.onclick = e => { e.stopPropagation(); const all = b.dataset.tm === 'a'; setLyrOff(all ? 'all' : 'song', (all ? S.lyrOffAll : S.lyrOff || 0) + +b.dataset.d) });
+  pop.querySelectorAll('[data-tm0]').forEach(b => b.onclick = e => { e.stopPropagation(); setLyrOff(b.dataset.tm0 === 'a' ? 'all' : 'song', 0) });
   pop.querySelector('#subL1').onchange = e => { S.sub.l1 = e.target.value; store.set('sub', S.sub); applySubs() };
   pop.querySelector('#subL2').onchange = e => { S.sub.l2 = e.target.value; store.set('sub', S.sub); applySubs() };
   pop.querySelector('[data-a=mode]').onclick = e => { e.stopPropagation(); setLyricsMode(!app.classList.contains('lyricsmode')); e.currentTarget.classList.toggle('on', app.classList.contains('lyricsmode')) };
   if (!t){ $('#lyrList').innerHTML = '<div class="lnote">Nothing playing</div>'; return }
   let list = [];
-  if (T && !t.demo){ try { list = await invoke('lyrics_search', {query: `${t.title} ${t.artist}`}) } catch(err){} }
+  const q0 = `${t.title} ${t.artist}`; $('#lyrQ').value = q0;
+  // typed search: Enter looks again with your words (for songs whose title does not match)
+  $('#lyrQ').onkeydown = async ev => { ev.stopPropagation(); if (ev.key !== 'Enter') return; const q = ev.target.value.trim(); if (!q) return;
+    $('#lyrList').innerHTML = '<div class="lnote">Searching…</div>';
+    if (T && !t.demo){ try { list = await invoke('lyrics_search', {query: q}) } catch(err){ list = [] } } showList() };
+  if (T && !t.demo){ try { list = await invoke('lyrics_search', {query: q0}) } catch(err){} }
   else list = [{track: t.title, artist: t.artist, album: t.album, synced: 'demo', source: 'demo'}];
+  showList();
+  function showList(){
   const box = $('#lyrList'); if (!box) return;
   box.innerHTML = list.map((l, i) => `<button class="mi" data-i="${i}"><span class="lv"><b>${esc(l.track)}</b><small>${esc(l.artist)}${l.album ? ' · ' + esc(l.album) : ''}</small></span><em>${l.synced ? 'Synced' : (l.source === 'genius' ? 'Genius' : 'Plain')}</em></button>`).join('') +
     (list.length ? '' : '<div class="lnote">No other versions found</div>') +
@@ -2061,24 +2668,60 @@ async function openLyricsPanel(){
     if (t.demo){ setLyrics(t.lyrics, t, 'demo'); pop.classList.remove('open'); return }
     if (!L.synced && !L.plain && L.url){ try { L.plain = await invoke('lyrics_page', {url: L.url}) } catch(err){ toast("Couldn't load those lyrics"); return } }
     setLyrics(lyricsFromObj(L, t.duration), t, L.source); if (!app.classList.contains('lyricsmode')) setLyricsMode(true); pop.classList.remove('open') };
+  }
+}
+// settings: sidebar pages, and the things that used to be in the ··· menu
+async function settingsAct(a){
+  if (a === 'open'){ if (S.track) openExternal(platformUrl(effectivePlatform(), S.track)); return }
+  if (a === 'lyrpanel'){ closeMenus(); openLyricsPanel(); return }
+  if (a === 'mv') toggleMV();
+  else if (a === 'wall') $('#wpFile').click();
+  else if (a === 'autostart'){ try { S.ui = await invoke('set_autostart', {on: !S.ui.autostart}); toast(S.ui.autostart ? 'Wallplayer opens when Windows starts' : 'Wallplayer no longer opens with Windows') } catch(err){ toast(String(err)) } }
+  else if (a === 'unwall'){ applyCustom(null); IDB.del('wall').then(() => T && T.event.emit('wall-changed', {}).catch(() => {})) }
+  else if (a === 'radio'){ S.radioOn = !S.radioOn; store.set('radioOn', S.radioOn); toast(S.radioOn ? 'Keeps playing similar songs when the playlist ends' : 'Stops when the playlist ends'); if (S.radioOn) maybeRadio() }
+  else if (a === 'shuf'){ if (S.src === 'system') invoke('media_control', {action: 'shuffle'}).catch(err => toast(String(err))); else { S.shuffle = !S.shuffle; toast(S.shuffle ? 'Shuffle on' : 'Shuffle off') } }
+  else if (a === 'behind'){ try { S.ui = await invoke('set_wallpaper_mode', {on: !S.ui.wallpaper_mode}); toast(S.ui.wallpaper_mode ? 'Behind desktop icons — Ctrl+Alt+Space to search' : 'Interactive desktop mode') } catch(err){ toast(String(err)) } }
+  else if (a === 'quit'){ invoke('quit_app'); return }
+  else if (a === 'dim'){ S.dim = !S.dim; applyToggles() }
+  else if (a === 'lymode') setLyricsMode(!app.classList.contains('lyricsmode'));
+  else if (a === 'isllyr'){ S.look.islLyr = S.look.islLyr === false; store.set('look', S.look); islandSync(true) }
+  if ($('#appPop').classList.contains('open')) renderAppPop();
 }
 $('#appPop').addEventListener('click', e => {
+  if (e.target.closest('.sclose')){ e.stopPropagation(); closeMenus(); return }
+  const nb = e.target.closest('[data-tab]'); if (nb){ e.stopPropagation(); if (S.binding) stopBinding(); S.setTab = nb.dataset.tab; renderAppPop(); return }
+  const sa = e.target.closest('[data-sa]'); if (sa){ e.stopPropagation(); settingsAct(sa.dataset.sa); return }
   const ed = e.target.closest('[data-edit]'); if (ed){ e.stopPropagation(); closeMenus(); openEditor(ed.dataset.edit); return }
   if (e.target.closest('#bindBtn')){ e.stopPropagation(); S.binding ? stopBinding() : startBinding(); return }
   if (e.target.closest('#bindReset')){ e.stopPropagation(); stopBinding(); applySearchKey('Ctrl+Alt+Space'); return }
+  if (e.target.closest('#upCheck')){ e.stopPropagation(); closeMenus(); openUpdates(); return }
+  const lg = e.target.closest('[data-lang]');
+  if (lg){ e.stopPropagation(); if (lg.dataset.lang === I18N.lang) return; S.look.lang = lg.dataset.lang; store.set('look', S.look);
+    if (T) invoke('set_ui_lang', {lang: S.look.lang}).catch(() => {}); setTimeout(() => location.reload(), 120); return }
+  if (e.target.closest('#privBtn')){ e.stopPropagation(); openExternal('https://github.com/lehuynhtan17/Wallplayer/blob/main/PRIVACY.md'); return }
+  if (e.target.closest('#upNotes')){ e.stopPropagation(); openExternal(UP.url || upPage(UP.current)); return }
   if (e.target.closest('#selfTestBtn')){ e.stopPropagation(); closeMenus(); selfTest(); return }
   e.stopPropagation(); const c = e.target.closest('.chip[data-k]'), tg = e.target.closest('[data-t]'), sw = e.target.closest('[data-sw]'), mon = e.target.closest('[data-mon]');
   if (sw){ S.look.theme = 'manual'; S.look.pickIdx = +sw.dataset.sw; store.set('look', S.look); applyTheme(); renderAppPop(); return }
+  const amon = e.target.closest('[data-ambmon]');
+  if (amon){ const off = S.look.ambOff = {...(S.look.ambOff || {})}; const id = amon.dataset.ambmon; if (off[id]) delete off[id]; else off[id] = true; store.set('look', S.look); amon.classList.toggle('on', !off[id]); applyToggles(); return }
   if (mon){ invoke('set_monitor', {id: mon.dataset.mon}).then(() => { toast('Moved to ' + mon.textContent); loadMonitors() }).catch(err => toast(String(err))); return }
-  if (c){ S.look[c.dataset.k] = c.dataset.v; if (c.dataset.k === 'lys') S.look.lysz = 0; if (c.dataset.k === 'ck') S.look.clock = true; if (c.dataset.k === 'theme') applyTheme(); applyLook(); if (c.dataset.k === 'bg') applyBg(); renderAppPop() }
-  if (tg){ if (tg.dataset.t === 'clock'){ S.look.clock = !S.look.clock; applyLook() } else if (tg.dataset.t === 'bgEach'){ S.look.bgEach = !S.look.bgEach; store.set('look', S.look) } else { S.ambOn = !S.ambOn; applyToggles() } renderAppPop() }
+  if (c){ S.look[c.dataset.k] = c.dataset.v; if (c.dataset.k === 'pwr') PW.prefs(); if (c.dataset.k === 'lys') S.look.lysz = 0; if (c.dataset.k === 'ck') S.look.clock = true; if (c.dataset.k === 'theme') applyTheme(); applyLook(); if (c.dataset.k === 'bg') applyBg(); renderAppPop() }
+  if (tg){ if (tg.dataset.t === 'clock'){ S.look.clock = !S.look.clock; applyLook() } else if (tg.dataset.t === 'bgEach'){ S.look.bgEach = !S.look.bgEach; store.set('look', S.look) } else if (tg.dataset.t === 'trayart'){ S.look.trayArt = S.look.trayArt === false; store.set('look', S.look); TRAY.key = '' } else if (tg.dataset.t === 'lynet'){ S.look.lyNet = S.look.lyNet === false; store.set('look', S.look); if (S.look.lyNet && S.track && !S.lyr.length) loadLyrics(S.track) } else if (tg.dataset.t === 'autoup'){ invoke('update_set_auto', {on: !UP.auto}).then(setUp).catch(() => toast('Updates work in the Windows app')); UP.auto = !UP.auto } else if (tg.dataset.t === 'pcov'){ S.look.pcov = S.look.pcov === false; store.set('look', S.look); PW.prefs() } else if (tg.dataset.t === 'amb'){ S.ambOn = !S.ambOn; applyToggles() } renderAppPop() }
   const bv = e.target.closest('[data-bgv]');
   if (bv){ const v = BGQ.res[+bv.dataset.bgv]; if (v){ S.look.bgVid = {id: v.id, title: v.title, art: v.art}; store.set('look', S.look); BGQ.res = []; bgVideo(S.track, true); renderAppPop() } }
   if (e.target.closest('[data-bgnext]')){ bgVideo(S.track, true); toast('Finding another one…') }
   const hb = e.target.closest('[data-h]'); if (hb){ if (hb.dataset.h === 'queue'){ S.qOff = !S.qOff; applyToggles() } else { S.hide[hb.dataset.h] = !S.hide[hb.dataset.h]; applyHide() } renderAppPop() }
 });
+// point at an edge-light effect to see it for a moment (it moves even when nothing plays)
+$('#appPop').addEventListener('pointerover', e => { const c = e.target.closest('.chip[data-k=afx]'); if (!c || S.afxPreview === c.dataset.v) return; S.afxPreview = c.dataset.v; PW.preview = true; PW.quiet = 0; wakeLoop() });
+$('#appPop').addEventListener('pointerout', e => { const c = e.target.closest('.chip[data-k=afx]'); if (!c || (e.relatedTarget && c.contains(e.relatedTarget))) return; S.afxPreview = null; PW.preview = false });
 // My video: search YouTube from the Appearance panel
 $('#appPop').addEventListener('keydown', async e => {
+  if (e.target.id === 'setQ'){ e.stopPropagation();
+    if (e.key === 'Enter'){ const b = filterSettings(); if (b){ S.setTab = b.dataset.tab; renderAppPop() } }
+    else if (e.key === 'Escape'){ if (SET.q){ SET.q = ''; e.target.value = ''; filterSettings() } else closeMenus() }
+    return }
   if (e.target.id !== 'bgQ' || e.key !== 'Enter') return;
   const q = e.target.value.trim(); if (!q) return; BGQ.q = q;
   if (!T){ toast('Search works in the Windows app'); return }
@@ -2086,7 +2729,7 @@ $('#appPop').addEventListener('keydown', async e => {
   try { const r = await invoke('search', {platform: 'youtube', query: q}); BGQ.res = (r.tracks || []).slice(0, 8) } catch(err){ BGQ.res = [] }
   BGQ.busy = false; if (!BGQ.res.length) toast('No videos found'); renderAppPop(); const inp = $('#bgQ'); if (inp) inp.focus();
 });
-$('#appPop').addEventListener('input', e => { if (e.target.id === 'bgQ'){ BGQ.q = e.target.value; return } const r = e.target.closest('[data-r]'); if (!r) return; S.look[r.dataset.r] = +r.value; store.set('look', S.look); if (r.dataset.r === 'wpBlur') blurBg() });
+$('#appPop').addEventListener('input', e => { if (e.target.id === 'setQ'){ SET.q = e.target.value; filterSettings(); return } if (e.target.id === 'bgQ'){ BGQ.q = e.target.value; return } const r = e.target.closest('[data-r]'); if (!r) return; S.look[r.dataset.r] = +r.value; store.set('look', S.look); if (r.dataset.r === 'wpBlur') blurBg() });
 $('#appPop').addEventListener('change', e => { const d = e.target.closest('select.dd'); if (!d) return; const k = d.dataset.k; S.look[k] = d.value;
   if (k === 'lys') S.look.lysz = 0; if (k === 'ck') S.look.clock = true; if (k === 'theme') applyTheme(); applyLook(); if (k === 'bg') applyBg(); renderAppPop() });
 
@@ -2136,12 +2779,37 @@ function deskMouse(m){
 (function mirrorHover(){ for (const sh of document.styleSheets){ let rules; try { rules = sh.cssRules } catch(e){ continue }
   for (const r of [...rules]){ if (r.selectorText && r.selectorText.includes(':hover')){ try { sh.insertRule(r.cssText.replace(/:hover/g, '.vh'), sh.cssRules.length) } catch(e){} } } } })();
 
+/* ════════════════════ tray icon: the album cover, with a ring that beats ════════════════════ */
+// While a song plays the icon by the clock shows its cover in a circle; a ring around it follows the beat.
+// Paused: the cover stays, without the ring. Nothing playing (or switched off): Wallplayer's own icon.
+const TRAY = {key: '', cv: null, busy: false};
+function trayTick(){
+  if (!T || MIRROR || TRAY.busy) return;
+  const on = S.look.trayArt !== false && S.artImg && S.track;
+  if (!on){ if (TRAY.key !== 'default'){ TRAY.key = 'default'; invoke('set_tray_art', {rgba: null}).catch(() => {}) } return }
+  const pl = isPlaying(), lvl = pl ? Math.round(clamp(AU.beat * .8 + AU.energy * .6, 0, 1) * 6) : -1;
+  const key = (S.track.title + '|' + S.track.artist) + '|' + lvl + '|' + (S.tgtA || []).join(',');
+  if (key === TRAY.key) return; TRAY.key = key;
+  const N = 32, cv = TRAY.cv || (TRAY.cv = Object.assign(document.createElement('canvas'), {width: N, height: N})), x = cv.getContext('2d', {willReadFrequently: true});
+  x.clearRect(0, 0, N, N);
+  const r = pl ? 11.5 : 14.5;   // room for the ring while playing
+  x.save(); x.beginPath(); x.arc(N / 2, N / 2, r, 0, 6.2832); x.clip();
+  try { const im = S.artImg, sc = Math.max(N / im.width, N / im.height) * (r * 2 / N); x.drawImage(im, N / 2 - im.width * sc / 2, N / 2 - im.height * sc / 2, im.width * sc, im.height * sc) } catch(e){}
+  x.restore();
+  if (pl){ const a = S.tgtA || [255, 255, 255], k = lvl / 6;
+    x.beginPath(); x.arc(N / 2, N / 2, 14.2, 0, 6.2832); x.lineWidth = 1.4 + k * 1.6; x.strokeStyle = `rgba(${a.join(',')},${(.45 + k * .55).toFixed(2)})`; x.stroke() }
+  let px; try { px = x.getImageData(0, 0, N, N).data } catch(e){ return }   // a cover from another site without CORS: keep the icon
+  let b = ''; for (let i = 0; i < px.length; i += 8192) b += String.fromCharCode.apply(null, px.subarray(i, i + 8192));
+  TRAY.busy = true; invoke('set_tray_art', {rgba: btoa(b)}).catch(() => {}).finally(() => TRAY.busy = false);
+}
+setInterval(trayTick, 110);
+
 /* ════════════════════ toggles ════════════════════ */
 function renderLike(){ const k = S.track ? S.track.title + '|' + S.track.artist : ''; const on = S.liked.has(k); $('#likeBtn').innerHTML = on ? I.heartF : I.heart; $('#likeBtn').classList.toggle('on', on) }
 function applyToggles(){
   if (deskFill() && T && !$('#deskImg').classList.contains('ok')) applyBg();
   app.classList.toggle('nolyr', !S.lyrOn);
-  app.classList.toggle('noamb', !S.ambOn);
+  app.classList.toggle('noamb', !ambHere());
   app.classList.toggle('dim', S.dim); $('#dimBtn').classList.toggle('on', S.dim);
   $('#mvBtn').classList.toggle('on', S.mvOn);
   $('#repBtn').innerHTML = S.repeat === 'one' ? I.repeat1 : I.repeat; $('#repBtn').classList.toggle('on', S.repeat !== 'off');
@@ -2153,29 +2821,111 @@ function applyToggles(){
 function toggleMV(){ S.mvOn = !S.mvOn; applyToggles(); if (!S.mvOn) YTV.stop(); else if (S.track && S.src !== 'demo') mvFor(S.track); toast(S.mvOn ? 'Music video wallpaper on' : 'Music video wallpaper off') }
 
 /* ════════════════════ toast ════════════════════ */
+/* ════════════════════ updates (portable: the app swaps its own exe, see update.rs) ════════════════════ */
+// The app checks quietly at start; a newer version only changes the tray menu item to "Update available".
+// That item, "Check for updates" and Appearance → Updates open the card: release notes with Skip / Update.
+const UP = {current: '', auto: true, state: 'idle', version: '', notes: '', url: '', error: '', just_updated: false, card: false};
+const upPage = v => `https://github.com/lehuynhtan17/Wallplayer/releases/tag/V${v}`;
+const upFound = () => ['available', 'downloading', 'ready'].includes(UP.state) && !!UP.version;
+function upText(){
+  if (!T) return 'Updates work in the Windows app';
+  const cur = UP.current ? `Wallplayer ${UP.current}` : 'Wallplayer';
+  return {checking: 'Looking for a new version…', available: `Wallplayer ${UP.version} is available`, downloading: `Downloading Wallplayer ${UP.version}…`,
+    ready: `Wallplayer ${UP.version} is ready`, latest: `${cur} · up to date`, error: `${cur} · couldn't check${UP.error ? ': ' + UP.error : ''}`}[UP.state] || cur;
+}
+function upBtns(){
+  const busy = UP.state === 'checking';
+  return (upFound() ? `<button class="chip on" id="upCheck">Update available: v${esc(UP.version)}</button>` : `<button class="chip" id="upCheck" ${busy ? 'disabled' : ''}>${busy ? 'Checking…' : 'Check for updates'}</button>`)
+    + (UP.current ? `<button class="chip" id="upNotes">What's new</button>` : '');
+}
+// release notes are markdown: headings, bullets, **bold**, *italic* are enough
+function mdLite(md){
+  return esc(md || '').split(/\r?\n/).map(l => {
+    const t = l.trim(); if (!t) return '';
+    const b = x => x.replace(/\*\*(.+?)\*\*/g, '<b>$1</b>').replace(/\*(.+?)\*/g, '<i>$1</i>').replace(/`(.+?)`/g, '<code>$1</code>').replace(/\[([^\]]+)\]\([^)]+\)/g, '$1');
+    if (/^#{1,6}\s/.test(t)) return `<h4>${b(t.replace(/^#+\s*/, ''))}</h4>`;
+    if (/^[-*•]\s/.test(t)) return `<li>${b(t.replace(/^[-*•]\s*/, ''))}</li>`;
+    return `<p>${b(t)}</p>`;
+  }).join('');
+}
+function renderCard(){
+  const c = $('#upCard'); if (!UP.card){ c.classList.remove('on'); return }
+  const has = upFound() || (UP.state === 'error' && UP.version && UP.going);
+  const head = has ? `<h3>Wallplayer ${esc(UP.version)}</h3><div class="lnote">You have ${esc(UP.current)}</div>` : '<h3>Updates</h3>';
+  const notes = has ? `<div class="upNotes">${mdLite(UP.notes) || '<p>No release notes.</p>'}</div>` : '';
+  const line = {checking: 'Looking for a new version…', latest: `You have the latest version (${esc(UP.current)}).`,
+    downloading: 'Downloading…', ready: 'Restarting with the new version…', error: `Couldn't ${UP.going ? 'update' : 'check'}: ${esc(UP.error || 'unknown error')}`}[UP.state] || '';
+  const btns = UP.state === 'available' ? '<button class="chip" data-up="skip">Skip</button><button class="chip on" data-up="update">Update</button>'
+    : UP.state === 'downloading' || UP.state === 'ready' ? ''
+    : '<button class="chip" data-up="close">Close</button>';
+  c.innerHTML = head + notes + (line ? `<div class="lnote upLine">${line}</div>` : '') + (btns ? `<div class="chips">${btns}</div>` : ''); c.classList.add('on');
+}
+function showPill(){   // only after an update: "Updated to Wallplayer x · What's new"
+  $('#upMsg').textContent = `Updated to Wallplayer ${UP.current}`; $('#upGo').textContent = "What's new"; $('#upX').textContent = '✕'; $('#upPill').classList.add('on');
+}
+const hidePill = () => $('#upPill').classList.remove('on');
+function setUp(st){
+  if (st) Object.assign(UP, st);
+  const n = $('#upNow'), b = $('#upBtns'); if (n) n.textContent = upText(); if (b) b.innerHTML = upBtns();
+  renderCard();
+}
+async function upRestart(){ try { await invoke('update_restart') } catch(err){ setUp({state: 'error', error: String(err)}) } }
+// "Check for updates" / "Update available": the card, checking first unless a newer version is already known
+async function openUpdates(){
+  if (!T){ toast('Updates work in the Windows app'); return }
+  UP.card = true; UP.going = false;
+  if (upFound()){ renderCard(); return }
+  setUp({state: 'checking'});
+  try { setUp(await invoke('update_check')) } catch(err){ setUp({state: 'error', error: String(err)}) }
+}
+$('#upCard').addEventListener('click', async e => {
+  e.stopPropagation(); const a = e.target.closest('[data-up]'); if (!a) return;
+  const act = a.dataset.up;
+  if (act === 'update'){   // download, swap the exe, start the new version
+    UP.going = true; setUp({state: 'downloading'});
+    try { const st = await invoke('update_download'); setUp(st); if (st.state === 'ready') setTimeout(upRestart, 600) } catch(err){ setUp({state: 'error', error: String(err)}) }
+  } else if (act === 'skip'){ try { setUp(await invoke('update_skip', {version: UP.version})) } catch(err){} UP.card = false; renderCard(); toast(`Skipped Wallplayer ${UP.version}`) }
+  else { UP.card = false; renderCard() }
+});
+$('#upPill').addEventListener('click', e => {
+  e.stopPropagation();
+  if (e.target.closest('#upGo')) openExternal(upPage(UP.current));
+  if (e.target.closest('#upGo') || e.target.closest('#upX')) hidePill();
+});
+async function initUpdates(){
+  if (!T || MIRROR) return;
+  listen('update-state', e => setUp(e.payload));
+  listen('update-check-request', () => openUpdates());
+  try { setUp(await invoke('update_status')) } catch(e){ return }
+  if (UP.just_updated){ showPill(); setTimeout(hidePill, 15000) }
+}
+
 function toast(msg){ const t = $('#toast'); t.textContent = msg; t.classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove('on'), 2600) }
 
 /* ════════════════════ wiring ════════════════════ */
 $('#prevBtn').innerHTML = I.prev; $('#nextBtn').innerHTML = I.next; $('#moreBtn').innerHTML = I.more;
-$('#lyrBtn').innerHTML = I.lyrics; $('#listBtn').innerHTML = I.list; $('#ambBtn').innerHTML = I.sliders; $('#dimBtn').innerHTML = I.moon;
-$('#mvBtn').innerHTML = I.record; $('#focusBtn').innerHTML = I.expand; $('#eyeBtn').innerHTML = I.eye;
-$('#qRefresh').innerHTML = I.refresh; $('#qHist').innerHTML = I.history; $('#restoreBtn').innerHTML = I.eye;
+$('#lyrBtn').innerHTML = I.lyrics; $('#listBtn').innerHTML = I.list; $('#dimBtn').innerHTML = I.moon; $('#qClear').innerHTML = I.xs;
+$('#mvBtn').innerHTML = I.record; $('#focusBtn').innerHTML = I.collapse; $('#eyeBtn').innerHTML = I.flow;
+$('#qRefresh').innerHTML = I.refresh; $('#qHist').innerHTML = I.history; $('#restoreBtn').innerHTML = I.expand;
 $('#playBtn').onclick = togglePlay; $('#nextBtn').onclick = next; $('#prevBtn').onclick = prev;
 $('#repBtn').onclick = () => { S.repeat = {off: 'all', all: 'one', one: 'off'}[S.repeat]; applyToggles();
   toast({off: 'Repeat off', all: 'Repeat all', one: 'Looping this song'}[S.repeat]) };
 $('#likeBtn').onclick = () => { if (!S.track) return; const k = S.track.title + '|' + S.track.artist; S.liked.has(k) ? S.liked.delete(k) : S.liked.add(k); store.set('liked', [...S.liked]); renderLike() };
 $('#lyrBtn').onclick = e => { e.stopPropagation(); openLyricsPanel() };
+// the edge light on this window's display (each display can be switched off)
+const ambHere = () => S.ambOn && !(S.look.ambOff || {})[PW.monitor || ''];
 async function loadMonitors(){
   const box = $('#monList'); if (!box || !T) return;
   try { const r = await invoke('list_monitors'); const cur = r.current || (r.monitors.find(m => m.primary) || {}).id;
+    const am = $('#ambMons'), off = S.look.ambOff || {};
+    if (am) am.innerHTML = r.monitors.length > 1 ? '<div class="lnote">Light on each display</div>' + r.monitors.map((m, i) => `<div class="lrow"><span>Display ${i + 1}${m.primary ? ' · main' : ''}</span><button class="tg ${off[m.id] ? '' : 'on'}" data-ambmon="${esc(m.id)}"></button></div>`).join('') : '';
     box.innerHTML = r.monitors.map((m, i) => `<button class="chip ${m.id === cur ? 'on' : ''}" data-mon="${esc(m.id)}">Display ${i + 1} · ${m.w}×${m.h}${m.primary ? ' · main' : ''}</button>`).join('') || '<span class="lnote">No displays found</span>' } catch(e){ box.innerHTML = '<span class="lnote">Unavailable</span>' }
 }
-function openAppPop(){ const m = $('#appPop'); if (m.classList.contains('open')){ m.classList.remove('open'); return } closeMenus(m); renderAppPop(); m.classList.add('open') }
-$('#ambBtn').onclick = e => { e.stopPropagation(); openAppPop() };
+$('#moreBtn').onclick = e => { e.stopPropagation(); openAppPop() };
 $('#listBtn').onclick = () => { S.qOff = !S.qOff; applyToggles() };
 $('#dimBtn').onclick = () => { S.dim = !S.dim; applyToggles() };
 $('#mvBtn').onclick = toggleMV;
-const setVol = () => { YTA.vol(); SCW.vol(); applyToggles() };
+const setVol = () => { YTA.vol(); SCW.vol(); LOC.vol(); applyToggles() };
 const sysVol = () => !!T && S.src === 'system';
 async function renderVolPop(){
   const sys = sysVol(); let v = S.vol, m = S.muted;
@@ -2200,9 +2950,11 @@ $('#volPop').addEventListener('mouseenter', () => clearTimeout(volT)); $('#volPo
 $('#volPop').addEventListener('click', e => e.stopPropagation());
 $('#volBtn').onclick = e => { e.stopPropagation(); toggleMute() };
 $('#volBtn').addEventListener('wheel', async e => { e.preventDefault(); let v = S.vol; if (sysVol()){ try { v = (await invoke('get_volume'))[0] } catch(err){} } setVolume(v - Math.sign(e.deltaY) * .05); openVol() }, {passive: false});
-function setLyricsMode(on){ app.classList.toggle('lyricsmode', on); $('#eyeBtn').innerHTML = on ? I.eyeOff : I.eye; $('#eyeBtn').classList.toggle('on', on); $('#lyrBtn').classList.toggle('on', on);
-  $('#eyeBtn').title = on ? 'Show cover flow' : 'Full lyrics — hide cover flow'; store.set('lyricsMode', on); if (on && !S.lyrOn){ S.lyrOn = true; applyToggles() } }
-function applyHide(){ for (const k of ['bar', 'search', 'flow']) app.classList.toggle('hide-' + k, !!S.hide[k]); store.set('hide', S.hide) }
+// the cover-flow button: lit while the cover flow shows; off = full-lyrics view
+function flowBtnState(){ const on = !app.classList.contains('lyricsmode') && !S.hide.flow; $('#eyeBtn').classList.toggle('on', on); $('#eyeBtn').title = on ? 'Hide cover flow — full lyrics' : 'Show cover flow' }
+function setLyricsMode(on){ app.classList.toggle('lyricsmode', on); $('#lyrBtn').classList.toggle('on', on); flowBtnState();
+  store.set('lyricsMode', on); if (on && !S.lyrOn){ S.lyrOn = true; applyToggles() } }
+function applyHide(){ for (const k of ['bar', 'search', 'flow']) app.classList.toggle('hide-' + k, !!S.hide[k]); store.set('hide', S.hide); flowBtnState() }
 function togglePart(k, label){ S.hide[k] = !S.hide[k]; applyHide(); toast(`${label} ${S.hide[k] ? 'hidden' : 'shown'}`) }
 /* ambient colour from the video that is playing right now (not the thumbnail) */
 const vivid = c => { const [h, s, l] = rgb2hsl(...c); return hsl2rgb(h, s < .08 ? s : clamp(s * 1.25 + .08, 0, 1), clamp(l, .38, .66)) };
@@ -2357,8 +3109,10 @@ function bindMouse(e){
   e.preventDefault(); e.stopPropagation();
   applySearchKey([e.ctrlKey && 'Ctrl', e.altKey && 'Alt', e.shiftKey && 'Shift', e.metaKey && 'Super'].filter(Boolean).concat('Mouse:' + m).join('+'));
 }
-function setBare(on){ app.classList.toggle('bare', on); closeMenus(); if (on){ closeSearch(); toast('UI hidden — click the eye, press H or double-click to show') } }
-$('#eyeBtn').onclick = e => { e.stopPropagation(); setLyricsMode(!app.classList.contains('lyricsmode')) };
+function setBare(on){ app.classList.toggle('bare', on); closeMenus(); if (on){ closeSearch(); toast(islandWant() ? 'Collapsed — point at the island at the top for the controls' : 'UI hidden — press H or double-click to show') } islandSync() }
+$('#eyeBtn').onclick = e => { e.stopPropagation(); if (app.classList.contains('lyricsmode') || S.hide.flow){ if (S.hide.flow){ S.hide.flow = false; applyHide() } setLyricsMode(false) } else setLyricsMode(true) };
+// search field: ✕ empties it
+$('#qClear').onclick = e => { e.stopPropagation(); const q = $('#q'); q.value = ''; q.dispatchEvent(new Event('input')); q.focus() };
 $('#focusBtn').onclick = e => { e.stopPropagation(); setBare(true) };
 $('#restoreBtn').onclick = e => { e.stopPropagation(); setBare(false) };
 app.addEventListener('dblclick', e => { if (e.target.closest('#dock, #queue, .fc, .menu, #restoreBtn, #editSheet') || app.classList.contains('editing')) return; setBare(!app.classList.contains('bare')) });
@@ -2377,7 +3131,7 @@ document.addEventListener('keydown', e => {
   if (e.target.closest && e.target.closest('input, textarea, select')) return;
   if (e.key === '/'){ e.preventDefault(); openSearch() }
   else if (e.key === ' '){ e.preventDefault(); togglePlay() }
-  else if (e.key === '[' || e.key === ']'){ if (S.track){ S.lyrOff = Math.round(((S.lyrOff || 0) + (e.key === ']' ? .5 : -.5)) * 10) / 10; const m = store.get('lyroff', {}) || {}; m[S.track.title + '|' + S.track.artist] = S.lyrOff; store.set('lyroff', m); toast(`Lyrics ${S.lyrOff === 0 ? 'in sync' : (S.lyrOff > 0 ? S.lyrOff + 's earlier' : -S.lyrOff + 's later')}`) } }
+  else if (e.key === '[' || e.key === ']'){ if (S.track){ setLyrOff('song', (S.lyrOff || 0) + (e.key === ']' ? .5 : -.5)); toast(`Lyrics ${S.lyrOff === 0 ? 'in sync' : (S.lyrOff > 0 ? S.lyrOff + 's earlier' : -S.lyrOff + 's later')}`) } }
   else if (e.key === 'ArrowRight') next(); else if (e.key === 'ArrowLeft') prev();
   else if (e.key === 'ArrowUp' || e.key === 'ArrowDown'){ e.preventDefault(); (async () => { let v = S.vol; if (sysVol()){ try { v = (await invoke('get_volume'))[0] } catch(err){} } setVolume(v + (e.key === 'ArrowUp' ? .05 : -.05)); toast(`Volume ${Math.round(clamp(v + (e.key === 'ArrowUp' ? .05 : -.05), 0, 1) * 100)}%`) })() }
   else if (e.key === 'Escape'){ if (app.classList.contains('editing')){ closeEditor(); return } closeMenus(); closeSearch() }
@@ -2396,15 +3150,20 @@ function runKey(k){
   else if (k === 'd'){ S.dim = !S.dim; applyToggles() }
   else if (k === 'r') $('#repBtn').click();
   else if (k === 'e'){ if (app.classList.contains('editing')) closeEditor(); else openEditor() }
-  else if (k === '?'){ openAppPop(); setTimeout(() => { const el = $('#appPop .keys'); el && el.scrollIntoView({block: 'nearest'}) }, 50) }
+  else if (k === '?'){ openAppPop('general'); setTimeout(() => { const el = $('#appPop .keys'); el && el.scrollIntoView({block: 'nearest'}) }, 50) }
 }
 ['dragenter', 'dragover'].forEach(ev => addEventListener(ev, e => { if ([...(e.dataTransfer?.types || [])].includes('Files')){ e.preventDefault(); app.classList.add('drag') } }));
 ['dragleave', 'drop'].forEach(ev => addEventListener(ev, e => { e.preventDefault(); if (ev === 'dragleave' && e.relatedTarget) return; app.classList.remove('drag'); if (ev === 'drop'){ const f = e.dataTransfer.files[0]; if (f) setCustomWallpaper(f) } }));
 
 /* ════════════════════ main loop ════════════════════ */
-let lastT = performance.now();
+// Runs every display frame while something moves. At rest (no music, no sound) it eases the
+// motion to a stop and then only looks around 4× a second; asleep (covered) once a second.
+let lastT = performance.now(); var loopRaf = 0, loopTimer = 0, lastAmb = '';   // var: PW.kick() may run before this line
+function wakeLoop(){ if (loopTimer){ clearTimeout(loopTimer); loopTimer = 0; lastT = performance.now(); loopRaf = requestAnimationFrame(frame) } }
 function frame(now){
-  requestAnimationFrame(frame); const dt = Math.min(.1, (now - lastT) / 1000); lastT = now;
+  loopRaf = 0;
+  if (PW.low() && now - lastT < 30 && !PW.asleep()){ loopRaf = requestAnimationFrame(frame); return }   // ~30 fps when lighter
+  const dt = Math.min(.1, (now - lastT) / 1000); lastT = now;
   if (S.src === 'demo' && S.demo.playing){ S.demo.pos += dt; if (S.demo.pos >= getDur()) onEnded() }
   const pos = getPos(), dur = getDur(), pl = isPlaying();
   $('#prog i').style.width = dur ? (clamp(pos / dur, 0, 1) * 100).toFixed(2) + '%' : '0%';
@@ -2414,9 +3173,22 @@ function frame(now){
   else AU.feed(pl ? synthSpectrum(pos, (S.track && S.track.bpm) || 96) : ZERO33, now);
   AU.decay(dt);
   S.amb = clamp(.2 + AU.energy * .7 + AU.beat * .4, 0, 1.3);
-  document.documentElement.style.setProperty('--amb', S.amb.toFixed(3));
-  if (AMB && S.ambOn && !document.hidden) AMB.render(dt, S.vidA || S.tgtA, S.vidB || S.tgtB);
+  const ambS = S.amb.toFixed(3); if (ambS !== lastAmb){ lastAmb = ambS; document.documentElement.style.setProperty('--amb', ambS) }
+  // rest: nothing plays and the room is quiet for 1.5 s
+  const loud = AU.energy > .03 || AU.beat > .05;
+  PW.quiet = pl || loud ? 0 : PW.quiet + dt;
+  const want = PW.quiet > 1.5 && !PW.preview ? 0 : 1;   // a preview keeps it moving even in silence
+  PW.motion += (want - PW.motion) * Math.min(1, dt * (want ? 6 : 2)); if (PW.motion < .01) PW.motion = 0;
+  const rest = PW.motion === 0, asleep = PW.asleep(), kicked = now < PW.until;
+  if (rest !== app.classList.contains('rest')) app.classList.toggle('rest', rest);
+  if (!asleep && (!rest || kicked)){
+    if (AMB && ambHere()) AMB.render(dt, S.vidA || S.tgtA, S.vidB || S.tgtB, PW.motion);
+    FX.draw(now, PW.motion);
+  }
   if (S.look.lfx === 'glow') $('#lyrics2').style.setProperty('--beat', AU.beat.toFixed(3));
+  if (asleep) loopTimer = setTimeout(() => { loopTimer = 0; loopRaf = requestAnimationFrame(frame) }, 1000);
+  else if (rest && !kicked) loopTimer = setTimeout(() => { loopTimer = 0; loopRaf = requestAnimationFrame(frame) }, 250);
+  else loopRaf = requestAnimationFrame(frame);
 }
 // end screens (suggested-video tiles) sit on the last ~20 s of a music video: fade to the cover there
 function ytEndGuard(){ if (!YTV.p) return; const d = YTV.dur(), t = YTV.time(); $('#ytWrap').classList.toggle('yt-end', d > 40 && d - t < 20) }
@@ -2432,7 +3204,8 @@ function mirrorSync(force){
   const t = S.track, clip = app.classList.contains('clip');
   const P = clip ? YTA : YTV;
   const video = (clip || $('#ytWrap').classList.contains('on')) ? (P.ids[P.i] || null) : null;
-  const m = {pos: getPos(), playing: isPlaying(), video, vt: video ? P.time() : 0, vpl: video ? P.playing() : false, clip, at: Date.now()};
+  const m = {pos: getPos(), playing: isPlaying(), video, vt: video ? P.time() : 0, vpl: video ? P.playing() : false, clip, at: Date.now(),
+    dur: getDur(), lo: (S.lyrOff || 0) + (S.lyrOffAll || 0), acc: getComputedStyle(document.documentElement).getPropertyValue('--accent').trim(), islLyr: S.look.islLyr !== false, dim: !!S.dim};
   const tk = t ? t.title + '|' + t.artist + '|' + (t.art || '').length : '';
   if (force || tk !== MIR.tk){ MIR.tk = tk; m.track = t ? {...t, lyrics: undefined} : null; m.hasTrack = true }
   const list = queueList(), qk = list.length + '|' + list.slice(0, 30).map(x => x.title).join('|') + '|' + (t ? t.title : '');
@@ -2462,26 +3235,62 @@ function mirrorReload(){
   S.look = Object.assign(S.look, store.get('look', {})); S.hide = Object.assign(S.hide, store.get('hide', {}));
   for (const k of ['lyrOn', 'ambOn', 'dim', 'mvOn', 'qOff']) S[k] = store.get(k, S[k]);
   S.sub = store.get('sub', S.sub);
-  applyLook(); applyHide(); applyToggles(); applyTheme(); applyBg(); setLyricsMode(store.get('lyricsMode', false));
+  if ((S.look.lang || I18N.lang) !== I18N.lang){ location.reload(); return }   // language changed in the main window
+  applyLook(); applyHide(); applyToggles(); applyTheme(); applyBg(); setLyricsMode(store.get('lyricsMode', false)); PW.prefs();
   lastClock = ''; renderClock(); S.lyrIdx = -2; applySubs();
 }
 if (MIRROR) addEventListener('storage', e => { if (e.key && !e.key.startsWith('wp.')) return; clearTimeout(mirrorReload.t); mirrorReload.t = setTimeout(mirrorReload, 60) });
+
+/* ════════════════════ Dynamic Island ════════════════════ */
+// A small capsule on top of every window (ui/island.html) shows the song while this player can't be seen:
+// a maximised window covers the wallpaper (Automatic), or the player is collapsed (button, H, double-click).
+// Never over games, films or slideshows, and gone after five minutes on pause.
+// Turned off for now (not needed yet): no island, no settings page, H only hides the interface.
+// The island page (ui/island.html) and its Rust side stay in place; set this to true to bring it back.
+var ISLAND_ENABLED = false;   // var: islandSync() can run before this line
+var ISL = {on: null, pausedAt: 0};   // var: islandSync() can run before this line
+function islandWant(){
+  if (!T || MIRROR || !ISLAND_ENABLED) return false;
+  const mode = S.look.isl || 'auto'; if (mode === 'off' || !S.track) return false;
+  if (PW.full) return false;
+  const pl = isPlaying(); if (pl) ISL.pausedAt = 0; else if (!ISL.pausedAt) ISL.pausedAt = Date.now();
+  if (!pl && Date.now() - ISL.pausedAt > 5 * 60e3) return false;
+  if (app.classList.contains('bare')) return true;
+  return mode === 'auto' && PW.max;
+}
+function islandSync(force){
+  if (!T || MIRROR || !ISLAND_ENABLED) return; const on = islandWant();
+  if (on === ISL.on && !force) return; ISL.on = on;
+  invoke('island_show', {on}).catch(() => {}); if (on) setTimeout(() => mirrorSync(true), 400);
+}
+if (T && !MIRROR) listen('island-cmd', e => {
+  const c = e.payload && e.payload.c, v = e.payload && e.payload.v;
+  if (c === 'ready'){ mirrorSync(true); return }
+  if (c === 'toggle') togglePlay(); else if (c === 'next') next(); else if (c === 'prev') prev();
+  else if (c === 'seek'){ const d = getDur(); if (d) seekTo(clamp(+v || 0, 0, 1) * d) }
+  else if (c === 'open'){ if (app.classList.contains('bare')) setBare(false); else invoke('peek', {on: true}).catch(() => {}) }
+  setTimeout(() => mirrorSync(false), 250);
+});
 
 /* ════════════════════ boot ════════════════════ */
 async function boot(){
   applyLook(); applyHide(); renderClock(); renderPlatMenu(); applyToggles(); setLyricsMode(store.get('lyricsMode', false));
   IDB.get('wall').then(b => b && applyCustom(b)); applyBg();
   if (T && MIRROR){
-    listen('audio-spectrum', e => AU.feed(e.payload, performance.now()));
+    listen('audio-spectrum', e => { AU.feed(e.payload, performance.now()); if (loopTimer && (e.payload[0] || 0) > 1.5e-4) wakeLoop() });
     listen('mirror-state', e => mirrorApply(e.payload));
     listen('wall-changed', () => IDB.get('wall').then(b => applyCustom(b || null)));
     setTrack(null); setAccent(null); setWallArt(null);
     T.event.emit('mirror-hello', {}).catch(() => {});
   } else if (T){
     listen('media-art', e => { S.sysArt = e.payload || null });
-    listen('media', e => onMedia(e.payload));
-    listen('audio-spectrum', e => AU.feed(e.payload, performance.now()));
+    listen('media', e => { onMedia(e.payload); wakeLoop() });
+    listen('audio-spectrum', e => { AU.feed(e.payload, performance.now()); if (loopTimer && (e.payload[0] || 0) > 1.5e-4) wakeLoop() });
     listen('hotkey-search', () => openSearch());
+    invoke('set_ui_lang', {lang: I18N.lang}).catch(() => {});
+    if (LIB.paths.length) invoke('music_allow', {paths: LIB.paths}).catch(() => {});
+    listen('tauri://drag-enter', () => app.classList.add('drag')); listen('tauri://drag-leave', () => app.classList.remove('drag'));
+    listen('tauri://drag-drop', e => { app.classList.remove('drag'); const ps = (e.payload && e.payload.paths) || []; if (ps.length) dropPaths(ps) });
     listen('bind-captured', e => { if (S.binding) applySearchKey(e.payload) });
     invoke('get_search_key').then(k => { S.searchKey = k; if ($('#appPop').classList.contains('open')) renderAppPop() }).catch(() => {});
     listen('desk-mouse', e => deskMouse(e.payload));
@@ -2498,7 +3307,9 @@ async function boot(){
     buildDemo(); S.queue = DEMO; S.qKind = 'queue'; S.qIdx = 1; S.src = 'demo'; S.demo = {pos: 31, playing: true};
     setTrack(DEMO[1]); S.history = [];
   }
-  requestAnimationFrame(frame);
+  if (T){ try { PW.set(await invoke('get_power')) } catch(e){} listen('power-state', e => PW.set(e.payload || {})) }
+  PW.prefs(); initUpdates();
+  loopRaf = requestAnimationFrame(frame);
 }
 document.fonts && document.fonts.ready.then(() => { lastClock = ''; renderClock(); if (!T && DEMO.length){ const k = S.qIdx; buildDemo(); S.queue = DEMO; const t = DEMO[k]; S.track = t; applyArt(t.art); setLyrics(t.lyrics, t, 'demo'); renderQueue(); renderFlow(true) } });
 boot();

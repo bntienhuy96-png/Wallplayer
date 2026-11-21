@@ -1,7 +1,7 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
-  "description": "Main wallpaper window and the mirror windows on other monitors",
-  "windows": ["main", "mirror-*"],
+  "description": "Main wallpaper window, the mirror windows on other monitors, and the Dynamic Island",
+  "windows": ["main", "mirror-*", "island"],
   "permissions": ["core:default"]
 }

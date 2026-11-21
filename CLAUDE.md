@@ -8,7 +8,8 @@ App Windows (Tauri v2 + Rust) biến hình nền desktop thành trình phát nh�
 ## Cấu trúc
 - `ui/index.html`: toàn bộ giao diện (1 file HTML/CSS/JS, chạy trong WebView2).
 - `src-tauri/src/`: Rust. `desktop.rs` (WorkerW, đa màn hình, hiện taskbar), `media.rs` (Windows Media), `audio.rs` (loopback + FFT), `net.rs` (search, lyrics, dịch), `accounts.rs` (đăng nhập YouTube/SoundCloud/Spotify), `volume.rs` (âm lượng Windows), `settings.rs`, `main.rs`.
-- `HUONG-DAN.txt`: hướng dẫn người dùng (tiếng Việt, giữ cập nhật khi thêm tính năng).
+- `GUIDE.txt`: hướng dẫn người dùng tiếng Anh (bản chính); `HUONG-DAN.txt`: bản tiếng Việt. Giữ cả hai cập nhật khi thêm tính năng.
+- Mọi thứ hiện trên GitHub (README, CHANGELOG/release notes, GUIDE.txt, PRIVACY, CODE_SIGNING) viết bằng tiếng Anh. Giao diện app có tiếng Anh + tiếng Việt (`ui/i18n-vi.js`).
 
 ## Build (trên Windows)
 ```
@@ -18,7 +19,9 @@ cargo build --release
 File ra: `src-tauri/target/release/wallplayer.exe`. Khi phát hành phải đi kèm `WebView2Loader.dll` cùng thư mục. Cần Rust (MSVC) và Microsoft Edge WebView2 Runtime.
 
 ## Phát hành
-Đóng gói thư mục `Wallplayer/` gồm `Wallplayer.exe`, `WebView2Loader.dll`, `HUONG-DAN.txt` (CRLF) thành `Wallplayer-Windows-x64.zip`, rồi tạo GitHub Release (`gh release create vX.Y.Z <zip>`).
+- Ghi release notes (tiếng Anh, kiểu "New / Changed / Fixed") dưới `## x.y.z` trong `CHANGELOG.md`, đổi version ở `src-tauri/Cargo.toml` và `src-tauri/tauri.conf.json` (phải giống nhau), push lên `main`.
+- GitHub Actions (`.github/workflows/build.yml`) build trên Windows; Tấn thử bản build rồi bấm **Run workflow** (hoặc Claude đẩy tag `Vx.y.z` lên, khi Tấn bảo publish) để phát hành: workflow ký qua SignPath (khi đã có `SIGNPATH_*`), chờ Tấn duyệt, rồi tạo release `Vx.y.z` với zip `Wallplayer-Windows-x64.zip` (thư mục `Wallplayer/` bên trong) và notes từ CHANGELOG. Chi tiết: `docs/SIGNPATH-SETUP.md`.
+- App tự cập nhật từ release mới nhất (`src-tauri/src/update.rs`): tên asset và thư mục trong zip không được đổi. Tag dạng `V1.0.3`.
 
 ## Lưu ý
 - Bản exe cũ được build chéo từ Linux và chưa từng chạy thử trên Windows thật: hãy build và kiểm tra lại trên máy Windows trước khi phát hành.

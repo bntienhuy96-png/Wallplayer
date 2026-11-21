@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Wallplayer</title>
+<link href="fonts/fonts.css" rel="stylesheet">
+<style>
+/* Dynamic Island: a capsule at the top of the screen, in the player's glass: the blurred, darkened cover the
+   player bar sits on, its smoky tint, thin light edge and soft shadow. Small: cover, the line being sung, a
+   little equaliser. Point at it: it opens to the song, a progress bar and the buttons. */
+:root{--acc:255,255,255}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:100%;height:100%;background:transparent;overflow:hidden;user-select:none;-webkit-user-select:none;color:#fff;
+  font-family:Inter,-apple-system,"SF Pro Text","Segoe UI Variable Text","Segoe UI",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+#isl{position:absolute;left:50%;top:6px;width:300px;height:38px;border-radius:19px;background:#1b1c22;overflow:hidden;cursor:default;isolation:isolate;
+  transform:translateX(-50%) scale(.55,.4);transform-origin:50% 0;opacity:0;
+  box-shadow:0 3px 8px rgba(0,0,0,.35),0 0 12px rgba(var(--acc),calc(.3 * var(--glow, 0)));
+  transition:width .42s cubic-bezier(.3,1.25,.45,1),height .42s cubic-bezier(.3,1.25,.45,1),border-radius .42s,transform .38s cubic-bezier(.3,1.3,.45,1),opacity .22s,box-shadow .6s}
+#isl.show{transform:translateX(-50%);opacity:1}
+/* the glass: the cover blurred like the wallpaper behind the player, then the player bar's tint and edge */
+.bg{position:absolute;inset:0;z-index:-1;overflow:hidden;border-radius:inherit;background:linear-gradient(135deg,rgba(var(--acc),.5),rgba(18,18,24,.9))}
+.bg i{position:absolute;inset:-60%;background:center/cover no-repeat;filter:blur(18px) saturate(1.6) brightness(.62);opacity:0;transition:opacity .8s}
+.bg i.on{opacity:1}
+.bg::after{content:"";position:absolute;inset:0;background:rgba(36,38,46,.5);transition:background .6s}
+#isl.dim .bg::after{background:rgba(20,21,26,.66)}
+#isl::after{content:"";position:absolute;inset:0;border-radius:inherit;border:1px solid rgba(255,255,255,.16);box-shadow:0 1px 0 rgba(255,255,255,.06) inset;pointer-events:none}
+#isl.open{width:384px;height:152px;border-radius:30px}
+.art{position:absolute;left:5px;top:5px;width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,.14) center/cover no-repeat;box-shadow:0 2px 6px rgba(0,0,0,.3);
+  transition:left .42s cubic-bezier(.3,1.25,.45,1),top .42s cubic-bezier(.3,1.25,.45,1),width .42s cubic-bezier(.3,1.25,.45,1),height .42s cubic-bezier(.3,1.25,.45,1),border-radius .42s}
+#isl.playing:not(.open) .art{animation:spin 14s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+#isl.open .art{left:16px;top:16px;width:58px;height:58px;border-radius:14px}
+/* small: one line */
+.line{position:absolute;left:42px;right:46px;top:0;height:38px;transition:opacity .2s}
+.line span{position:absolute;inset:0;display:block;line-height:38px;font-size:13px;font-weight:600;color:rgba(255,255,255,.92);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:opacity .35s,transform .35s}
+.line span.out{opacity:0;transform:translateY(-8px)}
+.line span.in{opacity:0;transform:translateY(8px)}
+#isl.open .line{opacity:0;pointer-events:none}
+.eq{position:absolute;right:15px;top:12px;height:14px;display:flex;align-items:center;gap:2.5px;transition:right .42s,top .42s}
+.eq i{width:3px;height:100%;border-radius:2px;background:rgb(var(--acc));transform:scaleY(.25);transform-origin:center}
+#isl.playing .eq i{animation:eq .9s ease-in-out infinite}
+.eq i:nth-child(2){animation-delay:-.3s!important}.eq i:nth-child(3){animation-delay:-.6s!important}.eq i:nth-child(4){animation-delay:-.15s!important}
+@keyframes eq{0%,100%{transform:scaleY(.3)}50%{transform:scaleY(1)}}
+#isl.open .eq{right:20px;top:24px}
+/* open: the song, the bar, the buttons */
+.big{position:absolute;left:0;right:0;top:0;bottom:0;opacity:0;pointer-events:none;transition:opacity .2s}
+#isl.open .big{opacity:1;pointer-events:auto;transition:opacity .3s .14s}
+.meta{position:absolute;left:86px;right:52px;top:20px}
+.meta b{display:block;font-size:15px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.meta small{display:block;margin-top:2px;font-size:12.5px;color:rgba(255,255,255,.62);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.meta em{display:block;margin-top:5px;font-style:normal;font-size:12px;font-weight:600;color:rgb(var(--acc));white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-height:15px}
+.bar{position:absolute;left:18px;right:18px;top:88px;display:flex;align-items:center;gap:9px;font-size:10.5px;font-variant-numeric:tabular-nums;color:rgba(255,255,255,.5)}
+.trk{flex:1;height:3px;border-radius:2px;background:rgba(255,255,255,.2);position:relative;cursor:pointer;transition:height .15s}
+.trk::before{content:"";position:absolute;inset:-7px 0}
+.trk:hover{height:5px}
+.trk i{position:absolute;left:0;top:0;bottom:0;border-radius:2px;background:#fff;width:0}
+.ctl{position:absolute;left:0;right:0;top:108px;height:36px;display:flex;align-items:center;justify-content:center;gap:22px}
+.ctl button{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;transition:background .15s,transform .12s}
+.ctl button{color:rgba(255,255,255,.92)}
+.ctl button:hover{background:rgba(255,255,255,.1)}
+.ctl button:active{transform:scale(.9)}
+.ctl svg{width:20px;height:20px;fill:currentColor}
+.ctl .pp svg{width:24px;height:24px}
+.ctl .go{position:absolute;right:16px}
+.ctl .go svg{fill:none;stroke:rgba(255,255,255,.8);stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;width:17px;height:17px}
+</style>
+</head>
+<body>
+<div id="isl">
+  <div class="bg"><i id="bgA"></i><i id="bgB"></i></div>
+  <div class="art" id="art"></div>
+  <div class="line" id="line"><span></span></div>
+  <div class="eq"><i></i><i></i><i></i><i></i></div>
+  <div class="big">
+    <div class="meta"><b id="ttl"></b><small id="sub"></small><em id="ly"></em></div>
+    <div class="bar"><span id="t0">0:00</span><div class="trk" id="trk"><i id="fill"></i></div><span id="t1">0:00</span></div>
+    <div class="ctl">
+      <button id="bPrev"><svg viewBox="0 0 24 24"><path d="M11.5 6.2v11.6L3.6 12zM20.4 6.2v11.6L12.5 12z"/></svg></button>
+      <button class="pp" id="bPlay"></button>
+      <button id="bNext"><svg viewBox="0 0 24 24"><path d="M12.5 6.2v11.6l7.9-5.8zM3.6 6.2v11.6l7.9-5.8z"/></svg></button>
+      <button class="go" id="bOpen"><svg viewBox="0 0 24 24"><path d="M14 4h6v6M20 4l-6.5 6.5M10 20H4v-6M4 20l6.5-6.5"/></svg></button>
+    </div>
+  </div>
+</div>
+<script>
+"use strict";
+const T = window.__TAURI__ || null;
+const $ = s => document.querySelector(s);
+const invoke = (c, a) => T ? T.core.invoke(c, a) : Promise.reject('no-tauri');
+const send = (c, v) => { if (T) T.event.emit('island-cmd', {c, v}).catch(() => {}) };
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const fmt = s => { s = Math.max(0, Math.floor(s || 0)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0') };
+// same saved language as the player
+let lang = 'en'; try { lang = (JSON.parse(localStorage.getItem('wp.look') || '{}').lang) || (navigator.language || '').slice(0, 2) } catch(e){}
+const VI = lang === 'vi';
+const TX = VI ? {none: 'Chưa phát', prev: 'Bài trước', play: 'Phát', pause: 'Tạm dừng', next: 'Bài tiếp', open: 'Mở Wallplayer'}
+              : {none: 'Not Playing', prev: 'Previous', play: 'Play', pause: 'Pause', next: 'Next', open: 'Open Wallplayer'};
+$('#bPrev').title = TX.prev; $('#bNext').title = TX.next; $('#bOpen').title = TX.open;
+const PLAY = '<svg viewBox="0 0 24 24"><path d="M7 4.8v14.4c0 .8.9 1.3 1.6.9l11.3-7.2c.6-.4.6-1.4 0-1.8L8.6 3.9C7.9 3.5 7 4 7 4.8z"/></svg>';
+const PAUSE = '<svg viewBox="0 0 24 24"><rect x="5.5" y="4" width="4.6" height="16" rx="1.3"/><rect x="13.9" y="4" width="4.6" height="16" rx="1.3"/></svg>';
+
+// what plays: the player's own broadcast (it is also what the other displays draw from);
+// Windows' media session as a stand-in when the player has gone quiet for a while
+const ST = {track: null, pos: 0, at: 0, playing: false, dur: 0, lyr: [], lo: 0, acc: '255,255,255', lyrOn: true, dim: false, last: 0};
+const SYS = {m: null, at: 0, art: ''};
+function state(m){
+  if (!m) return; ST.last = performance.now();
+  ST.pos = m.pos || 0; ST.playing = !!m.playing; ST.at = performance.now() - clamp(Date.now() - (m.at || Date.now()), 0, 2000);
+  if (m.hasTrack){ ST.track = m.track || null; ST.dur = (ST.track && ST.track.duration) || 0 }
+  if (m.dur) ST.dur = m.dur;
+  if (m.lyr) ST.lyr = m.lyr;
+  if (m.lo != null) ST.lo = m.lo;
+  if (m.acc) ST.acc = m.acc;
+  if (m.islLyr != null) ST.lyrOn = m.islLyr;
+  if (m.dim != null) ST.dim = !!m.dim;
+  draw();
+}
+function now(){
+  const stale = performance.now() - ST.last > 4000 && SYS.m && SYS.m.has;
+  if (stale){ const m = SYS.m, p = m.position_ms / 1000 + (m.playing ? (Date.now() - (m.updated_ms > 0 ? m.updated_ms : SYS.at)) / 1000 : 0);
+    return {title: m.title, artist: m.artist, art: SYS.art, playing: m.playing, pos: m.duration_ms ? Math.min(p, m.duration_ms / 1000) : p, dur: m.duration_ms / 1000, lyr: []} }
+  const t = ST.track;
+  return {title: t ? t.title : '', artist: t ? t.artist : '', art: t ? t.art : '', playing: ST.playing, pos: ST.pos + (ST.playing ? (performance.now() - ST.at) / 1000 : 0), dur: ST.dur, lyr: ST.lyr};
+}
+function lineAt(lyr, pos){
+  let i = -1; for (let k = 0; k < lyr.length; k++){ if (lyr[k].t <= pos + .12) i = k; else break }
+  if (i < 0) return '';
+  const L = lyr[i], nx = lyr[i + 1], end = L.e ? L.e + 1.5 : nx ? Math.min(nx.t, L.t + 9) : L.t + 6;
+  return pos < end ? L.text : '♪';
+}
+let lastArt = '', lastLine = null, bgFlip = false;
+// the cover behind the glass crossfades to the next song's
+function glassArt(u){
+  const a = $(bgFlip ? '#bgA' : '#bgB'), b = $(bgFlip ? '#bgB' : '#bgA'); bgFlip = !bgFlip;
+  if (!u){ a.classList.remove('on'); b.classList.remove('on'); return }
+  const img = new Image(); img.onload = () => { a.style.backgroundImage = u; a.classList.add('on'); b.classList.remove('on') }; img.src = u.slice(5, -2).replace(/%22/g, '"');
+}
+function setLine(txt){
+  if (txt === lastLine) return; lastLine = txt;
+  const box = $('#line'), old = box.querySelector('span:not(.out)'), s = document.createElement('span');
+  s.textContent = txt; s.className = 'in'; box.appendChild(s);
+  requestAnimationFrame(() => requestAnimationFrame(() => s.classList.remove('in')));
+  if (old){ old.classList.add('out'); setTimeout(() => old.remove(), 400) }
+}
+function draw(){
+  const n = now(), isl = $('#isl');
+  document.documentElement.style.setProperty('--acc', ST.acc);
+  isl.classList.toggle('playing', !!n.playing); isl.style.setProperty('--glow', n.playing ? 1 : 0);
+  isl.classList.toggle('dim', ST.dim);
+  if (n.art !== lastArt){ lastArt = n.art; const u = n.art ? `url("${String(n.art).replace(/"/g, '%22')}")` : ''; $('#art').style.backgroundImage = u; glassArt(u) }
+  const sung = ST.lyrOn && n.lyr && n.lyr.length ? lineAt(n.lyr, n.pos + ST.lo) : '';
+  setLine(sung || (n.title ? n.title + (n.artist ? ' · ' + n.artist : '') : TX.none));
+  $('#ttl').textContent = n.title || TX.none; $('#sub').textContent = n.artist || '';
+  $('#ly').textContent = n.lyr && n.lyr.length ? lineAt(n.lyr, n.pos + ST.lo).replace('♪', '') : '';
+  $('#bPlay').innerHTML = n.playing ? PAUSE : PLAY; $('#bPlay').title = n.playing ? TX.pause : TX.play;
+  $('#t0').textContent = fmt(n.pos); $('#t1').textContent = n.dur ? fmt(n.dur) : '';
+  $('#fill').style.width = n.dur ? (clamp(n.pos / n.dur, 0, 1) * 100).toFixed(2) + '%' : '0%';
+}
+
+// grows while the mouse points at it
+let shut = 0, isOpen = false;
+function open(on){
+  clearTimeout(shut);
+  if (on === isOpen) return; isOpen = on;
+  if (on){ invoke('island_size', {open: true}).catch(() => {}); requestAnimationFrame(() => $('#isl').classList.add('open')) }
+  else { $('#isl').classList.remove('open'); shut = setTimeout(() => invoke('island_size', {open: false}).catch(() => {}), 430) }
+}
+$('#isl').addEventListener('mouseenter', () => open(true));
+$('#isl').addEventListener('mouseleave', () => { clearTimeout(shut); shut = setTimeout(() => open(false), 380) });
+$('#bPlay').onclick = () => { send('toggle'); ST.playing = !ST.playing; ST.at = performance.now(); draw() };
+$('#bNext').onclick = () => send('next');
+$('#bPrev').onclick = () => send('prev');
+$('#bOpen').onclick = () => { open(false); send('open') };
+$('#trk').addEventListener('click', e => { const r = e.currentTarget.getBoundingClientRect(); send('seek', clamp((e.clientX - r.left) / r.width, 0, 1)) });
+
+let tick = 0;
+function visible(on){
+  const isl = $('#isl');
+  if (on){ draw(); requestAnimationFrame(() => isl.classList.add('show')); if (!tick) tick = setInterval(draw, 250) }
+  else { isl.classList.remove('show', 'open'); isOpen = false; clearInterval(tick); tick = 0 }
+}
+if (T){
+  T.event.listen('mirror-state', e => state(e.payload));
+  T.event.listen('media', e => { SYS.m = e.payload; SYS.at = Date.now() });
+  T.event.listen('media-art', e => { SYS.art = e.payload || '' });
+  T.event.listen('island-vis', e => visible(!!e.payload));
+  send('ready');   // the player answers with everything it knows
+} else {
+  // opened in a browser: a sample
+  state({hasTrack: true, track: {title: 'Toxic Bloom (Studio Session)', artist: 'Vero Wilde', art: '', duration: 214}, pos: 64, playing: true, at: Date.now(), acc: '120,220,90',
+    lyr: [{t: 60, text: 'Every street is glowing just the same'}, {t: 70, text: 'Neon lights are calling out my name'}]});
+  visible(true);
+}
+</script>
+</body>
+</html>
