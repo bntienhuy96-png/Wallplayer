@@ -8,6 +8,7 @@ the section that matches the version in `src-tauri/Cargo.toml`.
 ### New
 - **YouTube Mix**: click one YouTube song (in the search results or in *History Playing*) and the playlist on the left becomes the Mix YouTube makes for that song — personal when you are signed in to YouTube. It takes the place of *Continue Playing* and keeps going: near the end, the next part of the same Mix is added.
 - Settings → Now Playing → **When you pick a song**: *YouTube Mix* (default) or *Mix + your picks* (the previous behaviour).
+- **TikTok channel** (platform button → TikTok): one vertical video at a time in the middle of the screen, like the app — no playlist, the clock moves to the left. Scroll over the video, press ↑ / ↓ or use the ▲ ▼ buttons for the previous / next video; click it to pause. **Auto scroll** (under ▼) plays the next video when one ends, or loops each video when off. *For You* is your own feed when you are signed in to TikTok (Settings → Accounts → TikTok); press Enter in the search field to watch a search instead. *Up next* and the video's author, caption and sound sit on the right. Beside the video, like TikTok: **Like**, **Comments** (they open on the right), **Save** to your TikTok Favorites and **Share** (copies the link); Like and Save use your TikTok account (sign in first). Videos play in TikTok's official embed player; the list comes from TikTok's own page, opened out of sight with your session.
 
 ### Fixed
 - A music video in a YouTube list no longer shows its view count as the album.

@@ -675,6 +675,101 @@ button.bgv:hover{background:rgba(255,255,255,.08)}
 .rcta .pi{width:2rem;height:2rem;flex:none}
 .rcta span{flex:1}
 #sIco .pi{width:1.8rem;height:1.8rem}
+/* ── TikTok channel: one vertical video at a time, no playlist ── */
+#ttStage{display:none;position:absolute;inset:0;z-index:5;pointer-events:none}
+#app.tt #ttStage{display:block}
+#app.tt #flowWrap,#app.tt #queue,#app.tt #lyrics,#app.tt #lyrics2,#app.tt #results,#app.tt #musicPop{display:none!important}
+#app.tt #likeBtn,#app.tt #lyrBtn,#app.tt #eyeBtn,#app.tt #listBtn,#app.tt #mvBtn,#app.tt #repBtn{display:none}
+#app.tt #clock{left:20%;top:47%;transform:translate(-50%,-50%) scale(.8)}
+#app.bare #ttStage{opacity:0;pointer-events:none}
+#ttCard{--cw:max(32.06rem,330px);position:absolute;left:50%;top:4.2rem;width:var(--cw);height:calc(var(--cw) * 16 / 9);transform:translateX(-50%);border-radius:1.8rem;overflow:hidden;background:#000;pointer-events:auto;
+  box-shadow:0 2.6rem 5rem rgba(0,0,0,.5),0 0 0 1px rgba(255,255,255,.12)}
+#ttFrame,#ttFrame iframe,#ttCover,#ttHit{position:absolute;inset:0;width:100%;height:100%;border:0}
+#ttFrame iframe{pointer-events:none;background:#000}
+#ttCover{object-fit:cover;opacity:0;z-index:1;transition:opacity .4s}
+#ttCover:not([src]){display:none}
+#ttCard.cover #ttCover{opacity:1}
+#ttHit{z-index:2;cursor:pointer;background:none}
+#ttHit::after{content:'';position:absolute;left:50%;top:50%;width:5.4rem;height:6rem;transform:translate(-38%,-50%) scale(.6);background:rgba(255,255,255,.9);clip-path:polygon(0 0,100% 50%,0 100%);opacity:0;transition:opacity .25s,transform .25s}
+#ttCard.paused #ttHit::after{opacity:.9;transform:translate(-38%,-50%) scale(1)}
+#ttCard.swap{animation:ttswap .45s cubic-bezier(.2,.8,.2,1)}
+#ttCard.swap.back{animation-name:ttback}
+@keyframes ttswap{from{transform:translate(-50%,4%);opacity:.3}to{transform:translateX(-50%);opacity:1}}
+@keyframes ttback{from{transform:translate(-50%,-4%);opacity:.3}to{transform:translateX(-50%);opacity:1}}
+#ttMsg{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:3;width:78%;display:flex;flex-direction:column;align-items:center;gap:1.2rem;text-align:center;
+  padding:1.8rem 1.6rem;border-radius:1.6rem;background:rgba(14,15,20,.62);backdrop-filter:blur(18px);font:600 1.3rem/1.4 Inter,system-ui,sans-serif;color:#fff}
+#ttMsg:empty{display:none}
+#ttMsg .spin{width:2.6rem;height:2.6rem;border-radius:50%;border:.28rem solid rgba(255,255,255,.2);border-top-color:#fff;animation:ttspin .9s linear infinite}
+@keyframes ttspin{to{transform:rotate(360deg)}}
+#ttMsg .row{display:flex;gap:.6rem;flex-wrap:wrap;justify-content:center}
+#ttRail{position:absolute;left:calc(50% + max(16.03rem,165px) + 1.6rem);top:4.2rem;height:max(57rem,587px);display:flex;flex-direction:column;justify-content:space-between;align-items:center;pointer-events:auto}
+#ttNav,#ttActs{display:flex;flex-direction:column;align-items:center;gap:1rem}
+#ttActs{gap:1.3rem}
+.tta2{display:flex;flex-direction:column;align-items:center;gap:.35rem;color:#fff;font:700 1.05rem Inter,system-ui,sans-serif}
+.tta2 i{width:4.6rem;height:4.6rem;border-radius:50%;display:grid;place-items:center;background:rgba(14,15,20,.38);backdrop-filter:blur(18px);border:1px solid rgba(255,255,255,.1);transition:background .2s,transform .15s}
+.tta2:hover i{background:rgba(255,255,255,.2)}
+.tta2:active i{transform:scale(.92)}
+.tta2 svg{width:2.2rem;height:2.2rem;fill:none;stroke:#fff;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;transition:fill .2s,stroke .2s}
+.tta2.on i{background:rgba(255,255,255,.92)}
+.tta2.on svg{stroke:#111}
+.tta2.liked svg{fill:#fe2c55;stroke:#fe2c55}
+.tta2.saved svg{fill:#facc15;stroke:#facc15}
+.tta2.busy i{opacity:.6}
+.tta2.pop svg{animation:ttpop .4s cubic-bezier(.3,1.6,.5,1)}
+@keyframes ttpop{40%{transform:scale(1.3)}}
+.ttnav{width:4.2rem;height:4.2rem;border-radius:50%;display:grid;place-items:center;background:rgba(14,15,20,.38);backdrop-filter:blur(18px);border:1px solid rgba(255,255,255,.1);color:#fff;transition:background .2s,opacity .2s}
+.ttnav:hover{background:rgba(255,255,255,.2)}
+.ttnav:disabled{opacity:.3;pointer-events:none}
+.ttnav svg{width:1.9rem;height:1.9rem;fill:none;stroke:#fff;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.ttnav.ttauto{margin-top:1.4rem}
+.ttnav.ttauto.on{background:rgba(255,255,255,.92);border-color:transparent}
+.ttnav.ttauto.on svg{stroke:#111}
+.ttlab{width:4.2rem;margin-top:-.45rem;text-align:center;font:700 .92rem/1.15 Inter,system-ui,sans-serif;color:#fff;opacity:.62}
+#ttSide{position:absolute;left:calc(50% + max(16.03rem,165px) + 8rem);top:4.2rem;height:max(57rem,587px);width:31rem;display:flex;flex-direction:column;gap:2.2rem;pointer-events:auto;color:#fff}
+#ttTabs{display:flex;gap:.6rem;flex-wrap:wrap}
+.ttt{height:3.2rem;padding:0 1.35rem;border-radius:1.6rem;display:flex;align-items:center;gap:.5rem;max-width:100%;background:rgba(14,15,20,.38);backdrop-filter:blur(18px);border:1px solid rgba(255,255,255,.1);
+  color:rgba(255,255,255,.72);font:700 1.22rem Inter,system-ui,sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:background .2s,color .2s}
+.ttt:hover{color:#fff;background:rgba(255,255,255,.16)}
+.ttt.on{background:rgba(255,255,255,.92);color:#111}
+.ttt.ghost{background:none;border-color:transparent;text-decoration:underline;text-underline-offset:.25rem;padding:0 .4rem}
+.ttlbl{font:700 1.05rem Inter,system-ui,sans-serif;letter-spacing:.04em;text-transform:uppercase;opacity:.55;margin-bottom:.8rem}
+#ttNextWrap:has(#ttNext:empty){display:none}
+#ttNext{display:flex;gap:.8rem}
+.ttn{width:7.4rem;aspect-ratio:9/16;border-radius:1rem;overflow:hidden;background:rgba(255,255,255,.08);opacity:.72;transition:opacity .2s,transform .2s;box-shadow:0 0 0 1px rgba(255,255,255,.1)}
+.ttn:hover{opacity:1;transform:translateY(-.25rem)}
+.ttn img{width:100%;height:100%;object-fit:cover;display:block}
+#ttInfo{margin-top:auto;display:flex;flex-direction:column;gap:1.1rem;padding:1.7rem 1.8rem;border-radius:1.8rem;background:rgba(14,15,20,.4);backdrop-filter:blur(22px) saturate(1.3);border:1px solid rgba(255,255,255,.08)}
+#ttInfo:empty{display:none}
+.tta{display:flex;align-items:center;gap:1rem;min-width:0}
+.tta img{width:4.2rem;height:4.2rem;border-radius:50%;object-fit:cover;background:rgba(255,255,255,.12);flex:none}
+.tta div{min-width:0}
+.tta b{display:block;font:800 1.45rem Inter,system-ui,sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tta span{display:block;font:500 1.15rem Inter,system-ui,sans-serif;opacity:.62;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ttd{margin:0;font:500 1.3rem/1.45 Inter,system-ui,sans-serif;opacity:.92;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere}
+.ttd i{font-style:normal;font-weight:700}
+.ttm{display:flex;align-items:center;gap:.5rem;font:600 1.15rem Inter,system-ui,sans-serif;opacity:.7;min-width:0}
+.ttm span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tts{display:flex;gap:1.5rem;font:700 1.2rem Inter,system-ui,sans-serif;opacity:.88;flex-wrap:wrap}
+.tts span{display:flex;align-items:center;gap:.45rem}
+.ttm svg,.tts svg{width:1.5rem;height:1.5rem;flex:none;fill:none;stroke:#fff;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+#ttInfo .abtn{align-self:flex-start}
+#ttCom{display:none;flex:1;min-height:0;flex-direction:column;border-radius:1.8rem;background:rgba(14,15,20,.48);backdrop-filter:blur(22px) saturate(1.3);border:1px solid rgba(255,255,255,.08);overflow:hidden}
+#ttSide.com #ttNextWrap,#ttSide.com #ttInfo{display:none}
+#ttSide.com #ttCom{display:flex}
+.tch{display:flex;align-items:center;justify-content:space-between;padding:1.3rem 1.4rem 1rem 1.8rem;font:800 1.4rem Inter,system-ui,sans-serif}
+.tch button{width:3rem;height:3rem;border-radius:50%;display:grid;place-items:center;background:rgba(255,255,255,.1);color:#fff;font-size:1.3rem}
+.tch button:hover{background:rgba(255,255,255,.2)}
+.tcl{flex:1;min-height:0;overflow-y:auto;padding:0 1.6rem 1rem 1.8rem;display:flex;flex-direction:column;gap:1.4rem;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.25) transparent}
+.tcl .spin{width:2.4rem;height:2.4rem;margin:2rem auto;border-radius:50%;border:.26rem solid rgba(255,255,255,.2);border-top-color:#fff;animation:ttspin .9s linear infinite}
+.tcl .tce{margin:2rem 0;text-align:center;font:600 1.2rem/1.5 Inter,system-ui,sans-serif;opacity:.7}
+.tci{display:grid;grid-template-columns:3.4rem 1fr auto;gap:.9rem;align-items:start}
+.tci img,.tci .av{width:3.4rem;height:3.4rem;border-radius:50%;object-fit:cover;background:rgba(255,255,255,.12)}
+.tci b{display:block;font:700 1.12rem Inter,system-ui,sans-serif;opacity:.7;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tci p{margin:.2rem 0 0;font:500 1.25rem/1.4 Inter,system-ui,sans-serif;overflow-wrap:anywhere}
+.tci small{display:block;margin-top:.35rem;font:500 1.02rem Inter,system-ui,sans-serif;opacity:.5}
+.tci .lk{display:flex;flex-direction:column;align-items:center;gap:.15rem;font:600 .98rem Inter,system-ui,sans-serif;opacity:.6}
+.tci .lk svg{width:1.4rem;height:1.4rem;fill:none;stroke:#fff;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.tcf{padding:1rem 1.8rem 1.4rem;border-top:1px solid rgba(255,255,255,.08)}
 </style>
 </head>
 <body>
@@ -709,6 +804,12 @@ button.bgv:hover{background:rgba(255,255,255,.08)}
     <div id="flowLabel"></div>
     <div id="flow"></div>
     <div id="flowStatus" class="glass"></div>
+  </div>
+
+  <div id="ttStage" class="widget">
+    <div id="ttCard" class="cover"><img id="ttCover" alt="" referrerpolicy="no-referrer"><div id="ttFrame"></div><div id="ttHit"></div><div id="ttMsg"></div></div>
+    <div id="ttRail"><div id="ttNav"><button class="ttnav" id="ttUp" type="button" title="Previous video  (↑)"><svg viewBox="0 0 24 24"><path d="m6 15 6-6 6 6"/></svg></button><button class="ttnav" id="ttDown" type="button" title="Next video  (↓)"><svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></button><button class="ttnav ttauto" id="ttAuto" type="button"><svg viewBox="0 0 24 24"><path d="m7 6.5 5 5 5-5M7 12.5l5 5 5-5"/></svg></button><span class="ttlab">Auto scroll</span></div><div id="ttActs"></div></div>
+    <aside id="ttSide"><div id="ttTabs"></div><div id="ttNextWrap"><div class="ttlbl">Up next</div><div id="ttNext"></div></div><div id="ttInfo"></div><div id="ttCom"></div></aside>
   </div>
 
   <div id="dock">
@@ -864,6 +965,7 @@ const G = {
   wave:'<g stroke="#0b0b0b" stroke-width="2.4" stroke-linecap="round"><path d="M9 11v6M14 8v12M19 11.5v5"/></g>',
   globe:'<g fill="none" stroke="#0b0b0b" stroke-width="1.9"><circle cx="14" cy="14" r="6.5"/><path d="M7.5 14h13M14 7.5c2.2 2.4 2.2 10.6 0 13M14 7.5c-2.2 2.4-2.2 10.6 0 13"/></g>',
   play:'<path d="M11.2 9.3v9.4l7.6-4.7z" fill="#fff"/>',
+  clip:'<rect x="9.4" y="6.6" width="9.2" height="14.8" rx="2.3" fill="none" stroke="#fff" stroke-width="1.9"/><path d="M12.7 11.2v5.6l4.4-2.8z" fill="#fff"/>',
   bars:'<g stroke="#fff" stroke-width="2.1" stroke-linecap="round"><path d="M7.5 15v2M10.5 12.5v4.5M13.5 10v7M16.5 11.5v5.5M19.5 13.5v3.5"/></g>',
   phones:'<g fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><path d="M7.5 17.5v-3a6.5 6.5 0 0 1 13 0v3"/></g><rect x="6.5" y="15.2" width="3.4" height="5" rx="1.2" fill="#fff"/><rect x="18.1" y="15.2" width="3.4" height="5" rx="1.2" fill="#fff"/>'
 };
@@ -875,6 +977,7 @@ const PLATFORMS = [
   {id:'youtube', name:'YouTube', icon:PI('#ff3b30|#d70015', G.play)},
   {id:'soundcloud', name:'SoundCloud', icon:PI('#ff7a1a|#ff4d00', G.bars)},
   {id:'amazon', name:'Amazon Music', icon:PI('#3fe0e6|#0c9fcf', G.phones)},
+  {id:'tiktok', name:'TikTok', icon:PI('#ff3d7f|#1ec8d8', G.clip)},
 ];
 document.body.insertAdjacentHTML('afterbegin', `<svg width="0" height="0" style="position:absolute;width:0;height:0" aria-hidden="true"><defs>${Object.values(GRADS).join('')}</defs></svg>`);
 const AUTO = {id:'auto', name:'Automatic', icon:`<span style="display:grid;place-items:center;width:2.1rem;height:2.1rem">${I.sparkles}</span>`};
@@ -1540,6 +1643,7 @@ function setLyrics(arr, t, source){
 async function loadLyrics(t){
   const seq = ++S.lyrSeq; setLyrics([]); S.lyrSeq = seq; S.lyrOff = (store.get('lyroff', {}) || {})[t.title + '|' + t.artist] || 0;
   if (MIRROR) return;   // the main window sends its lyrics
+  if (t.source === 'tiktok') return;   // TikTok clips: no lyrics
   if (t.demo || !T){ setLyrics(t.lyrics || [], t, 'demo'); return }
   if (t.source === 'youtube' && t.play){   // YouTube clip: its own CC (hidden by YouTube) becomes the lyrics
     try { const cc = await invoke('yt_captions', {videoId: t.play}); if (seq !== S.lyrSeq) return; if (cc && cc.length){ setLyrics(cc.map(c => ({t: c.t, text: c.text})), t, 'YouTube CC'); return } } catch(e){}
@@ -1962,10 +2066,198 @@ const LOC = {
 };
 function stopInternal(){ YTA.stop(); SCW.stop(); LOC.stop(); app.classList.remove('clip') }
 
+/* ════════════════════ TikTok: a vertical channel, one video at a time (no playlist) ════════════════════ */
+// An off-screen TikTok page with your own session collects For You or a search (Rust: tiktok.rs);
+// each video plays in TikTok's official embed player. Scroll / ↑ ↓ for the next one, like the app.
+const TT = {
+  on: false, list: [], i: -1, mode: 'foryou', q: '', pos: 0, dur: 0, playing: false, started: false, ready: false, auto: true,
+  frame: null, poll: 0, taking: false, asked: 0, more: true, errs: 0, wheelAt: 0, wd: 0, slow: 0, busy: {},
+  src(id){ return `https://www.tiktok.com/player/v1/${id}?autoplay=${this.auto ? 1 : 0}&loop=0&controls=0&progress_bar=0&play_button=0&volume_control=0&fullscreen_button=0&timestamp=0&music_info=0&description=0&rel=0&native_context_menu=0&closed_caption=0` },
+  enter(auto = true){
+    if (this.on || MIRROR) return; this.on = true; this.auto = auto; app.classList.add('tt');
+    stopInternal(); YTV.stop(); S.src = 'tt'; this.feed('foryou');
+  },
+  leave(){
+    if (!this.on) return; this.on = false; app.classList.remove('tt'); clearInterval(this.poll); clearTimeout(this.slow); clearTimeout(this.wd); this.unload(); this.list = []; this.i = -1;
+    if (T) invoke('tiktok_stop').catch(() => {});
+    if (S.src === 'tt'){ S.src = 'none'; setTrack(null) }
+  },
+  feed(mode, q){
+    this.mode = mode === 'search' && q ? 'search' : 'foryou'; this.q = this.mode === 'search' ? q : this.q; this.list = []; this.i = -1; this.more = true; this.errs = 0;
+    this.unload(); $('#ttCover').removeAttribute('src'); renderTT();
+    this.msg(this.mode === 'search' ? `Searching TikTok for “${q}”…` : 'Loading For You…', 'wait');
+    if (!T){ this.demo(); return }
+    invoke('tiktok_feed', {mode: this.mode, query: this.mode === 'search' ? q : ''}).catch(() => this.msg("Couldn't open TikTok", 'open'));
+    clearInterval(this.poll); this.poll = setInterval(() => this.take(), 1500); setTimeout(() => this.take(), 1200);
+    clearTimeout(this.slow); this.slow = setTimeout(() => { if (this.on && !this.list.length) this.msg('TikTok is slow to answer. It may want you to sign in or do a quick check.', 'check') }, 20000);
+  },
+  add(clips){
+    const have = new Set(this.list.map(c => c.id)), add = (clips || []).filter(c => c && c.id && !have.has(c.id) && (have.add(c.id), true));
+    if (!add.length) return; this.list.push(...add);
+    if (this.i < 0){ clearTimeout(this.slow); this.show(0) } else renderTT();
+  },
+  async take(){
+    if (!this.on || this.taking || !T) return; this.taking = true;
+    try {
+      const r = await invoke('tiktok_take'); if (!this.on) return;
+      if (r.ready) this.more = r.more !== false;
+      this.add(r.clips);
+      if (r.captcha && !this.list.length) this.msg('TikTok wants a quick check before it shows videos.', 'check');
+      if (this.i >= this.list.length - 5 && this.more && Date.now() - this.asked > 3000){ this.asked = Date.now(); invoke('tiktok_more').catch(() => {}) }   // keep a few videos ahead
+    } catch(e){} finally { this.taking = false }
+  },
+  show(i, back){
+    const c = this.list[i]; if (!c) return;
+    this.i = i; this.pos = 0; this.dur = c.duration || 0; this.playing = false; this.started = false; this.ready = false; S.src = 'tt';
+    const card = $('#ttCard'); card.classList.remove('swap', 'back', 'paused'); void card.offsetWidth; card.classList.add('cover', 'swap'); card.classList.toggle('back', !!back);
+    if (c.cover) $('#ttCover').src = c.cover; else $('#ttCover').removeAttribute('src');
+    const host = $('#ttFrame'); host.innerHTML = ''; this.frame = null;
+    if (T){ const f = document.createElement('iframe'); f.allow = 'autoplay; encrypted-media; fullscreen; picture-in-picture'; f.title = 'TikTok'; f.src = this.src(c.id); host.appendChild(f); this.frame = f }
+    else { this.ready = true; this.started = this.playing = this.auto }   // browser demo: covers only
+    this.msg('');
+    setTrack({id: c.id, title: (c.desc || '').split('\n')[0].replace(/\s+/g, ' ').trim() || c.nick || ('@' + c.author), artist: '@' + c.author, album: c.music ? '♪ ' + c.music : '',
+      art: c.cover, url: `https://www.tiktok.com/@${c.author}/video/${c.id}`, duration: c.duration, source: 'tiktok', play: c.id});
+    clearTimeout(this.wd); this.wd = setTimeout(() => { if (this.on && this.list[this.i] === c && !this.ready) this.failed(c) }, 15000);
+    this.busy = {}; renderTT(); renderPlay(); this.take(); ttComments();
+  },
+  failed(c){ this.errs++; if (this.errs < 4 && this.i < this.list.length - 1) this.show(this.i + 1); else this.msg("TikTok won't play its videos here right now.", 'open') },
+  go(d){
+    if (!this.on || !this.list.length) return; this.auto = true; const j = this.i + d;
+    if (j < 0) return;
+    if (j >= this.list.length){ this.take(); toast('More videos are on the way'); return }
+    this.errs = 0; this.show(j, d < 0);
+  },
+  send(type, value = null){ try { this.frame && this.frame.contentWindow.postMessage({type, value, 'x-tiktok-player': true}, '*') } catch(e){} },
+  toggle(){
+    this.auto = true;
+    if (!T){ this.playing = !this.playing; this.started = true; this.state(); return }
+    if (this.playing) this.send('pause'); else { this.vol(); this.send('play') }
+  },
+  seek(sec){ this.send('seekTo', Math.max(0, sec)); this.pos = Math.max(0, sec) },
+  vol(){ this.send(S.muted ? 'mute' : 'unMute') },
+  unload(){ const h = $('#ttFrame'); if (h) h.innerHTML = ''; this.frame = null; this.playing = false; this.ready = false },
+  state(){ const card = $('#ttCard'); card.classList.toggle('cover', !this.started || !T); card.classList.toggle('paused', this.ready && !this.playing); renderPlay() },
+  onMsg(e){
+    if (!this.frame || e.source !== this.frame.contentWindow) return;
+    let d = e.data; if (typeof d === 'string'){ try { d = JSON.parse(d) } catch(x){ return } }
+    if (!d || typeof d.type !== 'string') return;
+    if (d.type === 'onPlayerReady'){ this.ready = true; clearTimeout(this.wd); if (this.auto){ this.vol(); this.send('play') } this.state() }
+    else if (d.type === 'onStateChange'){
+      this.ready = true; clearTimeout(this.wd);
+      if (d.value === 1){ this.playing = true; this.started = true; this.errs = 0; this.vol() } else if (d.value === 2 || d.value === 0) this.playing = false;
+      this.state(); if (d.value === 0) this.ended();
+    }
+    else if (d.type === 'onCurrentTime' && d.value){ this.pos = +d.value.currentTime || 0; this.dur = +d.value.duration || this.dur }
+    else if (d.type === 'onPlayerError'){ clearTimeout(this.wd); const c = this.list[this.i]; setTimeout(() => { if (this.list[this.i] === c) this.failed(c) }, 700) }
+  },
+  // Auto scroll (the button under ↓): the next video when one ends; off, each video loops like in the app
+  ended(){ if (S.repeat === 'one' || S.look.ttAuto === false){ this.seek(0); this.send('play'); return } this.go(1) },
+  msg(text, kind){
+    const m = $('#ttMsg'); if (!text){ m.innerHTML = ''; return }
+    const c = this.list[this.i];
+    const btns = kind === 'check' ? `<div class="row"><button class="abtn" data-ttm="show">Open TikTok</button><button class="abtn" data-ttm="done">Done</button>${S.acc && S.acc.tiktok ? '' : '<button class="abtn" data-ttm="login">Sign in</button>'}</div>`
+      : kind === 'open' ? `<div class="row"><button class="abtn" data-ttm="ext">Open in TikTok</button><button class="abtn" data-ttm="retry">Try again</button></div>` : '';
+    m.innerHTML = `${kind === 'wait' ? '<i class="spin"></i>' : ''}<span>${esc(text)}</span>${btns}`;
+    void c;
+  },
+  demo(){
+    const tags = ['#lofi', '#citypop', '#vinyl', '#dance', '#sunset', '#studio'], cols = [['#ff3d7f', '#2a0f2f'], ['#1ec8d8', '#0b2233'], ['#ffb347', '#3a1d05'], ['#9b7bff', '#170f3a']];
+    const make = k => { const [a, b] = cols[k % cols.length]; return {id: '73' + String(k).padStart(17, '0'), desc: `Demo clip ${k + 1} ${tags[k % tags.length]} ${tags[(k + 2) % tags.length]}`, cover: makeCover('Clip ' + (k + 1), '@wallplayer', a, b, ['wave', 'sun', 'pool'][k % 3], k + 3),
+      duration: 20 + k * 3, width: 576, height: 1024, author: 'wallplayer', nick: 'Wallplayer demo', avatar: '', music: 'original sound - wallplayer', likes: 12400 * (k + 1), comments: 210 * (k + 1), shares: 95 * (k + 1), plays: 380000 * (k + 1), saves: 1300 * (k + 1), liked: false, saved: false} };
+    setTimeout(() => this.add(Array.from({length: 12}, (_, k) => make(k))), 300);
+  }
+};
+addEventListener('message', e => TT.onMsg(e));
+const ttN = n => { try { return new Intl.NumberFormat('en', {notation: 'compact', maximumFractionDigits: 1}).format(n || 0) } catch(e){ return String(n || 0) } };
+const TTI = {
+  note: '<svg viewBox="0 0 24 24"><path d="M9 18V6l10-2v12"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="16.5" cy="16" r="2.5"/></svg>',
+  heart: '<svg viewBox="0 0 24 24"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/></svg>',
+  talk: '<svg viewBox="0 0 24 24"><path d="M5 18.5V7a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H8z"/></svg>',
+  share: '<svg viewBox="0 0 24 24"><path d="M14 5l6 6-6 6M20 11H9a5 5 0 0 0-5 5v2"/></svg>',
+  plays: '<svg viewBox="0 0 24 24"><path d="M8 5.5v13l10-6.5z"/></svg>',
+  save: '<svg viewBox="0 0 24 24"><path d="M7 4.5h10a1 1 0 0 1 1 1v14l-6-3.8-6 3.8v-14a1 1 0 0 1 1-1z"/></svg>'
+};
+const ago = t => { const s = Date.now() / 1000 - t; if (!(t > 0) || s < 0) return ''; if (s < 3600) return Math.max(1, Math.round(s / 60)) + 'm'; if (s < 86400) return Math.round(s / 3600) + 'h'; if (s < 86400 * 30) return Math.round(s / 86400) + 'd'; return new Date(t * 1000).toLocaleDateString() };
+function renderTT(){
+  if (!TT.on) return;
+  const c = TT.list[TT.i], acc = S.acc || {};
+  $('#ttTabs').innerHTML = `<button class="ttt ${TT.mode === 'foryou' ? 'on' : ''}" data-tt="foryou">For You</button>`
+    + (TT.q ? `<button class="ttt ${TT.mode === 'search' ? 'on' : ''}" data-tt="search" title="${esc(TT.q)}">${I.search}<span>${esc(TT.q)}</span></button>` : '')
+    + (T && !acc.tiktok ? `<button class="ttt ghost" data-tt="login" title="Your own For You">Sign in to TikTok</button>` : '');
+  $('#ttNext').innerHTML = TT.list.slice(TT.i + 1, TT.i + 4).map((n, k) => `<button class="ttn" data-tj="${TT.i + 1 + k}" title="${esc((n.desc || '@' + n.author).slice(0, 80))}">${n.cover ? `<img src="${esc(n.cover)}" alt="" referrerpolicy="no-referrer" loading="lazy">` : ''}</button>`).join('');
+  $('#ttUp').disabled = TT.i <= 0; $('#ttDown').disabled = !TT.list.length;
+  const au = S.look.ttAuto !== false; $('#ttAuto').classList.toggle('on', au);
+  $('#ttAuto').title = au ? 'Auto scroll is on: the next video plays when one ends' : 'Auto scroll is off: each video loops';
+  $('#ttInfo').innerHTML = c ? `<div class="tta">${c.avatar ? `<img src="${esc(c.avatar)}" alt="" referrerpolicy="no-referrer">` : ''}<div><b>@${esc(c.author)}</b><span>${esc(c.nick || '')}</span></div></div>`
+    + (c.desc ? `<p class="ttd">${esc(c.desc).replace(/(^|\s)(#[^\s#]+)/g, '$1<i>$2</i>')}</p>` : '')
+    + (c.music ? `<div class="ttm">${TTI.note}<span>${esc(c.music)}</span></div>` : '')
+    + `<div class="tts"><span title="Views">${TTI.plays}${ttN(c.plays)}</span></div>`
+    + `<button class="abtn" data-tt="ext">Open in TikTok</button>` : '';
+  const act = (k, ic, n, title, cls = '') => `<button class="tta2 ${cls}" data-ta="${k}" title="${title}"><i>${ic}</i><span>${ttN(n)}</span></button>`;
+  $('#ttActs').innerHTML = c ? act('like', TTI.heart, c.likes, c.liked ? 'Unlike' : 'Like', (c.liked ? 'liked' : '') + (TT.busy.like ? ' busy' : ''))
+    + act('comment', TTI.talk, c.comments, 'Comments', $('#ttSide').classList.contains('com') ? 'on' : '')
+    + act('save', TTI.save, c.saves, c.saved ? 'Remove from Favorites' : 'Save to Favorites', (c.saved ? 'saved' : '') + (TT.busy.save ? ' busy' : ''))
+    + act('share', TTI.share, c.shares, 'Share — copy the link') : '';
+}
+// comments of the video on screen, read from its TikTok page (writing one opens TikTok)
+async function ttComments(){
+  const c = TT.list[TT.i], side = $('#ttSide'); if (!c || !side.classList.contains('com')) return;
+  const box = $('#ttCom'), key = c.id;
+  box.innerHTML = `<div class="tch"><span>Comments · ${ttN(c.comments)}</span><button data-tc="x" title="Close">✕</button></div><div class="tcl"><i class="spin"></i></div><div class="tcf"><button class="abtn" data-tt="ext">Write a comment on TikTok</button></div>`;
+  let list = [];
+  if (T){ try { list = await invoke('tiktok_comments', {author: c.author, id: c.id}) } catch(e){} }
+  else list = Array.from({length: 8}, (_, k) => ({id: 'c' + k, text: ['so good 🔥', 'this song is stuck in my head', 'who else is here in 2026?', 'the edit 😭', 'nghe hoài không chán', 'sound name pls'][k % 6], likes: 900 - k * 97, replies: k % 3, time: Date.now() / 1000 - k * 5400, nick: 'listener ' + (k + 1), user: 'user' + k, avatar: ''}));
+  if (TT.list[TT.i] !== c || !side.classList.contains('com') || c.id !== key) return;
+  const l = box.querySelector('.tcl'); if (!l) return;
+  l.innerHTML = list.length ? list.map(m => `<div class="tci">${m.avatar ? `<img src="${esc(m.avatar)}" alt="" referrerpolicy="no-referrer" loading="lazy">` : '<i class="av"></i>'}<div><b>${esc(m.nick || '@' + m.user)}</b><p>${esc(m.text)}</p><small>${ago(m.time)}${m.replies ? `${m.time ? ' · ' : ''}<span>${ttN(m.replies)} ${m.replies === 1 ? 'reply' : 'replies'}</span>` : ''}</small></div><span class="lk">${TTI.heart}${ttN(m.likes)}</span></div>`).join('')
+    : `<div class="tce">${T && !(S.acc && S.acc.tiktok) ? 'TikTok shows comments when you are signed in.' : "Couldn't load the comments."}</div>`;
+}
+async function ttAct(kind){
+  const c = TT.list[TT.i]; if (!c) return;
+  if (kind === 'comment'){ const side = $('#ttSide'); side.classList.toggle('com'); renderTT(); ttComments(); return }
+  if (kind === 'share'){ const url = `https://www.tiktok.com/@${c.author}/video/${c.id}`;
+    try { await navigator.clipboard.writeText(url); toast('Link copied') } catch(e){ openExternal(url) } return }
+  if (T && !(S.acc && S.acc.tiktok)){ toast(kind === 'like' ? 'Sign in to TikTok to like videos' : 'Sign in to TikTok to save videos'); openAccounts(); return }
+  if (TT.busy[kind]) return;
+  const f = kind === 'like' ? 'liked' : 'saved', n = kind === 'like' ? 'likes' : 'saves', was = c[f];
+  c[f] = !was; c[n] = Math.max(0, (c[n] || 0) + (was ? -1 : 1)); TT.busy[kind] = true; renderTT();
+  const b = $(`#ttActs [data-ta="${kind}"]`); if (b && c[f]) b.classList.add('pop');
+  let ok = !T;
+  if (T){ try { ok = await invoke('tiktok_act', {author: c.author, id: c.id, kind}) } catch(e){ ok = false } }
+  TT.busy[kind] = false;
+  if (!ok){ c[f] = was; c[n] = Math.max(0, (c[n] || 0) + (was ? 1 : -1)); toast(kind === 'like' ? "TikTok didn't take the like — try again" : "TikTok didn't save it — try again") }
+  else if (kind === 'save') toast(c.saved ? 'Saved to your TikTok Favorites' : 'Removed from your TikTok Favorites');
+  if (TT.list[TT.i] === c) renderTT();
+}
+$('#ttStage').addEventListener('click', e => {
+  const ta = e.target.closest('[data-ta]'); if (ta){ e.stopPropagation(); ttAct(ta.dataset.ta); return }
+  if (e.target.closest('[data-tc="x"]')){ e.stopPropagation(); $('#ttSide').classList.remove('com'); renderTT(); return }
+  const b = e.target.closest('[data-tt],[data-tj],[data-ttm]'); if (!b) return; e.stopPropagation();
+  if (b.dataset.tj){ TT.auto = true; TT.errs = 0; TT.show(+b.dataset.tj); return }
+  const a = b.dataset.tt || b.dataset.ttm, c = TT.list[TT.i];
+  if (a === 'foryou') TT.feed('foryou');
+  else if (a === 'search' && TT.q) TT.feed('search', TT.q);
+  else if (a === 'login') openAccounts();
+  else if (a === 'ext') openExternal(c ? `https://www.tiktok.com/@${c.author}/video/${c.id}` : 'https://www.tiktok.com/foryou');
+  else if (a === 'show'){ invoke('tiktok_show', {on: true}).catch(() => {}); toast('Answer TikTok there, then press Done') }
+  else if (a === 'done'){ invoke('tiktok_show', {on: false}).catch(() => {}); TT.feed(TT.mode, TT.q) }
+  else if (a === 'retry') TT.feed(TT.mode, TT.q);
+});
+$('#ttHit').addEventListener('click', e => { e.stopPropagation(); if (TT.list.length) togglePlay() });
+$('#ttUp').addEventListener('click', e => { e.stopPropagation(); TT.go(-1) });
+$('#ttDown').addEventListener('click', e => { e.stopPropagation(); TT.go(1) });
+$('#ttAuto').addEventListener('click', e => { e.stopPropagation(); S.look.ttAuto = S.look.ttAuto === false; store.set('look', S.look); renderTT();
+  toast(S.look.ttAuto ? 'Auto scroll on · the next video plays when one ends' : 'Auto scroll off · each video loops') });
+$('#ttStage').addEventListener('wheel', e => {
+  if (!e.target.closest('#ttCard,#ttRail')) return; e.preventDefault(); e.stopPropagation();
+  const now = Date.now(); if (Math.abs(e.deltaY) < 4 || now - TT.wheelAt < 650) return; TT.wheelAt = now; TT.go(e.deltaY > 0 ? 1 : -1);
+}, {passive: false});
+
 /* ════════════════════ track / playback ════════════════════ */
 function getPos(){
   if (S.src === 'mirror') return MS.pos + (MS.playing ? (performance.now() - MS.at) / 1000 : 0);
   if (S.src === 'demo') return S.demo.pos;
+  if (S.src === 'tt') return TT.pos;
   if (S.src === 'yt') return YTA.time();
   if (S.src === 'sc') return SCW.time();
   if (S.src === 'local') return LOC.time();
@@ -1974,12 +2266,14 @@ function getPos(){
 }
 function getDur(){
   const td = (S.track && S.track.duration) || 0;
+  if (S.src === 'tt') return TT.dur || td;
   if (S.src === 'yt') return YTA.dur() || td; if (S.src === 'sc') return SCW.dur || td; if (S.src === 'local') return LOC.dur() || td;
   if (S.src === 'system' && S.sys) return S.sys.duration_ms / 1000; return td;
 }
 function isPlaying(){
   if (S.src === 'mirror') return MS.playing;
   if (S.src === 'demo') return S.demo.playing;
+  if (S.src === 'tt') return TT.playing;
   if (S.src === 'yt') return YTA.playing();
   if (S.src === 'sc') return SCW.playing;
   if (S.src === 'local') return LOC.playing();
@@ -2051,6 +2345,7 @@ async function resolveAndPlay(t){
 let trackStartAt = 0;   // when the last song was started here
 async function playTrack(t, list){
   trackStartAt = Date.now();
+  if (TT.frame && t.source !== 'tiktok') TT.unload();   // music from elsewhere: the TikTok video stops
   if (list){ S.queue = list.slice(); S.qKind = 'queue'; S.mix = null; if (!T && S.queue.length < 6) S.queue = S.queue.concat(DEMO.filter(d => !S.queue.includes(d))) }
   S.qIdx = S.queue.indexOf(t); if (S.qIdx < 0){ S.queue.unshift(t); S.qIdx = 0 }
   showDots(S.queue, S.qIdx);
@@ -2089,6 +2384,7 @@ async function playTrack(t, list){
   cardStarting(t, p === 'spotify' ? 'Opened in Spotify — press play' : `Starting on ${platById(p).name}`, url, p);
 }
 function togglePlay(){
+  if (S.src === 'tt'){ TT.toggle(); return }
   if (S.src === 'demo'){ S.demo.playing = !S.demo.playing; renderPlay(); return }
   if (S.src === 'yt'){ YTA.playing() ? YTA.pause() : YTA.play(); setTimeout(renderPlay, 150); return }
   if (S.src === 'sc'){ SCW.playing ? SCW.pause() : SCW.play(); return }
@@ -2097,6 +2393,7 @@ function togglePlay(){
   if (S.queue.length) playTrack(S.queue[Math.max(0, S.qIdx)]); else openSearch();
 }
 function step(dir){
+  if (S.src === 'tt'){ TT.go(dir); return }
   if (S.src === 'system'){ invoke('media_control', {action: dir > 0 ? 'next' : 'prev'}).catch(e => toast(String(e))); return }
   if (dir < 0 && getPos() > 4){ seekTo(0); return }
   if (!S.queue.length) return;
@@ -2105,6 +2402,7 @@ function step(dir){
 }
 const next = () => step(1), prev = () => step(-1);
 function seekTo(sec){
+  if (S.src === 'tt'){ TT.seek(sec); return }
   if (S.src === 'demo') S.demo.pos = clamp(sec, 0, getDur());
   else if (S.src === 'yt') YTA.seek(sec);
   else if (S.src === 'sc') SCW.seek(sec);
@@ -2186,6 +2484,7 @@ function followOther(){
 }
 function onMedia(m){
   S.sys = m; S.sysRecv = Date.now(); S.sysOptimistic = null;
+  if (S.src === 'tt') return;   // a TikTok video keeps playing
   if (S.src === 'yt' || S.src === 'sc' || S.src === 'local'){ followOther(); return }   // a song here keeps playing
   if (!m.has){ if (S.src === 'system'){ S.src = 'none'; S.sysKey = ''; setTrack(null); YTV.stop() } return }
   S.src = 'system';
@@ -2378,6 +2677,7 @@ $('#q').addEventListener('input', () => { clearTimeout(sTimer); const v = $('#q'
   if (!v.trim()){ S.results = []; renderResults(null); return } sTimer = setTimeout(() => doSearch(v), 320) });
 async function doSearch(q){
   q = q.trim(); const seq = ++S.searchSeq; if (!q) return;
+  if (searchPlatform() === 'tiktok') return;   // TikTok: Enter opens the search as a vertical feed
   $('#rTop').innerHTML = '<div class="skel"></div>'.repeat(5); $('#rSongs').innerHTML = ''; $('#rCta').innerHTML = ''; $('#rEnt').innerHTML = ''; $('#rSug').innerHTML = ''; $('#rCols').innerHTML = ''; $('#rColLabel').style.display = 'none';
   const plat = searchPlatform(); let res = [], meta = {source: plat, needs_login: false}; S.rich = null; S.rtab = 'all'; S.cols = [];
   if (T){
@@ -2632,6 +2932,7 @@ $('#rCols').addEventListener('click', e => {
 $('#rCta').addEventListener('click', e => { if (e.target.closest('[data-acc]')){ e.stopPropagation(); openAccounts() } });
 $('#q').addEventListener('keydown', e => {
   if (e.key === 'Escape'){ e.preventDefault(); closeSearch(); return }
+  if (TT.on){ if (e.key === 'Enter'){ e.preventDefault(); const q = $('#q').value.trim(); if (q){ TT.feed('search', q); closeSearch() } } return }
   if (S.rtab !== 'song' && S.rich){ if (e.key === 'Enter'){ e.preventDefault(); const c = document.querySelector('#rEnt .ent'); c && openEntity(+c.dataset.e, c) } return }
   const n = Math.min(S.results.length, 25); if (!n) return;
   if (e.key === 'ArrowDown'){ e.preventDefault(); S.resSel = (S.resSel + 1) % n; hiSel() }
@@ -2647,7 +2948,7 @@ function hiSel(){
 function closeMenus(except){ for (const m of document.querySelectorAll('.menu.open')) if (m !== except) m.classList.remove('open') }
 function renderPlatMenu(){
   const m = $('#platMenu'); const a = S.acc || {};
-  const signed = {ytmusic: a.youtube, youtube: a.youtube, soundcloud: a.soundcloud, spotify: a.spotify, spotifyweb: a.spotify};
+  const signed = {ytmusic: a.youtube, youtube: a.youtube, soundcloud: a.soundcloud, spotify: a.spotify, spotifyweb: a.spotify, tiktok: a.tiktok};
   m.innerHTML = PLATFORMS.map(p => `<button class="mi ${S.platform === p.id ? 'sel' : ''}" data-p="${p.id}">${p.icon}<span>${p.name}</span>${signed[p.id] ? '<i class="dot" title="Signed in"></i>' : ''}${I.check}</button>`).join('') +
     `<div class="msep"></div><button class="mi ${S.platform === 'auto' ? 'sel' : ''}" data-p="auto">${AUTO.icon}<span>Automatic</span>${I.check}</button>` +
     `<div class="msep"></div><button class="mi" data-p="__acc">${I.user}<span>Accounts…</span></button>`;
@@ -2656,11 +2957,14 @@ function renderPlatMenu(){
 $('#platMenu').addEventListener('click', e => { const b = e.target.closest('.mi'); if (!b) return; e.stopPropagation();
   if (b.dataset.p === '__acc'){ openAccounts(); return }
   S.platform = b.dataset.p; store.set('platform', S.platform); renderPlatMenu(); renderQueue(); closeMenus();
+  if (S.platform === 'tiktok'){ TT.enter(); toast('TikTok · scroll or ↑ ↓ for the next video'); return }
+  TT.leave();
   toast(`Searching on ${platById(searchPlatform()).name}`); if (app.classList.contains('searching') && $('#q').value.trim()) doSearch($('#q').value) });
 $('#platBtn').onclick = e => { e.stopPropagation(); const m = $('#platMenu'); closeMenus(m); renderPlatMenu(); m.classList.toggle('open') };
 
 /* accounts */
-async function refreshAccounts(){ if (!T) return; try { S.acc = await invoke('account_status') } catch(e){} renderPlatMenu(); if ($('#accMenu').classList.contains('open')) renderAccounts() }
+async function refreshAccounts(){ if (!T) return; const was = S.acc && S.acc.tiktok; try { S.acc = await invoke('account_status') } catch(e){} renderPlatMenu(); if ($('#accMenu').classList.contains('open')) renderAccounts()
+  if (TT.on){ renderTT(); if (S.acc && was !== undefined && was !== S.acc.tiktok && TT.mode === 'foryou') TT.feed('foryou') } }
 function openAccounts(){ openAppPop('acc') }
 function renderAccounts(){
   const a = S.acc || {};
@@ -2676,7 +2980,8 @@ function renderAccounts(){
     row('soundcloud', 'SoundCloud', a.soundcloud ? 'Signed in' : 'Sign in to use your SoundCloud Go+', a.soundcloud, a.soundcloud ? btn('logout', 'soundcloud', 'Sign out') : btn('login', 'soundcloud', 'Sign in', true)) +
     sp +
     row('apple', 'Apple Music', 'Plays in your Apple Music app / web', false, '') +
-    row('amazon', 'Amazon Music', 'Opens in Amazon Music', false, '');
+    row('amazon', 'Amazon Music', 'Opens in Amazon Music', false, '') +
+    row('tiktok', 'TikTok', a.tiktok ? 'Signed in · For You is yours' : 'Sign in for your own For You', a.tiktok, a.tiktok ? btn('logout', 'tiktok', 'Sign out') : btn('login', 'tiktok', 'Sign in', true));
 }
 $('#accMenu').addEventListener('click', async e => {
   const b = e.target.closest('[data-act]'); e.stopPropagation(); if (!b) return; e.preventDefault();
@@ -2996,7 +3301,7 @@ $('#moreBtn').onclick = e => { e.stopPropagation(); openAppPop() };
 $('#listBtn').onclick = () => { S.qOff = !S.qOff; applyToggles() };
 $('#dimBtn').onclick = () => { S.dim = !S.dim; applyToggles() };
 $('#mvBtn').onclick = toggleMV;
-const setVol = () => { YTA.vol(); SCW.vol(); LOC.vol(); applyToggles() };
+const setVol = () => { YTA.vol(); SCW.vol(); LOC.vol(); if (S.src === 'tt') TT.vol(); applyToggles() };
 const sysVol = () => !!T && S.src === 'system';
 async function renderVolPop(){
   const sys = sysVol(); let v = S.vol, m = S.muted;
@@ -3205,6 +3510,7 @@ document.addEventListener('keydown', e => {
   else if (e.key === ' '){ e.preventDefault(); togglePlay() }
   else if (e.key === '[' || e.key === ']'){ if (S.track){ setLyrOff('song', (S.lyrOff || 0) + (e.key === ']' ? .5 : -.5)); toast(`Lyrics ${S.lyrOff === 0 ? 'in sync' : (S.lyrOff > 0 ? S.lyrOff + 's earlier' : -S.lyrOff + 's later')}`) } }
   else if (e.key === 'ArrowRight') next(); else if (e.key === 'ArrowLeft') prev();
+  else if (TT.on && (e.key === 'ArrowUp' || e.key === 'ArrowDown')){ e.preventDefault(); TT.go(e.key === 'ArrowDown' ? 1 : -1) }
   else if (e.key === 'ArrowUp' || e.key === 'ArrowDown'){ e.preventDefault(); (async () => { let v = S.vol; if (sysVol()){ try { v = (await invoke('get_volume'))[0] } catch(err){} } setVolume(v + (e.key === 'ArrowUp' ? .05 : -.05)); toast(`Volume ${Math.round(clamp(v + (e.key === 'ArrowUp' ? .05 : -.05), 0, 1) * 100)}%`) })() }
   else if (e.key === 'Escape'){ if (app.classList.contains('editing')){ closeEditor(); return } closeMenus(); closeSearch() }
   else if (!e.ctrlKey && !e.metaKey && !e.altKey) runKey(e.key.toLowerCase());
@@ -3381,6 +3687,7 @@ async function boot(){
   }
   if (T){ try { PW.set(await invoke('get_power')) } catch(e){} listen('power-state', e => PW.set(e.payload || {})) }
   PW.prefs(); initUpdates();
+  if (!MIRROR && S.platform === 'tiktok') TT.enter(false);
   loopRaf = requestAnimationFrame(frame);
 }
 document.fonts && document.fonts.ready.then(() => { lastClock = ''; renderClock(); if (!T && DEMO.length){ const k = S.qIdx; buildDemo(); S.queue = DEMO; const t = DEMO[k]; S.track = t; applyArt(t.art); setLyrics(t.lyrics, t, 'demo'); renderQueue(); renderFlow(true) } });

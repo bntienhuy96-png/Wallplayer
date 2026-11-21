@@ -151,6 +151,24 @@ UPDATES (no installer)
 - The new Wallplayer.exe replaces the old one in the same folder (the old file is kept as
   Wallplayer.exe.old until the next start).
 
+TIKTOK
+- Choose TikTok with the platform button (left of the player bar). The middle of the screen becomes one
+  vertical video at a time, like the TikTok app: no playlist, the clock moves to the left.
+- Next / previous video: scroll the mouse wheel over the video, press ↓ / ↑, or use the ▲ ▼ buttons
+  (and ⏮ ⏭ on the player bar). Click the video to pause or play it.
+- Auto scroll (the button under ▼): on, the next video starts when one ends; off, each video loops.
+- Beside the video, like TikTok: ♥ Like, comments, Save (your TikTok Favorites) and Share (copies the
+  link). Like and Save use your TikTok account, so sign in to TikTok first; comments open on the right
+  (writing one opens the video on TikTok).
+- "For You" is your TikTok feed when you are signed in to TikTok (Settings → Accounts → TikTok),
+  TikTok's general feed when you are not. Type in the search field and press Enter to watch a search;
+  the For You button brings the feed back. "Up next" on the right shows the next three videos.
+- How it works: TikTok has no public feed for apps, so Wallplayer opens TikTok's own page out of sight
+  (with your TikTok session) to read the list of videos, and plays each video in TikTok's official embed
+  player. If TikTok asks for a check, press "Open TikTok", answer it, then "Done".
+- Pick another platform to leave TikTok. Wallplayer starts again on TikTok if that is where you left it
+  (paused until you press play).
+
 MUSIC IN TWO PLACES
 Wallplayer never pauses other apps, and music in another app (Spotify, a browser…) never stops or replaces
 the song playing in Wallplayer: both keep playing. When Wallplayer's song has stayed paused for a minute

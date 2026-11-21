@@ -12,6 +12,7 @@ mod mirror;
 mod net;
 mod power;
 mod settings;
+mod tiktok;
 mod update;
 mod volume;
 
@@ -380,6 +381,46 @@ async fn suggest(app: AppHandle, id: String) -> Result<Suggest, String> {
     Ok(Suggest { tracks, personal })
 }
 
+/// TikTok channel: open For You ("foryou") or a search ("search") in the off-screen TikTok page.
+#[tauri::command]
+async fn tiktok_feed(app: AppHandle, mode: String, query: String) -> Result<(), String> {
+    tiktok::feed(&app, &mode, &query)
+}
+
+/// The TikTok videos collected since the last call.
+#[tauri::command]
+async fn tiktok_take(app: AppHandle) -> Result<tiktok::Take, String> {
+    tiktok::take(&app).await
+}
+
+#[tauri::command]
+async fn tiktok_more(app: AppHandle) {
+    tiktok::more(&app)
+}
+
+#[tauri::command]
+async fn tiktok_stop(app: AppHandle) {
+    tiktok::stop(&app)
+}
+
+/// Like / save a TikTok video with your TikTok account (flips it).
+#[tauri::command]
+async fn tiktok_act(app: AppHandle, author: String, id: String, kind: String) -> Result<bool, String> {
+    tiktok::act(&app, &author, &id, &kind).await
+}
+
+/// The first comments under a TikTok video.
+#[tauri::command]
+async fn tiktok_comments(app: AppHandle, author: String, id: String) -> Result<Vec<tiktok::Comment>, String> {
+    tiktok::comments(&app, &author, &id).await
+}
+
+/// Show the TikTok page (to answer TikTok's check), or put it away.
+#[tauri::command]
+async fn tiktok_show(app: AppHandle, on: bool) {
+    tiktok::show(&app, on)
+}
+
 /// YouTube's Mix for one song ("Danh sách kết hợp"), or its next part when `cont` is given.
 #[derive(serde::Serialize)]
 struct Mix {
@@ -725,6 +766,13 @@ fn main() {
             collection_tracks,
             radio,
             mix,
+            tiktok_feed,
+            tiktok_take,
+            tiktok_more,
+            tiktok_stop,
+            tiktok_show,
+            tiktok_act,
+            tiktok_comments,
             account_status,
             account_login,
             account_logout,

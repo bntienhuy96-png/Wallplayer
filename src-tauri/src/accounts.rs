@@ -34,12 +34,14 @@ static SP_PENDING: Mutex<Option<(String, String, String)>> = Mutex::new(None);
 
 const YT_COOKIES: &[&str] = &["SAPISID", "__Secure-3PAPISID", "LOGIN_INFO", "__Secure-1PSID"];
 const SC_COOKIES: &[&str] = &["oauth_token"];
+const TT_COOKIES: &[&str] = &["sessionid", "sessionid_ss"];
 
 #[derive(Serialize, Clone)]
 pub struct Accounts {
     pub youtube: bool,
     pub soundcloud: bool,
     pub spotify: bool,
+    pub tiktok: bool,
     pub spotify_client_id: String,
     pub redirect_uri: String,
 }
@@ -93,6 +95,7 @@ pub fn yt_auth(app: &AppHandle) -> Option<(String, String)> {
 pub async fn status(app: &AppHandle) -> Accounts {
     let youtube = has_cookie(app, "https://www.youtube.com", YT_COOKIES);
     let soundcloud = has_cookie(app, "https://soundcloud.com", SC_COOKIES);
+    let tiktok = has_cookie(app, "https://www.tiktok.com", TT_COOKIES);
     let (cid, refresh) = {
         let st = app.state::<crate::AppState>();
         let s = st.settings.lock().unwrap();
@@ -102,6 +105,7 @@ pub async fn status(app: &AppHandle) -> Accounts {
         youtube,
         soundcloud,
         spotify: refresh,
+        tiktok,
         spotify_client_id: cid,
         redirect_uri: SP_REDIRECT.into(),
     }
@@ -174,6 +178,14 @@ pub async fn login(app: AppHandle, platform: String) -> Result<(), String> {
                 SC_COOKIES,
                 "SoundCloud",
             ),
+            "tiktok" => (
+                "login-tiktok",
+                "https://www.tiktok.com/login",
+                "Sign in — TikTok",
+                "https://www.tiktok.com",
+                TT_COOKIES,
+                "TikTok",
+            ),
             _ => return Err("unknown platform".into()),
         };
     crate::end_peek(&app);
@@ -220,6 +232,11 @@ pub async fn logout(app: AppHandle, platform: String) -> Result<(), String> {
         }
         "soundcloud" => {
             for u in ["https://soundcloud.com", "https://api-auth.soundcloud.com", "https://secure.soundcloud.com"] {
+                delete_cookies(&app, u);
+            }
+        }
+        "tiktok" => {
+            for u in ["https://www.tiktok.com", "https://tiktok.com", "https://www.tiktokv.com"] {
                 delete_cookies(&app, u);
             }
         }
