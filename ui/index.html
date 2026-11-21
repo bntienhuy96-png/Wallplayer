@@ -1487,14 +1487,6 @@ function filterSettings(){
   $('#appPop').querySelectorAll('.snsep').forEach(s => s.classList.toggle('hide', !!q));
   return first;
 }
-/* Settings behind the desktop icons (Wallpaper mode): while it is open the window comes to the front, like the
-   search field does, so the panel takes real mouse and keyboard input; closing it puts the skin back behind the icons. */
-const SETPEEK = {on: false};
-new MutationObserver(() => {
-  if (!T || MIRROR) return; const open = $('#appPop').classList.contains('open');
-  if (open && !SETPEEK.on && S.ui.wallpaper_mode && !S.ui.peek){ SETPEEK.on = true; invoke('peek', {on: true}).catch(() => { SETPEEK.on = false }) }
-  else if (!open && SETPEEK.on){ SETPEEK.on = false; invoke('peek', {on: false}).catch(() => {}) }
-}).observe($('#appPop'), {attributes: true, attributeFilter: ['class']});
 function openAppPop(tab){
   const m = $('#appPop');
   if (tab) S.setTab = tab; else if (m.classList.contains('open')){ m.classList.remove('open'); return }
@@ -2747,7 +2739,8 @@ async function settingsAct(a){
 }
 $('#appPop').addEventListener('click', e => {
   if (e.target.closest('.sclose')){ e.stopPropagation(); closeMenus(); return }
-  const nb = e.target.closest('[data-tab]'); if (nb){ e.stopPropagation(); if (S.binding) stopBinding(); S.setTab = nb.dataset.tab; renderAppPop(); return }
+  const nb = e.target.closest('.sn[data-tab]'); if (nb){   // only the list on the left (the panel body carries data-tab too)
+  e.stopPropagation(); if (S.binding) stopBinding(); S.setTab = nb.dataset.tab; renderAppPop(); return }
   const sa = e.target.closest('[data-sa]'); if (sa){ e.stopPropagation(); settingsAct(sa.dataset.sa); return }
   const ed = e.target.closest('[data-edit]'); if (ed){ e.stopPropagation(); closeMenus(); openEditor(ed.dataset.edit); return }
   if (e.target.closest('#bindBtn')){ e.stopPropagation(); S.binding ? stopBinding() : startBinding(); return }
@@ -2810,22 +2803,8 @@ function vmHover(x, y){
 }
 function vmRange(r, x){ const b = r.getBoundingClientRect(), f = clamp((x - b.left) / b.width, 0, 1), mn = +r.min || 0, mx = r.max === '' ? 100 : +r.max, st = +r.step || 0;
   let v = mn + f * (mx - mn); if (st) v = Math.round(v / st) * st; r.value = v; vmFire('input', r, x, 0); vmFire('change', r, x, 0) }
-/* TEMP debug: while Settings is open, a small log in the corner shows every click the page receives
-   (fwd = sent from the desktop by the mouse hook, real = Windows gave it to the window directly) */
-const DBG = {lines: [], el: null};
-const dbgEl = el => !el ? "nothing" : (el.id ? "#" + el.id : el.tagName.toLowerCase() + (el.className && typeof el.className === "string" ? "." + el.className.split(" ")[0] : "")) + (el.closest && el.closest("#appPop") ? " (in Settings)" : "");
-function dbgLog(s){
-  if (!DBG.el){ DBG.el = document.createElement("div"); DBG.el.style.cssText = "position:fixed;left:8px;top:8px;z-index:99999;pointer-events:none;font:12px/1.35 Consolas,monospace;color:#0f0;background:rgba(0,0,0,.82);padding:8px 10px;border-radius:8px;max-width:46vw;white-space:pre"; document.body.appendChild(DBG.el) }
-  const t = new Date().toLocaleTimeString(); DBG.lines.unshift(`${t} ${s}`); DBG.lines.length = Math.min(DBG.lines.length, 14);
-  DBG.el.textContent = `mode: ${S.ui.wallpaper_mode ? "behind icons" : "desktop"} · peek: ${S.ui.peek} · dpr ${window.devicePixelRatio} · ${innerWidth}x${innerHeight}\n` + DBG.lines.join("\n"); DBG.el.style.display = "";
-}
-for (const t of ["pointerdown", "click"]) document.addEventListener(t, e => dbgLog(`${e.isTrusted ? "real" : "fwd-event"} ${t} ${Math.round(e.clientX)},${Math.round(e.clientY)} → ${dbgEl(e.target)}`), true);
-{ let was = false; new MutationObserver(() => { const o = $("#appPop").classList.contains("open"); if (o !== was){ was = o; dbgLog(o ? "Settings OPENED" : "Settings CLOSED") } }).observe($("#appPop"), {attributes: true, attributeFilter: ["class"]}) }
-for (const t of ["pointerup"]) document.addEventListener(t, e => dbgLog(`${e.isTrusted ? "real" : "fwd-event"} ${t} → ${dbgEl(e.target)}`), true);
-addEventListener("blur", () => dbgLog("window lost focus")); addEventListener("focus", () => dbgLog("window got focus"));
 function deskMouse(m){
   const k = m.k, d = window.devicePixelRatio || 1, x = m.x / d, y = m.y / d;
-  if (k !== 'move') dbgLog(`fwd ${k} ${Math.round(x)},${Math.round(y)} → ${dbgEl(document.elementFromPoint(x, y))}`);
   if (k === 'leave'){ vmHover(-1, -1); return }
   if (k === 'move'){ const el = vmHover(x, y); if (VM.down && VM.down.type === 'range') vmRange(VM.down, x);
     vmFire('pointermove', VM.down || el || document.body, x, y); vmFire('mousemove', VM.down || el || document.body, x, y); return }
@@ -3367,8 +3346,8 @@ async function boot(){
     listen('bind-captured', e => { if (S.binding) applySearchKey(e.payload) });
     invoke('get_search_key').then(k => { S.searchKey = k; if ($('#appPop').classList.contains('open')) renderAppPop() }).catch(() => {});
     listen('desk-mouse', e => deskMouse(e.payload));
-    listen('peek-ended', () => { app.classList.remove('searching'); if (SETPEEK.on){ SETPEEK.on = false; $('#appPop').classList.remove('open') } });
-    listen('mode-changed', e => { S.ui = e.payload; dbgLog('mode-changed: peek=' + e.payload.peek + ' behind=' + e.payload.wallpaper_mode) });
+    listen('peek-ended', () => app.classList.remove('searching'));
+    listen('mode-changed', e => { S.ui = e.payload });
     listen('accounts-changed', () => refreshAccounts());
     listen('monitor-changed', () => loadMonitors());
     listen('toast', e => toast(e.payload));
