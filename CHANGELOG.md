@@ -3,6 +3,11 @@
 Each section is the release notes of one version. The release workflow publishes
 the section that matches the version in `src-tauri/Cargo.toml`.
 
+## 1.0.4
+
+### Fixed
+- Playlist: the left edge of the highlighted song (and of the song you point at) was cut off; the rounded highlight now shows whole.
+
 ## 1.0.3
 
 ### New

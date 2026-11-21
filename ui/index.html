@@ -186,7 +186,8 @@ img{display:block}
 .qbtn:hover{background:rgba(255,255,255,.16)}
 .qbtn.spin{transform:rotate(360deg)}
 .qbtn .ico{width:1.3rem;height:1.3rem}
-#qlist{list-style:none;height:calc(100% - 6rem);overflow-y:auto;padding-right:1.4rem;border-right:1px solid rgba(255,255,255,.28);scrollbar-width:none;
+#qlist{list-style:none;height:calc(100% - 6rem);overflow-y:auto;padding-right:1.4rem;padding-left:.8rem;margin-left:-.8rem;   /* room for the rows' rounded highlight, which reaches .7rem past the text */
+  border-right:1px solid rgba(255,255,255,.28);scrollbar-width:none;
   -webkit-mask-image:linear-gradient(to bottom,#000 78%,transparent);mask-image:linear-gradient(to bottom,#000 78%,transparent);transition:opacity .3s}
 #qlist::-webkit-scrollbar{display:none}
 #queue.collapsed #qlist{opacity:0;pointer-events:none}
