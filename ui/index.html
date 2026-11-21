@@ -2815,13 +2815,14 @@ function vmRange(r, x){ const b = r.getBoundingClientRect(), f = clamp((x - b.le
 const DBG = {lines: [], el: null};
 const dbgEl = el => !el ? "nothing" : (el.id ? "#" + el.id : el.tagName.toLowerCase() + (el.className && typeof el.className === "string" ? "." + el.className.split(" ")[0] : "")) + (el.closest && el.closest("#appPop") ? " (in Settings)" : "");
 function dbgLog(s){
-  if (!$("#appPop").classList.contains("open")) return;
   if (!DBG.el){ DBG.el = document.createElement("div"); DBG.el.style.cssText = "position:fixed;left:8px;top:8px;z-index:99999;pointer-events:none;font:12px/1.35 Consolas,monospace;color:#0f0;background:rgba(0,0,0,.82);padding:8px 10px;border-radius:8px;max-width:46vw;white-space:pre"; document.body.appendChild(DBG.el) }
   const t = new Date().toLocaleTimeString(); DBG.lines.unshift(`${t} ${s}`); DBG.lines.length = Math.min(DBG.lines.length, 14);
   DBG.el.textContent = `mode: ${S.ui.wallpaper_mode ? "behind icons" : "desktop"} · peek: ${S.ui.peek} · dpr ${window.devicePixelRatio} · ${innerWidth}x${innerHeight}\n` + DBG.lines.join("\n"); DBG.el.style.display = "";
 }
 for (const t of ["pointerdown", "click"]) document.addEventListener(t, e => dbgLog(`${e.isTrusted ? "real" : "fwd-event"} ${t} ${Math.round(e.clientX)},${Math.round(e.clientY)} → ${dbgEl(e.target)}`), true);
-new MutationObserver(() => { if (DBG.el && !$("#appPop").classList.contains("open")) DBG.el.style.display = "none"; else dbgLog("Settings opened") }).observe($("#appPop"), {attributes: true, attributeFilter: ["class"]});
+{ let was = false; new MutationObserver(() => { const o = $("#appPop").classList.contains("open"); if (o !== was){ was = o; dbgLog(o ? "Settings OPENED" : "Settings CLOSED") } }).observe($("#appPop"), {attributes: true, attributeFilter: ["class"]}) }
+for (const t of ["pointerup"]) document.addEventListener(t, e => dbgLog(`${e.isTrusted ? "real" : "fwd-event"} ${t} → ${dbgEl(e.target)}`), true);
+addEventListener("blur", () => dbgLog("window lost focus")); addEventListener("focus", () => dbgLog("window got focus"));
 function deskMouse(m){
   const k = m.k, d = window.devicePixelRatio || 1, x = m.x / d, y = m.y / d;
   if (k !== 'move') dbgLog(`fwd ${k} ${Math.round(x)},${Math.round(y)} → ${dbgEl(document.elementFromPoint(x, y))}`);
@@ -3367,7 +3368,7 @@ async function boot(){
     invoke('get_search_key').then(k => { S.searchKey = k; if ($('#appPop').classList.contains('open')) renderAppPop() }).catch(() => {});
     listen('desk-mouse', e => deskMouse(e.payload));
     listen('peek-ended', () => { app.classList.remove('searching'); if (SETPEEK.on){ SETPEEK.on = false; $('#appPop').classList.remove('open') } });
-    listen('mode-changed', e => { S.ui = e.payload });
+    listen('mode-changed', e => { S.ui = e.payload; dbgLog('mode-changed: peek=' + e.payload.peek + ' behind=' + e.payload.wallpaper_mode) });
     listen('accounts-changed', () => refreshAccounts());
     listen('monitor-changed', () => loadMonitors());
     listen('toast', e => toast(e.payload));
