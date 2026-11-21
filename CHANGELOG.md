@@ -7,6 +7,7 @@ the section that matches the version in `src-tauri/Cargo.toml`.
 
 ### Fixed
 - Wallplayer seemed to quit by itself after a while: when the Microsoft Edge WebView2 engine behind the skin stopped, the screen went back to the plain wallpaper while Wallplayer stayed in the tray with nothing to show. Wallplayer now starts itself again when that happens (at most 3 times in 10 minutes), and reloads a page whose process stops or hangs. What happened is written to `wallplayer.log` in `%LOCALAPPDATA%\com.tan.wallplayer`.
+- The cause on one PC: signing in to YouTube. When the sign-in finished, Wallplayer closed the sign-in window while its page was still busy, and the WebView2 engine (shared by every Wallplayer window) crashed. Sign-in windows (YouTube, SoundCloud, Spotify) and the windows of other displays are now hidden and reused instead of closed, and Alt+F4 no longer closes the skin.
 
 ## 1.0.5
 

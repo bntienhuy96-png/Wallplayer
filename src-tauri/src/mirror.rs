@@ -32,21 +32,35 @@ pub fn sync(app: &AppHandle) {
         };
         let wanted_labels: Vec<String> = wanted.iter().map(|m| label_for(&m.id)).collect();
 
-        // close mirrors that are no longer needed
+        // put away mirrors that are no longer needed: hidden and emptied, not destroyed (tearing a
+        // window down can crash the WebView2 engine all Wallplayer windows share); reused if the
+        // display comes back
         for (label, w) in app.webview_windows() {
             if label.starts_with("mirror-") && !wanted_labels.contains(&label) {
                 if let Ok(h) = w.hwnd() {
                     desktop::remove_mirror(h.0 as isize);
                 }
-                let _ = w.destroy();
+                let _ = w.hide();
+                if let Ok(u) = tauri::Url::parse("about:blank") {
+                    let _ = w.navigate(u);
+                }
             }
         }
+        let page = app.get_webview_window("main").and_then(|m| m.url().ok());
 
         // open the missing ones
         for m in wanted {
             let label = label_for(&m.id);
             let win = match app.get_webview_window(&label) {
-                Some(w) => w,
+                Some(w) => {
+                    // put away earlier: load the skin again
+                    if w.url().map(|u| u.as_str() == "about:blank").unwrap_or(false) {
+                        if let Some(p) = page.clone() {
+                            let _ = w.navigate(p);
+                        }
+                    }
+                    w
+                }
                 None => match WebviewWindowBuilder::new(&app, &label, WebviewUrl::App("index.html".into()))
                     .initialization_script("window.__WP_MIRROR__ = true;")
                     .title("Wallplayer")

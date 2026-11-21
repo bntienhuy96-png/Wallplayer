@@ -18,7 +18,7 @@ use rand::Rng;
 use serde::Serialize;
 use serde_json::{json, Value};
 use sha2::{Digest, Sha256};
-use tauri::{AppHandle, Emitter, Manager, Url, WebviewUrl, WebviewWindowBuilder};
+use tauri::{AppHandle, Emitter, Manager, Url, WebviewUrl, WebviewWindow, WebviewWindowBuilder, WindowEvent};
 
 use crate::net::{client, Collection, Track};
 
@@ -107,21 +107,51 @@ pub async fn status(app: &AppHandle) -> Accounts {
     }
 }
 
+/// Put a sign-in window away without closing it. All Wallplayer windows share one WebView2 engine, and
+/// closing a window while its page is still busy (sign-in redirects, the password bubble) can crash that
+/// engine: the whole skin then goes blank. So the window is hidden and emptied, and the next sign-in
+/// uses it again.
+fn retire(w: &WebviewWindow) {
+    let _ = w.hide();
+    if let Ok(u) = Url::parse("about:blank") {
+        let _ = w.navigate(u);
+    }
+}
+
+/// The ✕ of a sign-in window hides it too.
+fn keep_on_close(w: &WebviewWindow) {
+    let w2 = w.clone();
+    w.on_window_event(move |e| {
+        if let WindowEvent::CloseRequested { api, .. } = e {
+            api.prevent_close();
+            retire(&w2);
+        }
+    });
+}
+
+/// Show a sign-in window on `url`: the one kept from last time, or a new one.
+fn show_again(win: &WebviewWindow, url: &str) -> Result<(), String> {
+    win.navigate(Url::parse(url).map_err(|e| e.to_string())?).map_err(|e| e.to_string())?;
+    let _ = win.center();
+    let _ = win.show();
+    let _ = win.set_focus();
+    Ok(())
+}
+
 fn browser_window(app: &AppHandle, label: &str, url: &str, title: &str, w: f64, h: f64) -> Result<(), String> {
     if let Some(win) = app.get_webview_window(label) {
-        let _ = win.show();
-        let _ = win.set_focus();
-        return Ok(());
+        return show_again(&win, url);
     }
-    WebviewWindowBuilder::new(app, label, WebviewUrl::External(Url::parse(url).map_err(|e| e.to_string())?))
+    let win = WebviewWindowBuilder::new(app, label, WebviewUrl::External(Url::parse(url).map_err(|e| e.to_string())?))
         .title(title)
         .inner_size(w, h)
         .center()
         .user_agent(UA)
         .additional_browser_args(BROWSER_ARGS)
         .build()
-        .map(|_| ())
-        .map_err(|e| e.to_string())
+        .map_err(|e| e.to_string())?;
+    keep_on_close(&win);
+    Ok(())
 }
 
 /// Open the sign-in page; closes itself as soon as the session cookie appears.
@@ -156,13 +186,15 @@ pub async fn login(app: AppHandle, platform: String) -> Result<(), String> {
         // give the page a moment so an existing session isn't mistaken for a fresh one
         tokio::time::sleep(Duration::from_millis(2500)).await;
         for _ in 0..480 {
-            if app2.get_webview_window(&label).is_none() {
-                break;
+            // put away (or closed by you): stop watching
+            match app2.get_webview_window(&label) {
+                Some(w) if w.is_visible().unwrap_or(false) => {}
+                _ => break,
             }
             if has_cookie(&app2, &check_url, names) {
                 tokio::time::sleep(Duration::from_millis(1500)).await;
                 if let Some(w) = app2.get_webview_window(&label) {
-                    let _ = w.close();
+                    retire(&w);
                 }
                 let _ = app2.emit("toast", format!("Signed in to {nice}"));
                 break;
@@ -231,11 +263,10 @@ pub async fn spotify_connect(app: AppHandle, client_id: String) -> Result<(), St
     );
     crate::end_peek(&app);
     if let Some(w) = app.get_webview_window("login-spotify") {
-        let _ = w.close();
-        tokio::time::sleep(Duration::from_millis(300)).await;
+        return show_again(&w, &url);   // its redirect watcher reads the new login from SP_PENDING
     }
     let app2 = app.clone();
-    WebviewWindowBuilder::new(&app, "login-spotify", WebviewUrl::External(Url::parse(&url).map_err(|e| e.to_string())?))
+    let win = WebviewWindowBuilder::new(&app, "login-spotify", WebviewUrl::External(Url::parse(&url).map_err(|e| e.to_string())?))
         .title("Connect Spotify")
         .inner_size(520.0, 780.0)
         .center()
@@ -248,7 +279,7 @@ pub async fn spotify_connect(app: AppHandle, client_id: String) -> Result<(), St
                 tauri::async_runtime::spawn(async move {
                     let r = finish(&app3, q).await;
                     if let Some(w) = app3.get_webview_window("login-spotify") {
-                        let _ = w.close();
+                        retire(&w);
                     }
                     let _ = app3.emit(
                         "toast",
@@ -265,6 +296,7 @@ pub async fn spotify_connect(app: AppHandle, client_id: String) -> Result<(), St
         })
         .build()
         .map_err(|e| e.to_string())?;
+    keep_on_close(&win);
     Ok(())
 }
 

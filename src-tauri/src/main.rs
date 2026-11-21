@@ -772,6 +772,11 @@ fn main() {
             // leave peek when focus goes elsewhere
             let h2 = handle.clone();
             win.on_window_event(move |e| {
+                // Alt+F4 while the skin is in front must not tear it down (quit from the tray)
+                if let WindowEvent::CloseRequested { api, .. } = e {
+                    api.prevent_close();
+                    return;
+                }
                 if let WindowEvent::Focused(false) = e {
                     if *h2.state::<AppState>().peek.lock().unwrap() {
                         set_peek(&h2, false);
