@@ -1487,6 +1487,14 @@ function filterSettings(){
   $('#appPop').querySelectorAll('.snsep').forEach(s => s.classList.toggle('hide', !!q));
   return first;
 }
+/* Settings behind the desktop icons (Wallpaper mode): while it is open the window comes to the front, like the
+   search field does, so the panel takes real mouse and keyboard input; closing it puts the skin back behind the icons. */
+const SETPEEK = {on: false};
+new MutationObserver(() => {
+  if (!T || MIRROR) return; const open = $('#appPop').classList.contains('open');
+  if (open && !SETPEEK.on && S.ui.wallpaper_mode && !S.ui.peek){ SETPEEK.on = true; invoke('peek', {on: true}).catch(() => { SETPEEK.on = false }) }
+  else if (!open && SETPEEK.on){ SETPEEK.on = false; invoke('peek', {on: false}).catch(() => {}) }
+}).observe($('#appPop'), {attributes: true, attributeFilter: ['class']});
 function openAppPop(tab){
   const m = $('#appPop');
   if (tab) S.setTab = tab; else if (m.classList.contains('open')){ m.classList.remove('open'); return }
@@ -3345,7 +3353,7 @@ async function boot(){
     listen('bind-captured', e => { if (S.binding) applySearchKey(e.payload) });
     invoke('get_search_key').then(k => { S.searchKey = k; if ($('#appPop').classList.contains('open')) renderAppPop() }).catch(() => {});
     listen('desk-mouse', e => deskMouse(e.payload));
-    listen('peek-ended', () => app.classList.remove('searching'));
+    listen('peek-ended', () => { app.classList.remove('searching'); if (SETPEEK.on){ SETPEEK.on = false; $('#appPop').classList.remove('open') } });
     listen('mode-changed', e => { S.ui = e.payload });
     listen('accounts-changed', () => refreshAccounts());
     listen('monitor-changed', () => loadMonitors());
