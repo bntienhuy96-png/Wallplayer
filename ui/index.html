@@ -676,13 +676,14 @@ button.bgv:hover{background:rgba(255,255,255,.08)}
 .rcta span{flex:1}
 #sIco .pi{width:1.8rem;height:1.8rem}
 /* ── TikTok channel: one vertical video at a time, no playlist ── */
-#ttStage{display:none;position:absolute;inset:0;z-index:5;pointer-events:none}
+#ttStage{--tt-top:2.6rem;--tt-h:73rem;--tt-w:calc(var(--tt-h) * 9 / 16);display:none;position:absolute;inset:0;z-index:5;pointer-events:none}
+#app.tt #dock{top:auto;bottom:2.2rem}
 #app.tt #ttStage{display:block}
 #app.tt #flowWrap,#app.tt #queue,#app.tt #lyrics,#app.tt #lyrics2,#app.tt #results,#app.tt #musicPop{display:none!important}
 #app.tt #likeBtn,#app.tt #lyrBtn,#app.tt #eyeBtn,#app.tt #listBtn,#app.tt #mvBtn,#app.tt #repBtn{display:none}
-#app.tt #clock{left:20%;top:47%;transform:translate(-50%,-50%) scale(.8)}
+#app.tt #clock{left:19%;top:44%;transform:translate(-50%,-50%) scale(.8)}
 #app.bare #ttStage{opacity:0;pointer-events:none}
-#ttCard{--cw:max(32.06rem,330px);position:absolute;left:50%;top:4.2rem;width:var(--cw);height:calc(var(--cw) * 16 / 9);transform:translateX(-50%);border-radius:1.8rem;overflow:hidden;background:#000;pointer-events:auto;
+#ttCard{position:absolute;left:50%;top:var(--tt-top);width:var(--tt-w);height:var(--tt-h);transform:translateX(-50%);border-radius:1.8rem;overflow:hidden;background:#000;pointer-events:auto;
   box-shadow:0 2.6rem 5rem rgba(0,0,0,.5),0 0 0 1px rgba(255,255,255,.12)}
 #ttFrame,#ttFrame iframe,#ttCover,#ttHit{position:absolute;inset:0;width:100%;height:100%;border:0}
 #ttFrame iframe{pointer-events:none;background:#000}
@@ -702,7 +703,7 @@ button.bgv:hover{background:rgba(255,255,255,.08)}
 #ttMsg .spin{width:2.6rem;height:2.6rem;border-radius:50%;border:.28rem solid rgba(255,255,255,.2);border-top-color:#fff;animation:ttspin .9s linear infinite}
 @keyframes ttspin{to{transform:rotate(360deg)}}
 #ttMsg .row{display:flex;gap:.6rem;flex-wrap:wrap;justify-content:center}
-#ttRail{position:absolute;left:calc(50% + max(16.03rem,165px) + 1.6rem);top:4.2rem;height:max(57rem,587px);display:flex;flex-direction:column;justify-content:space-between;align-items:center;pointer-events:auto}
+#ttRail{position:absolute;left:calc(50% + var(--tt-w) / 2 + 1.6rem);top:var(--tt-top);height:var(--tt-h);display:flex;flex-direction:column;justify-content:space-between;align-items:center;pointer-events:auto}
 #ttNav,#ttActs{display:flex;flex-direction:column;align-items:center;gap:1rem}
 #ttActs{gap:1.3rem}
 .tta2{display:flex;flex-direction:column;align-items:center;gap:.35rem;color:#fff;font:700 1.05rem Inter,system-ui,sans-serif}
@@ -725,7 +726,7 @@ button.bgv:hover{background:rgba(255,255,255,.08)}
 .ttnav.ttauto.on{background:rgba(255,255,255,.92);border-color:transparent}
 .ttnav.ttauto.on svg{stroke:#111}
 .ttlab{width:4.2rem;margin-top:-.45rem;text-align:center;font:700 .92rem/1.15 Inter,system-ui,sans-serif;color:#fff;opacity:.62}
-#ttSide{position:absolute;left:calc(50% + max(16.03rem,165px) + 8rem);top:4.2rem;height:max(57rem,587px);width:31rem;display:flex;flex-direction:column;gap:2.2rem;pointer-events:auto;color:#fff}
+#ttSide{position:absolute;left:calc(50% + var(--tt-w) / 2 + 8rem);top:var(--tt-top);height:var(--tt-h);width:31rem;display:flex;flex-direction:column;gap:2.2rem;pointer-events:auto;color:#fff}
 #ttTabs{display:flex;gap:.6rem;flex-wrap:wrap}
 .ttt{height:3.2rem;padding:0 1.35rem;border-radius:1.6rem;display:flex;align-items:center;gap:.5rem;max-width:100%;background:rgba(14,15,20,.38);backdrop-filter:blur(18px);border:1px solid rgba(255,255,255,.1);
   color:rgba(255,255,255,.72);font:700 1.22rem Inter,system-ui,sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:background .2s,color .2s}
