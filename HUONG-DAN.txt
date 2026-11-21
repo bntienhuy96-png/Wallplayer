@@ -162,7 +162,8 @@ CẬP NHẬT (không cần file cài)
 
 TIKTOK
 - Chọn TikTok ở nút nền tảng (bên trái thanh phát nhạc). Giữa màn hình thành một video dọc, từng video một như
-  app TikTok: không có playlist, đồng hồ dời sang bên trái.
+  app TikTok: không có playlist, đồng hồ dời sang bên trái, nền là chính video đó làm mờ, lan ra toàn màn hình
+  (khi tiết kiệm pin thì là ảnh tĩnh).
 - Qua video sau / trước: lăn chuột trên video, phím ↓ / ↑, hoặc nút ▲ ▼ (và ⏮ ⏭ trên thanh phát).
   Bấm vào video để dừng / phát.
 - Tự cuộn (nút dưới ▼): bật thì hết video tự sang video tiếp theo; tắt thì mỗi video phát lặp lại.

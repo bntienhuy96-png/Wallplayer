@@ -153,7 +153,8 @@ UPDATES (no installer)
 
 TIKTOK
 - Choose TikTok with the platform button (left of the player bar). The middle of the screen becomes one
-  vertical video at a time, like the TikTok app: no playlist, the clock moves to the left.
+  vertical video at a time, like the TikTok app: no playlist, the clock moves to the left, and the
+  video, blurred, lights the whole screen behind it (a still picture on battery saver).
 - Next / previous video: scroll the mouse wheel over the video, press ↓ / ↑, or use the ▲ ▼ buttons
   (and ⏮ ⏭ on the player bar). Click the video to pause or play it.
 - Auto scroll (the button under ▼): on, the next video starts when one ends; off, each video loops.

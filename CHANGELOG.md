@@ -3,6 +3,12 @@
 Each section is the release notes of one version. The release workflow publishes
 the section that matches the version in `src-tauri/Cargo.toml`.
 
+## 1.0.8
+
+### Changed
+- TikTok: the video is a moderate size again, centred in the space above the player, and the search field and player bar sit just above the Windows taskbar instead of under it.
+- TikTok: the background is the video itself — a muted, blurred, enlarged copy fills the whole screen and glows out from the frame, like YouTube's ambient mode (a still blurred cover on battery saver).
+
 ## 1.0.7
 
 ### New

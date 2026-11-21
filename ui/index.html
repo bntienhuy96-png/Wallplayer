@@ -676,8 +676,14 @@ button.bgv:hover{background:rgba(255,255,255,.08)}
 .rcta span{flex:1}
 #sIco .pi{width:1.8rem;height:1.8rem}
 /* ── TikTok channel: one vertical video at a time, no playlist ── */
-#ttStage{--tt-top:2.6rem;--tt-h:73rem;--tt-w:calc(var(--tt-h) * 9 / 16);display:none;position:absolute;inset:0;z-index:5;pointer-events:none}
-#app.tt #dock{top:auto;bottom:2.2rem}
+#ttStage{--tt-room:calc(100vh - var(--tb, 48px) - 12rem);--tt-h:min(64rem, calc(var(--tt-room) - 6rem));--tt-top:calc((var(--tt-room) - var(--tt-h)) / 2);--tt-w:calc(var(--tt-h) * 9 / 16);display:none;position:absolute;inset:0;z-index:5;pointer-events:none}
+#app.tt #dock{top:auto;bottom:calc(var(--tb, 48px) + 1.4rem)}
+/* the video, blurred, lights the whole screen from the frame outwards */
+#ttAmb{display:none;overflow:hidden;pointer-events:none;-webkit-mask-image:radial-gradient(ellipse 62% 78% at 50% 44%,#000 30%,rgba(0,0,0,.4) 100%);mask-image:radial-gradient(ellipse 62% 78% at 50% 44%,#000 30%,rgba(0,0,0,.4) 100%)}
+#app.tt #ttAmb{display:block}
+#ttAmbFrame{position:absolute;left:50%;top:50%;width:330px;height:587px;transform:translate(-50%,-50%) scale(var(--amb-s, 5));filter:blur(10px) saturate(1.6) brightness(.78);opacity:0;transition:opacity 1.2s}
+#ttAmb.on #ttAmbFrame{opacity:1}
+#ttAmbFrame iframe{width:100%;height:100%;border:0;pointer-events:none;background:transparent}
 #app.tt #ttStage{display:block}
 #app.tt #flowWrap,#app.tt #queue,#app.tt #lyrics,#app.tt #lyrics2,#app.tt #results,#app.tt #musicPop{display:none!important}
 #app.tt #likeBtn,#app.tt #lyrBtn,#app.tt #eyeBtn,#app.tt #listBtn,#app.tt #mvBtn,#app.tt #repBtn{display:none}
@@ -784,6 +790,7 @@ button.bgv:hover{background:rgba(255,255,255,.08)}
     <img id="customImg" class="wl custom" alt="">
     <video id="customVid" class="wl custom" muted loop playsinline autoplay></video>
     <div id="ytWrap"><div id="ytHost"></div></div>
+    <div id="ttAmb" class="wl"><div id="ttAmbFrame"></div></div>
     <div class="wl shade"></div>
   </div>
   <div id="ambient"><i class="amb top"></i><i class="amb bottom"></i><i class="amb left"></i><i class="amb right"></i></div>
@@ -2072,7 +2079,7 @@ function stopInternal(){ YTA.stop(); SCW.stop(); LOC.stop(); app.classList.remov
 // each video plays in TikTok's official embed player. Scroll / ↑ ↓ for the next one, like the app.
 const TT = {
   on: false, list: [], i: -1, mode: 'foryou', q: '', pos: 0, dur: 0, playing: false, started: false, ready: false, auto: true,
-  frame: null, poll: 0, taking: false, asked: 0, more: true, errs: 0, wheelAt: 0, wd: 0, slow: 0, busy: {},
+  frame: null, bg: null, bgPos: 0, bgSync: 0, poll: 0, taking: false, asked: 0, more: true, errs: 0, wheelAt: 0, wd: 0, slow: 0, busy: {},
   src(id){ return `https://www.tiktok.com/player/v1/${id}?autoplay=${this.auto ? 1 : 0}&loop=0&controls=0&progress_bar=0&play_button=0&volume_control=0&fullscreen_button=0&timestamp=0&music_info=0&description=0&rel=0&native_context_menu=0&closed_caption=0` },
   enter(auto = true){
     if (this.on || MIRROR) return; this.on = true; this.auto = auto; app.classList.add('tt');
@@ -2115,6 +2122,7 @@ const TT = {
     const host = $('#ttFrame'); host.innerHTML = ''; this.frame = null;
     if (T){ const f = document.createElement('iframe'); f.allow = 'autoplay; encrypted-media; fullscreen; picture-in-picture'; f.title = 'TikTok'; f.src = this.src(c.id); host.appendChild(f); this.frame = f }
     else { this.ready = true; this.started = this.playing = this.auto }   // browser demo: covers only
+    this.ambient(c);
     this.msg('');
     setTrack({id: c.id, title: (c.desc || '').split('\n')[0].replace(/\s+/g, ' ').trim() || c.nick || ('@' + c.author), artist: '@' + c.author, album: c.music ? '♪ ' + c.music : '',
       art: c.cover, url: `https://www.tiktok.com/@${c.author}/video/${c.id}`, duration: c.duration, source: 'tiktok', play: c.id});
@@ -2129,26 +2137,43 @@ const TT = {
     this.errs = 0; this.show(j, d < 0);
   },
   send(type, value = null){ try { this.frame && this.frame.contentWindow.postMessage({type, value, 'x-tiktok-player': true}, '*') } catch(e){} },
+  sendBg(type, value = null){ try { this.bg && this.bg.contentWindow.postMessage({type, value, 'x-tiktok-player': true}, '*') } catch(e){} },
+  // a second, muted copy of the video, blurred and enlarged behind everything (not on battery saver)
+  ambient(c){
+    const host = $('#ttAmbFrame'), amb = $('#ttAmb'); host.innerHTML = ''; this.bg = null; this.bgPos = 0; amb.classList.remove('on');
+    if (!T || !c || PW.low()) return;
+    const f = document.createElement('iframe'); f.allow = 'autoplay; encrypted-media'; f.tabIndex = -1; f.setAttribute('aria-hidden', 'true');
+    f.src = this.src(c.id).replace('loop=0', 'loop=1') + '&force_muted=1'; host.appendChild(f); this.bg = f; ambScale();
+  },
   toggle(){
     this.auto = true;
     if (!T){ this.playing = !this.playing; this.started = true; this.state(); return }
     if (this.playing) this.send('pause'); else { this.vol(); this.send('play') }
   },
-  seek(sec){ this.send('seekTo', Math.max(0, sec)); this.pos = Math.max(0, sec) },
+  seek(sec){ this.send('seekTo', Math.max(0, sec)); this.sendBg('seekTo', Math.max(0, sec)); this.pos = Math.max(0, sec) },
   vol(){ this.send(S.muted ? 'mute' : 'unMute') },
-  unload(){ const h = $('#ttFrame'); if (h) h.innerHTML = ''; this.frame = null; this.playing = false; this.ready = false },
+  unload(){ const h = $('#ttFrame'); if (h) h.innerHTML = ''; this.frame = null; this.playing = false; this.ready = false;
+    const a = $('#ttAmbFrame'); if (a) a.innerHTML = ''; this.bg = null; const am = $('#ttAmb'); if (am) am.classList.remove('on') },
   state(){ const card = $('#ttCard'); card.classList.toggle('cover', !this.started || !T); card.classList.toggle('paused', this.ready && !this.playing); renderPlay() },
   onMsg(e){
-    if (!this.frame || e.source !== this.frame.contentWindow) return;
+    const bg = this.bg && e.source === this.bg.contentWindow;
+    if (!bg && (!this.frame || e.source !== this.frame.contentWindow)) return;
     let d = e.data; if (typeof d === 'string'){ try { d = JSON.parse(d) } catch(x){ return } }
     if (!d || typeof d.type !== 'string') return;
+    if (bg){   // the blurred copy follows the real one
+      if (d.type === 'onPlayerReady'){ this.sendBg('mute'); if (this.playing) this.sendBg('play') }
+      else if (d.type === 'onStateChange' && d.value === 1){ $('#ttAmb').classList.add('on'); if (!this.playing && this.ready) this.sendBg('pause') }
+      else if (d.type === 'onCurrentTime' && d.value) this.bgPos = +d.value.currentTime || 0;
+      return;
+    }
     if (d.type === 'onPlayerReady'){ this.ready = true; clearTimeout(this.wd); if (this.auto){ this.vol(); this.send('play') } this.state() }
     else if (d.type === 'onStateChange'){
       this.ready = true; clearTimeout(this.wd);
-      if (d.value === 1){ this.playing = true; this.started = true; this.errs = 0; this.vol() } else if (d.value === 2 || d.value === 0) this.playing = false;
+      if (d.value === 1){ this.playing = true; this.started = true; this.errs = 0; this.vol(); this.sendBg('play') } else if (d.value === 2 || d.value === 0){ this.playing = false; if (d.value === 2) this.sendBg('pause') }
       this.state(); if (d.value === 0) this.ended();
     }
-    else if (d.type === 'onCurrentTime' && d.value){ this.pos = +d.value.currentTime || 0; this.dur = +d.value.duration || this.dur }
+    else if (d.type === 'onCurrentTime' && d.value){ this.pos = +d.value.currentTime || 0; this.dur = +d.value.duration || this.dur;
+      if (this.bg && Math.abs(this.bgPos - this.pos) > .8 && Date.now() - this.bgSync > 3000){ this.bgSync = Date.now(); this.sendBg('seekTo', this.pos) } }
     else if (d.type === 'onPlayerError'){ clearTimeout(this.wd); const c = this.list[this.i]; setTimeout(() => { if (this.list[this.i] === c) this.failed(c) }, 700) }
   },
   // Auto scroll (the button under ↓): the next video when one ends; off, each video loops like in the app
@@ -2169,6 +2194,12 @@ const TT = {
   }
 };
 addEventListener('message', e => TT.onMsg(e));
+// the blurred copy covers the whole screen
+function ambScale(){ app.style.setProperty('--amb-s', (Math.max(innerWidth / 330, innerHeight / 587) * 1.12).toFixed(3)) }
+// keep the search field and the player bar above the Windows taskbar (TikTok puts them at the bottom)
+function taskbarGap(){ const sc = window.screen || {}; const tb = (sc.height || 0) - (sc.availTop || 0) - (sc.availHeight || 0);
+  app.style.setProperty('--tb', Math.round(clamp(tb > 0 ? tb : 48, 48, 160)) + 'px') }
+addEventListener('resize', () => { ambScale(); taskbarGap() }); ambScale(); taskbarGap();
 const ttN = n => { try { return new Intl.NumberFormat('en', {notation: 'compact', maximumFractionDigits: 1}).format(n || 0) } catch(e){ return String(n || 0) } };
 const TTI = {
   note: '<svg viewBox="0 0 24 24"><path d="M9 18V6l10-2v12"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="16.5" cy="16" r="2.5"/></svg>',
