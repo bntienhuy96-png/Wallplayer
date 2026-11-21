@@ -175,9 +175,12 @@ QUYỀN RIÊNG TƯ
   tính năng đó. Tắt tìm lời bài hát: Cài đặt → Lời bài hát → "Tìm lời bài hát trên mạng". Chi tiết: PRIVACY.md trên GitHub.
 
 CONTINUE PLAYING (danh sách bên trái)
-- Bấm vào MỘT bài lẻ trong kết quả search → bài phát ngay, danh sách bên trái tự thành "Picked for you": gợi ý của YouTube Music
-  cho bài đó, trộn thêm bài từ trang chủ YouTube Music (theo tài khoản bạn đã đăng nhập; chưa đăng nhập thì là gợi ý chung).
-- Nút ↻ : làm mới danh sách gợi ý.  Nút đồng hồ ⟲ bên cạnh: chuyển sang "History Playing" - xem lại tối đa 100 bài đã phát,
+- Bấm vào MỘT bài YouTube (trong kết quả search hoặc trong History Playing) → bài phát ngay, danh sách bên trái thành
+  "Danh sách kết hợp" (YouTube Mix): danh sách YouTube tự tạo cho bài đó (riêng theo tài khoản khi đã đăng nhập YouTube).
+  Nó thay chỗ Continue Playing và phát không dứt: gần hết danh sách, Wallplayer tự tải thêm phần tiếp theo.
+- Muốn kiểu cũ: Cài đặt → Đang phát → Khi bạn chọn một bài → "Kết hợp + gợi ý cho bạn": gợi ý của YouTube cho bài đó
+  trộn với bài chọn từ tài khoản của bạn.
+- Nút ↻ : tạo lại Danh sách kết hợp (hoặc gợi ý) mới cho bài đang phát.  Nút đồng hồ ⟲ bên cạnh: chuyển sang "History Playing" - xem lại tối đa 100 bài đã phát,
   bấm một bài để phát lại, bấm nút lần nữa để quay về Continue Playing.
 
 PHÍM TẮT

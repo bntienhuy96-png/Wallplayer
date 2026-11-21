@@ -60,10 +60,12 @@ ACCOUNTS (platform icon → Accounts…, or Settings → Accounts)
   http://127.0.0.1:43821/callback, paste its Client ID and click Connect.
 
 THE PLAYLIST (left)
-- Click ONE song in the search results: it plays right away and the playlist becomes "Picked for you":
-  YouTube Music's suggestions for that song, mixed with picks from your account (general picks when you
-  are not signed in).
-- ↻ refreshes the suggestions. The clock button next to it switches to "History Playing": your last 100
+- Click ONE YouTube song (in the search results or in History Playing): it plays right away and the
+  playlist becomes "YouTube Mix" — the Mix YouTube makes for that song (personal when you are signed in to
+  YouTube). It replaces Continue Playing and keeps going: near the end Wallplayer loads the next part.
+- Prefer the old way? Settings → Now Playing → When you pick a song → "Mix + your picks": YouTube's
+  suggestions for that song, mixed with picks from your account.
+- ↻ makes a fresh Mix (or fresh suggestions) for the song playing. The clock button next to it switches to "History Playing": your last 100
   songs; click one to play it again, click the button again to go back.
 - Point at a song: ▶≡ plays it next, ✕ removes it. Drag the ⋮⋮ handle to change the order.
 - Scroll with the mouse wheel or drag up and down.

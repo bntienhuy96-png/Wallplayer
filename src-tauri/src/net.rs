@@ -837,8 +837,9 @@ fn yt_signed_in() -> bool {
 
 async fn ytm_post(path: &str, body: Value) -> Result<Value, String> {
     use sha1::{Digest, Sha1};
+    let sep = if path.contains('?') { '&' } else { '?' };
     let mut req = client()
-        .post(format!("https://music.youtube.com/youtubei/v1/{path}?prettyPrint=false"))
+        .post(format!("https://music.youtube.com/youtubei/v1/{path}{sep}prettyPrint=false"))
         .header("Origin", "https://music.youtube.com")
         .header("Referer", "https://music.youtube.com/");
     if let Some((cookie, sapisid)) = YT_AUTH.lock().unwrap_or_else(|e| e.into_inner()).clone() {
@@ -1100,7 +1101,8 @@ fn ytm_panel(v: &Value) -> Vec<Track> {
         if title.is_empty() || out.iter().any(|t| t.id == vid || (t.title == title && t.artist == artist)) {
             continue;
         }
-        let album = if parts.len() >= 3 { parts[1].clone() } else { String::new() };
+        // songs read "Artist • Album • Year"; music videos read "Artist • 6.8B views • 36M likes"
+        let album = if parts.len() >= 3 && !parts[1].ends_with(" views") && !parts[1].ends_with(" likes") { parts[1].clone() } else { String::new() };
         let dur = it.get("lengthText").map(runs_text).map(|d| parse_dur(&d)).unwrap_or(0);
         out.push(Track {
             id: vid.to_string(),
@@ -1206,6 +1208,31 @@ pub async fn ytm_suggest(video_id: &str) -> Result<(Vec<Track>, bool), String> {
         }
     }
     Ok((out, yt_signed_in()))
+}
+
+/// YouTube's own Mix for a song ("Danh sách kết hợp"): the list YouTube Music builds when you play it,
+/// personal when signed in. `cont` asks for the next part of the same Mix (it goes on and on);
+/// returns the songs and the token for the part after.
+pub async fn ytm_mix(video_id: &str, cont: Option<&str>) -> Result<(Vec<Track>, Option<String>), String> {
+    let body = json!({
+        "context": ytm_ctx(), "videoId": video_id, "playlistId": format!("RDAMVM{video_id}"),
+        "enablePersistentPlaylistPanel": true, "isAudioOnly": true, "tunerSettingValue": "AUTOMIX_SETTING_NORMAL",
+        "watchEndpointMusicSupportedConfigs": {"watchEndpointMusicConfig": {"hasPersistentPlaylistPanel": true, "musicVideoType": "MUSIC_VIDEO_TYPE_ATV"}}
+    });
+    let path = match cont {
+        Some(c) if !c.is_empty() => format!("next?ctoken={0}&continuation={0}&type=next", enc(c)),
+        _ => "next".to_string(),
+    };
+    let v = ytm_post(&path, body).await?;
+    let tracks: Vec<Track> = ytm_panel(&v).into_iter().filter(|t| t.id != video_id).collect();
+    let next = find_key(&v, "nextRadioContinuationData")
+        .and_then(|d| d.get("continuation"))
+        .and_then(|c| c.as_str())
+        .map(String::from);
+    if tracks.is_empty() && cont.is_none() {
+        return Err("YouTube has no Mix for this song".into());
+    }
+    Ok((tracks, next))
 }
 
 pub async fn ytm_radio(video_id: &str) -> Result<Vec<Track>, String> {

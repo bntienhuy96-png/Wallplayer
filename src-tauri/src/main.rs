@@ -380,6 +380,20 @@ async fn suggest(app: AppHandle, id: String) -> Result<Suggest, String> {
     Ok(Suggest { tracks, personal })
 }
 
+/// YouTube's Mix for one song ("Danh sách kết hợp"), or its next part when `cont` is given.
+#[derive(serde::Serialize)]
+struct Mix {
+    tracks: Vec<net::Track>,
+    cont: Option<String>,
+}
+
+#[tauri::command]
+async fn mix(app: AppHandle, id: String, cont: Option<String>) -> Result<Mix, String> {
+    net::set_yt_auth(accounts::yt_auth(&app));
+    let (tracks, cont) = net::ytm_mix(&id, cont.as_deref()).await?;
+    Ok(Mix { tracks, cont })
+}
+
 #[tauri::command]
 async fn radio(app: AppHandle, source: String, id: String) -> Result<Vec<net::Track>, String> {
     net::set_yt_auth(accounts::yt_auth(&app));
@@ -710,6 +724,7 @@ fn main() {
             search_collections,
             collection_tracks,
             radio,
+            mix,
             account_status,
             account_login,
             account_logout,

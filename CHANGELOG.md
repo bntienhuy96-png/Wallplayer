@@ -3,6 +3,16 @@
 Each section is the release notes of one version. The release workflow publishes
 the section that matches the version in `src-tauri/Cargo.toml`.
 
+## 1.0.7
+
+### New
+- **YouTube Mix**: click one YouTube song (in the search results or in *History Playing*) and the playlist on the left becomes the Mix YouTube makes for that song — personal when you are signed in to YouTube. It takes the place of *Continue Playing* and keeps going: near the end, the next part of the same Mix is added.
+- Settings → Now Playing → **When you pick a song**: *YouTube Mix* (default) or *Mix + your picks* (the previous behaviour).
+
+### Fixed
+- A music video in a YouTube list no longer shows its view count as the album.
+- In a long playlist, the rows around the playing song are shown (the list used to stop at the first 100).
+
 ## 1.0.6
 
 ### Fixed
