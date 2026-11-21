@@ -144,6 +144,8 @@ window.WP_VI = {
     'Saved to your TikTok Favorites': 'Đã lưu vào mục Yêu thích trên TikTok', 'Removed from your TikTok Favorites': 'Đã bỏ khỏi mục Yêu thích trên TikTok',
     'Write a comment on TikTok': 'Viết bình luận trên TikTok', 'TikTok shows comments when you are signed in.': 'TikTok chỉ hiện bình luận khi bạn đã đăng nhập.',
     "Couldn't load the comments.": 'Không tải được bình luận.',
+    'Opening the video on TikTok…': 'Đang mở video trên TikTok…',
+    'TikTok wants a quick check · slide the puzzle in the TikTok window, then close it': 'TikTok cần xác minh nhanh · kéo thanh ghép hình trong cửa sổ TikTok rồi đóng nó lại',
     'Finding songs for you…': 'Đang tìm bài cho bạn…', 'When you pick a song': 'Khi bạn chọn một bài', 'YouTube Mix': 'Danh sách kết hợp', 'Mix + your picks': 'Kết hợp + gợi ý cho bạn',
     'The playlist becomes the Mix YouTube makes for that song (personal when you are signed in) and keeps going.': 'Danh sách phát thành Danh sách kết hợp mà YouTube tạo cho bài đó (riêng cho bạn khi đã đăng nhập) và phát tiếp không dứt.',
     "YouTube's suggestions for that song, mixed with picks from your account.": 'Gợi ý của YouTube cho bài đó, trộn với các bài chọn từ tài khoản của bạn.', "The song's video plays behind everything, muted": 'Video của bài phát phía sau mọi thứ, tắt tiếng',

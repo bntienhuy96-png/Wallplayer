@@ -417,8 +417,8 @@ async fn tiktok_comments(app: AppHandle, author: String, id: String) -> Result<V
 
 /// Show the TikTok page (to answer TikTok's check), or put it away.
 #[tauri::command]
-async fn tiktok_show(app: AppHandle, on: bool) {
-    tiktok::show(&app, on)
+async fn tiktok_show(app: AppHandle, on: bool, video: Option<bool>) {
+    tiktok::show(&app, on, video.unwrap_or(false))
 }
 
 /// YouTube's Mix for one song ("Danh sách kết hợp"), or its next part when `cont` is given.

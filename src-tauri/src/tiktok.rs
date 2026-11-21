@@ -118,11 +118,25 @@ const HOOK: &str = r#"(() => {
       const captcha = [...document.querySelectorAll('[id*="captcha" i],[class*="captcha" i]')].some(e => e.offsetWidth > 150 && e.offsetHeight > 120);
       return {clips, more, captcha, ready: document.readyState !== 'loading'} },
     // the video page (second window): press its like / save / comments button
-    has(){ return !!document.querySelector('[data-e2e="like-icon"]') },
-    act(kind){ const b = document.querySelector(kind === 'save' ? '[data-e2e="favorite-icon"]' : '[data-e2e="like-icon"]'); if (!b) return false;
-      res = null; this.before = b.outerHTML; this.btn = b; b.click(); return true },
-    acted(){ if (res) return {done: true, ok: res.ok}; const b = this.btn; return {done: false, changed: !!(b && b.isConnected && b.outerHTML !== this.before)} },
-    openComments(){ C.length = 0; const b = document.querySelector('[data-e2e="comment-icon"]'); if (b) b.click(); return !!b },
+    find(kind, id){
+      const sel = {like: '[data-e2e="like-icon"],[data-e2e="browse-like-icon"]', save: '[data-e2e="favorite-icon"],[data-e2e="browse-favorite-icon"],[data-e2e="undefined-icon"]',
+        comment: '[data-e2e="comment-icon"],[data-e2e="browse-comment-icon"]'}[kind];
+      const all = [...document.querySelectorAll(sel)].filter(b => b.offsetParent !== null || b.getClientRects().length);
+      const mine = id && all.find(b => { const box = b.closest('article,section,[id^="one-column-item"],[class*="ItemContainer"],[class*="VideoWrapper"]');
+        return box && box.querySelector('[href*="' + id + '"],[id*="' + id + '"],[data-video-id="' + id + '"]') });
+      return mine || all[0] || null },
+    has(id){ return (!id || location.pathname.indexOf(id) >= 0) && !!this.find('like', id) },
+    act(kind, id){ const b = this.find(kind, id); if (!b) return false;
+      res = null; this.before = b.outerHTML; this.b = b; b.click(); return true },
+    check(){ return [...document.querySelectorAll('[id*="captcha" i],[class*="captcha" i]')].some(e => e.offsetWidth > 150 && e.offsetHeight > 120) },
+    acted(){ if (res) return {done: true, ok: res.ok}; const b = this.b; return {done: false, changed: !!(b && b.isConnected && b.outerHTML !== this.before)} },
+    openComments(id){ if (C.some(c => c.item === id)) return true; const b = this.find('comment', id); if (b) b.click();
+      // the side panel may open on "You may like": pick its Comments tab
+      setTimeout(() => { const t = [...document.querySelectorAll('[role="tab"],[data-e2e*="comment-tab"],[class*="TabItem"]')].find(e => /comment|bình luận/i.test(e.textContent || '') || /comment/i.test(e.getAttribute('data-e2e') || ''));
+        if (t && t.getAttribute('aria-selected') !== 'true') t.click() }, 700);
+      // and if the page still has not asked TikTok for them, ask (TikTok's own request code signs it)
+      setTimeout(() => { if (!C.some(c => c.item === id)) fetch('/api/comment/list/?aid=1988&count=30&cursor=0&aweme_id=' + id, {credentials: 'include'}).catch(() => {}) }, 2600);
+      return !!b },
     comments(item){ return C.filter(c => !item || c.item === item) },
     more(){ const s = [document.scrollingElement, ...document.querySelectorAll('div,main')].filter(e => e && e.scrollHeight > e.clientHeight + 200 && (e === document.scrollingElement || /(auto|scroll)/.test(getComputedStyle(e).overflowY)));
       s.forEach(e => { e.scrollTop = e.scrollHeight });
@@ -201,9 +215,10 @@ pub fn more(app: &AppHandle) {
     }
 }
 
-/// Bring the page on screen so you can answer TikTok's check yourself; `false` puts it away again.
-pub fn show(app: &AppHandle, on: bool) {
-    let Some(w) = app.get_webview_window(LABEL) else { return };
+/// Bring a TikTok page on screen so you can answer TikTok's check yourself ("video": the page of the
+/// video you act on; otherwise the feed page); `false` puts it away again.
+pub fn show(app: &AppHandle, on: bool, video: bool) {
+    let Some(w) = app.get_webview_window(if video { ACT } else { LABEL }) else { return };
     if on {
         let _ = w.center();
         let _ = w.set_focus();
@@ -316,7 +331,7 @@ async fn item(app: &AppHandle, author: &str, id: &str) -> Result<(), String> {
         } else {
             let w = WebviewWindowBuilder::new(app, ACT, WebviewUrl::External(u))
                 .title("Wallplayer · TikTok video")
-                .inner_size(480.0, 860.0)
+                .inner_size(1280.0, 900.0)
                 .position(OFF, OFF)
                 .decorations(false)
                 .skip_taskbar(true)
@@ -339,13 +354,16 @@ async fn item(app: &AppHandle, author: &str, id: &str) -> Result<(), String> {
         *ACT_ITEM.lock().unwrap_or_else(|e| e.into_inner()) = id.to_string();
         tokio::time::sleep(Duration::from_millis(1200)).await;
     }
+    let js = format!("!!(window.__wptt && window.__wptt.has('{id}'))");
     for _ in 0..40 {
-        if run(app, ACT, "!!(window.__wptt && window.__wptt.has())").await.as_deref() == Some("true") {
+        if run(app, ACT, &js).await.as_deref() == Some("true") {
             return Ok(());
         }
         tokio::time::sleep(Duration::from_millis(400)).await;
     }
     *ACT_ITEM.lock().unwrap_or_else(|e| e.into_inner()) = String::new();
+    let url = run(app, ACT, "location.href").await.unwrap_or_default();
+    crate::guard::log(app, &format!("tiktok: the video page has no buttons ({id}, now at {url})"));
     Err("TikTok did not open that video".into())
 }
 
@@ -353,8 +371,13 @@ async fn item(app: &AppHandle, author: &str, id: &str) -> Result<(), String> {
 /// video's own TikTok page. Each call flips it (liked ↔ not liked). Ok(true) when TikTok took it.
 pub async fn act(app: &AppHandle, author: &str, id: &str, kind: &str) -> Result<bool, String> {
     item(app, author, id).await?;
-    let js = if kind == "save" { "window.__wptt.act('save')" } else { "window.__wptt.act('like')" };
-    if run(app, ACT, js).await.as_deref() != Some("true") {
+    let k = if kind == "save" { "save" } else { "like" };
+    if run(app, ACT, "!!(window.__wptt && window.__wptt.check())").await.as_deref() == Some("true") {
+        crate::guard::log(app, "tiktok: the video page wants a check");
+        return Err("check".into());
+    }
+    if run(app, ACT, &format!("window.__wptt.act('{k}', '{id}')")).await.as_deref() != Some("true") {
+        crate::guard::log(app, &format!("tiktok: no {k} button for {id}"));
         return Err("TikTok's button is not there".into());
     }
     for _ in 0..25 {
@@ -362,7 +385,9 @@ pub async fn act(app: &AppHandle, author: &str, id: &str, kind: &str) -> Result<
         let Some(r) = run(app, ACT, "window.__wptt.acted()").await else { continue };
         let v: Value = serde_json::from_str(&r).unwrap_or(Value::Null);
         if v.get("done").and_then(|x| x.as_bool()) == Some(true) {
-            return Ok(v.get("ok").and_then(|x| x.as_bool()).unwrap_or(false));
+            let ok = v.get("ok").and_then(|x| x.as_bool()).unwrap_or(false);
+            crate::guard::log(app, &format!("tiktok: {k} {id}: TikTok answered {}", if ok { "ok" } else { "no" }));
+            return Ok(ok);
         }
         if v.get("changed").and_then(|x| x.as_bool()) == Some(true) {
             // the button changed; give TikTok's answer a moment, else trust the button
@@ -373,16 +398,24 @@ pub async fn act(app: &AppHandle, author: &str, id: &str, kind: &str) -> Result<
                     return Ok(v2.get("ok").and_then(|x| x.as_bool()).unwrap_or(false));
                 }
             }
+            crate::guard::log(app, &format!("tiktok: {k} {id}: the button changed"));
             return Ok(true);
         }
     }
+    if run(app, ACT, "!!(window.__wptt && window.__wptt.check())").await.as_deref() == Some("true") {
+        crate::guard::log(app, "tiktok: the video page wants a check");
+        return Err("check".into());
+    }
+    crate::guard::log(app, &format!("tiktok: {k} {id}: no answer from TikTok"));
     Ok(false)
 }
 
 /// The first comments under a video (opens its comment panel on the video's TikTok page).
 pub async fn comments(app: &AppHandle, author: &str, id: &str) -> Result<Vec<Comment>, String> {
     item(app, author, id).await?;
-    let _ = run(app, ACT, "window.__wptt.openComments()").await;
+    if run(app, ACT, &format!("window.__wptt.openComments('{id}')")).await.as_deref() != Some("true") {
+        crate::guard::log(app, &format!("tiktok: no comment button for {id}"));
+    }
     let js = format!("window.__wptt.comments('{id}')");
     for _ in 0..24 {
         tokio::time::sleep(Duration::from_millis(400)).await;
@@ -407,5 +440,10 @@ pub async fn comments(app: &AppHandle, author: &str, id: &str) -> Result<Vec<Com
                 .collect());
         }
     }
+    if run(app, ACT, "!!(window.__wptt && window.__wptt.check())").await.as_deref() == Some("true") {
+        crate::guard::log(app, "tiktok: the video page wants a check");
+        return Err("check".into());
+    }
+    crate::guard::log(app, &format!("tiktok: no comments came for {id}"));
     Ok(Vec::new())
 }

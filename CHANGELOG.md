@@ -9,6 +9,10 @@ the section that matches the version in `src-tauri/Cargo.toml`.
 - TikTok: the video is a moderate size again, centred in the space above the player, and the search field and player bar sit just above the Windows taskbar instead of under it.
 - TikTok: the background is the video itself — a muted, blurred, enlarged copy fills the whole screen and glows out from the frame, like YouTube's ambient mode (a still blurred cover on battery saver).
 
+### Fixed
+- TikTok: Like, Save and Comments did nothing. Wallplayer opened the video's TikTok page in a narrow hidden window, where TikTok pushes those buttons off the edge and never opens the comments. The page now opens at desktop width, on the right video, and the comments are loaded from their own tab. If TikTok asks for a "slide the puzzle" check, its window comes up so you can answer it.
+- Buttons beside the TikTok video could miss a click while the list of videos was growing.
+
 ## 1.0.7
 
 ### New

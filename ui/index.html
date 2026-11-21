@@ -2210,26 +2210,28 @@ const TTI = {
   save: '<svg viewBox="0 0 24 24"><path d="M7 4.5h10a1 1 0 0 1 1 1v14l-6-3.8-6 3.8v-14a1 1 0 0 1 1-1z"/></svg>'
 };
 const ago = t => { const s = Date.now() / 1000 - t; if (!(t > 0) || s < 0) return ''; if (s < 3600) return Math.max(1, Math.round(s / 60)) + 'm'; if (s < 86400) return Math.round(s / 3600) + 'h'; if (s < 86400 * 30) return Math.round(s / 86400) + 'd'; return new Date(t * 1000).toLocaleDateString() };
+// set HTML only when it changed: redrawing a button between mouse down and up would swallow the click
+const setHTML = (el, h) => { if (el._h !== h){ el._h = h; el.innerHTML = h } };
 function renderTT(){
   if (!TT.on) return;
   const c = TT.list[TT.i], acc = S.acc || {};
-  $('#ttTabs').innerHTML = `<button class="ttt ${TT.mode === 'foryou' ? 'on' : ''}" data-tt="foryou">For You</button>`
+  setHTML($('#ttTabs'), `<button class="ttt ${TT.mode === 'foryou' ? 'on' : ''}" data-tt="foryou">For You</button>`
     + (TT.q ? `<button class="ttt ${TT.mode === 'search' ? 'on' : ''}" data-tt="search" title="${esc(TT.q)}">${I.search}<span>${esc(TT.q)}</span></button>` : '')
-    + (T && !acc.tiktok ? `<button class="ttt ghost" data-tt="login" title="Your own For You">Sign in to TikTok</button>` : '');
-  $('#ttNext').innerHTML = TT.list.slice(TT.i + 1, TT.i + 4).map((n, k) => `<button class="ttn" data-tj="${TT.i + 1 + k}" title="${esc((n.desc || '@' + n.author).slice(0, 80))}">${n.cover ? `<img src="${esc(n.cover)}" alt="" referrerpolicy="no-referrer" loading="lazy">` : ''}</button>`).join('');
+    + (T && !acc.tiktok ? `<button class="ttt ghost" data-tt="login" title="Your own For You">Sign in to TikTok</button>` : ''));
+  setHTML($('#ttNext'), TT.list.slice(TT.i + 1, TT.i + 4).map((n, k) => `<button class="ttn" data-tj="${TT.i + 1 + k}" title="${esc((n.desc || '@' + n.author).slice(0, 80))}">${n.cover ? `<img src="${esc(n.cover)}" alt="" referrerpolicy="no-referrer" loading="lazy">` : ''}</button>`).join(''));
   $('#ttUp').disabled = TT.i <= 0; $('#ttDown').disabled = !TT.list.length;
   const au = S.look.ttAuto !== false; $('#ttAuto').classList.toggle('on', au);
   $('#ttAuto').title = au ? 'Auto scroll is on: the next video plays when one ends' : 'Auto scroll is off: each video loops';
-  $('#ttInfo').innerHTML = c ? `<div class="tta">${c.avatar ? `<img src="${esc(c.avatar)}" alt="" referrerpolicy="no-referrer">` : ''}<div><b>@${esc(c.author)}</b><span>${esc(c.nick || '')}</span></div></div>`
+  setHTML($('#ttInfo'), c ? `<div class="tta">${c.avatar ? `<img src="${esc(c.avatar)}" alt="" referrerpolicy="no-referrer">` : ''}<div><b>@${esc(c.author)}</b><span>${esc(c.nick || '')}</span></div></div>`
     + (c.desc ? `<p class="ttd">${esc(c.desc).replace(/(^|\s)(#[^\s#]+)/g, '$1<i>$2</i>')}</p>` : '')
     + (c.music ? `<div class="ttm">${TTI.note}<span>${esc(c.music)}</span></div>` : '')
     + `<div class="tts"><span title="Views">${TTI.plays}${ttN(c.plays)}</span></div>`
-    + `<button class="abtn" data-tt="ext">Open in TikTok</button>` : '';
+    + `<button class="abtn" data-tt="ext">Open in TikTok</button>` : '');
   const act = (k, ic, n, title, cls = '') => `<button class="tta2 ${cls}" data-ta="${k}" title="${title}"><i>${ic}</i><span>${ttN(n)}</span></button>`;
-  $('#ttActs').innerHTML = c ? act('like', TTI.heart, c.likes, c.liked ? 'Unlike' : 'Like', (c.liked ? 'liked' : '') + (TT.busy.like ? ' busy' : ''))
+  setHTML($('#ttActs'), c ? act('like', TTI.heart, c.likes, c.liked ? 'Unlike' : 'Like', (c.liked ? 'liked' : '') + (TT.busy.like ? ' busy' : ''))
     + act('comment', TTI.talk, c.comments, 'Comments', $('#ttSide').classList.contains('com') ? 'on' : '')
     + act('save', TTI.save, c.saves, c.saved ? 'Remove from Favorites' : 'Save to Favorites', (c.saved ? 'saved' : '') + (TT.busy.save ? ' busy' : ''))
-    + act('share', TTI.share, c.shares, 'Share — copy the link') : '';
+    + act('share', TTI.share, c.shares, 'Share — copy the link') : '');
 }
 // comments of the video on screen, read from its TikTok page (writing one opens TikTok)
 async function ttComments(){
@@ -2237,13 +2239,15 @@ async function ttComments(){
   const box = $('#ttCom'), key = c.id;
   box.innerHTML = `<div class="tch"><span>Comments · ${ttN(c.comments)}</span><button data-tc="x" title="Close">✕</button></div><div class="tcl"><i class="spin"></i></div><div class="tcf"><button class="abtn" data-tt="ext">Write a comment on TikTok</button></div>`;
   let list = [];
-  if (T){ try { list = await invoke('tiktok_comments', {author: c.author, id: c.id}) } catch(e){} }
+  if (T){ try { list = await invoke('tiktok_comments', {author: c.author, id: c.id}) } catch(e){ if (String(e) === 'check') ttCheck() } }
   else list = Array.from({length: 8}, (_, k) => ({id: 'c' + k, text: ['so good 🔥', 'this song is stuck in my head', 'who else is here in 2026?', 'the edit 😭', 'nghe hoài không chán', 'sound name pls'][k % 6], likes: 900 - k * 97, replies: k % 3, time: Date.now() / 1000 - k * 5400, nick: 'listener ' + (k + 1), user: 'user' + k, avatar: ''}));
   if (TT.list[TT.i] !== c || !side.classList.contains('com') || c.id !== key) return;
   const l = box.querySelector('.tcl'); if (!l) return;
   l.innerHTML = list.length ? list.map(m => `<div class="tci">${m.avatar ? `<img src="${esc(m.avatar)}" alt="" referrerpolicy="no-referrer" loading="lazy">` : '<i class="av"></i>'}<div><b>${esc(m.nick || '@' + m.user)}</b><p>${esc(m.text)}</p><small>${ago(m.time)}${m.replies ? `${m.time ? ' · ' : ''}<span>${ttN(m.replies)} ${m.replies === 1 ? 'reply' : 'replies'}</span>` : ''}</small></div><span class="lk">${TTI.heart}${ttN(m.likes)}</span></div>`).join('')
     : `<div class="tce">${T && !(S.acc && S.acc.tiktok) ? 'TikTok shows comments when you are signed in.' : "Couldn't load the comments."}</div>`;
 }
+// TikTok asks the video page for a "slide the puzzle" check: show that page so you can answer it yourself
+function ttCheck(){ invoke('tiktok_show', {on: true, video: true}).catch(() => {}); toast('TikTok wants a quick check · slide the puzzle in the TikTok window, then close it') }
 async function ttAct(kind){
   const c = TT.list[TT.i]; if (!c) return;
   if (kind === 'comment'){ const side = $('#ttSide'); side.classList.toggle('com'); renderTT(); ttComments(); return }
@@ -2254,10 +2258,10 @@ async function ttAct(kind){
   const f = kind === 'like' ? 'liked' : 'saved', n = kind === 'like' ? 'likes' : 'saves', was = c[f];
   c[f] = !was; c[n] = Math.max(0, (c[n] || 0) + (was ? -1 : 1)); TT.busy[kind] = true; renderTT();
   const b = $(`#ttActs [data-ta="${kind}"]`); if (b && c[f]) b.classList.add('pop');
-  let ok = !T;
-  if (T){ try { ok = await invoke('tiktok_act', {author: c.author, id: c.id, kind}) } catch(e){ ok = false } }
-  TT.busy[kind] = false;
-  if (!ok){ c[f] = was; c[n] = Math.max(0, (c[n] || 0) + (was ? 1 : -1)); toast(kind === 'like' ? "TikTok didn't take the like — try again" : "TikTok didn't save it — try again") }
+  let ok = !T, err = ''; const slow = setTimeout(() => toast('Opening the video on TikTok…'), 2500);
+  if (T){ try { ok = await invoke('tiktok_act', {author: c.author, id: c.id, kind}) } catch(e){ ok = false; err = String(e) } }
+  clearTimeout(slow); TT.busy[kind] = false;
+  if (!ok){ c[f] = was; c[n] = Math.max(0, (c[n] || 0) + (was ? 1 : -1)); if (err === 'check') ttCheck(); else toast(kind === 'like' ? "TikTok didn't take the like — try again" : "TikTok didn't save it — try again") }
   else if (kind === 'save') toast(c.saved ? 'Saved to your TikTok Favorites' : 'Removed from your TikTok Favorites');
   if (TT.list[TT.i] === c) renderTT();
 }
