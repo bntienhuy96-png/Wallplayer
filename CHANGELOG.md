@@ -3,6 +3,11 @@
 Each section is the release notes of one version. The release workflow publishes
 the section that matches the version in `src-tauri/Cargo.toml`.
 
+## 1.0.6
+
+### Fixed
+- Wallplayer seemed to quit by itself after a while: when the Microsoft Edge WebView2 engine behind the skin stopped, the screen went back to the plain wallpaper while Wallplayer stayed in the tray with nothing to show. Wallplayer now starts itself again when that happens (at most 3 times in 10 minutes), and reloads a page whose process stops or hangs. What happened is written to `wallplayer.log` in `%LOCALAPPDATA%\com.tan.wallplayer`.
+
 ## 1.0.5
 
 ### Changed

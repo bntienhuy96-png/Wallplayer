@@ -62,7 +62,10 @@ pub fn sync(app: &AppHandle) {
                     .position(m.x as f64, m.y as f64)
                     .build()
                 {
-                    Ok(w) => w,
+                    Ok(w) => {
+                        crate::guard::watch(&w, false);
+                        w
+                    }
                     Err(e) => {
                         eprintln!("mirror window: {e}");
                         continue;

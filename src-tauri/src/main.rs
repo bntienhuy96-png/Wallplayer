@@ -4,6 +4,7 @@ mod accounts;
 mod audio;
 mod deskmouse;
 mod desktop;
+mod guard;
 mod island;
 mod library;
 mod media;
@@ -764,6 +765,9 @@ fn main() {
             }
             apply_mode(&handle);
             desktop::set_icons_hidden(hide_on);
+            // the web engine dies → start again instead of sitting empty in the tray
+            guard::log(&handle, "started");
+            guard::watch(&win, true);
 
             // leave peek when focus goes elsewhere
             let h2 = handle.clone();

@@ -160,6 +160,11 @@ CẬP NHẬT (không cần file cài)
 - Bản mới thay Wallplayer.exe ngay trong thư mục hiện tại (file cũ thành Wallplayer.exe.old, tự xóa lần sau).
   Nếu để thư mục trong Program Files thì app không ghi được: hãy để thư mục ở chỗ khác (ví dụ Documents).
 
+NẾU GIAO DIỆN BIẾN MẤT
+Giao diện Wallplayer chạy bằng Microsoft Edge WebView2. Nếu bộ máy này dừng, Wallplayer tự mở lại sau vài giây
+(tối đa 3 lần trong 10 phút; quá số đó thì thoát ở khay hệ thống rồi mở lại). Nhật ký ghi ở
+%LOCALAPPDATA%\com.tan.wallplayer\wallplayer.log.
+
 GỠ BỎ
 - Chuột phải biểu tượng khay: bỏ tick "Start with Windows", rồi "Quit Wallplayer". Xóa thư mục Wallplayer.
 - Xóa luôn cài đặt và đăng nhập: xóa thư mục com.tan.wallplayer trong %APPDATA% và %LOCALAPPDATA%.
