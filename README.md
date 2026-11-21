@@ -107,7 +107,7 @@ This program will not transfer any information to other networked systems unless
 
 1. Write the release notes under a new `## x.y.z` heading in `CHANGELOG.md` and set the same version in `src-tauri/Cargo.toml` and `src-tauri/tauri.conf.json`.
 2. Push to `main`. GitHub Actions builds `Wallplayer.exe`; download the build from the run to test it on Windows.
-3. Open **Actions → Build and release → Run workflow**, tick *Publish a release*. The workflow builds again, sends the exe to SignPath for signing (once it is set up), waits for the approval, and publishes release `Vx.y.z` with the notes.
+3. Open **Actions → Build and release → Run workflow**, tick *Publish a release* (or push a tag `Vx.y.z`). The workflow builds again, sends the exe to SignPath for signing (once it is set up), waits for the approval, and publishes release `Vx.y.z` with the notes.
 
 ## License
 
