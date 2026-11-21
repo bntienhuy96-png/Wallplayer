@@ -75,6 +75,13 @@ window.WP_VI = {
     'Press a key or mouse button…': 'Bấm một phím hoặc nút chuột…', 'Self-test (Ctrl+Shift+D)': 'Tự kiểm tra (Ctrl+Shift+D)',
     'Use album-art wallpaper': 'Dùng ảnh bìa làm hình nền',
     'Behind desktop icons': 'Nằm sau icon desktop', 'Hide desktop icons': 'Ẩn icon desktop', 'Start with Windows': 'Mở cùng Windows',
+    'Opens by itself when you turn on the PC': 'Tự mở khi bật máy', 'Wallplayer opens when Windows starts': 'Wallplayer sẽ tự mở cùng Windows',
+    'Wallplayer no longer opens with Windows': 'Wallplayer không còn tự mở cùng Windows', 'Recent playlists': 'Playlist gần đây',
+    'Save to YouTube Music': 'Lưu vào YouTube Music', 'Save this list to YouTube Music': 'Lưu danh sách này vào YouTube Music',
+    'Saved in your YouTube Music library': 'Đã lưu trong thư viện YouTube Music', 'Already in your YouTube Music library': 'Đã có trong thư viện YouTube Music',
+    'Saving to YouTube Music…': 'Đang lưu vào YouTube Music…', 'Saving works in the Windows app': 'Chỉ lưu được trong app Windows',
+    'Sign in to YouTube (Settings → Accounts) to save playlists': 'Đăng nhập YouTube (Cài đặt → Tài khoản) để lưu playlist',
+    'Only YouTube Music songs can be saved to YouTube Music': 'Chỉ lưu được các bài từ YouTube Music',
     'Fill other displays': 'Phủ các màn hình khác', 'Move to next display': 'Chuyển sang màn hình kế',
     // update card / pills
     'Downloading…': 'Đang tải…', 'Restarting with the new version…': 'Đang mở lại bằng bản mới…', 'Skip': 'Bỏ qua', 'Update': 'Cập nhật',
@@ -179,5 +186,7 @@ window.WP_VI = {
     [/^Loading (.+)…$/, 'Đang tải $1…'],
     [/^Plays next: (.+)$/, 'Phát tiếp theo: $1'],
     [/^Added to playlist: (.+)$/, 'Đã thêm vào danh sách phát: $1'],
+    [/^Saved to YouTube Music: (.+)$/, 'Đã lưu vào YouTube Music: $1'],
+    [/^Couldn't save: (.+)$/, 'Không lưu được: $1'],
   ],
 };

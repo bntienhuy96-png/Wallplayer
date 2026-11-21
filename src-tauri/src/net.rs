@@ -1519,3 +1519,37 @@ async fn yt_transcript(video_id: &str) -> Result<Vec<Cue>, String> {
         Ok(out)
     }
 }
+
+// ───────────────────────── YouTube Music library (signed in) ─────────────────────────
+
+fn ytm_error(v: &Value) -> Option<String> {
+    v.get("error").map(|e| e.get("message").and_then(|m| m.as_str()).unwrap_or("YouTube refused the request").to_string())
+}
+
+/// Save a playlist or album (by playlistId) to the signed-in user's YouTube Music library.
+pub async fn ytm_save_playlist(playlist_id: &str) -> Result<(), String> {
+    if !yt_signed_in() {
+        return Err("not_signed_in".into());
+    }
+    let v = ytm_post("like/like", json!({"context": ytm_ctx(), "target": {"playlistId": playlist_id}})).await?;
+    match ytm_error(&v) {
+        Some(e) => Err(e),
+        None => Ok(()),
+    }
+}
+
+/// Create a private playlist in the user's YouTube Music library from video ids; returns its playlistId.
+pub async fn ytm_create_playlist(title: &str, video_ids: &[String]) -> Result<String, String> {
+    if !yt_signed_in() {
+        return Err("not_signed_in".into());
+    }
+    let v = ytm_post(
+        "playlist/create",
+        json!({"context": ytm_ctx(), "title": title, "description": "Made with Wallplayer", "privacyStatus": "PRIVATE", "videoIds": video_ids}),
+    )
+    .await?;
+    if let Some(e) = ytm_error(&v) {
+        return Err(e);
+    }
+    v.get("playlistId").and_then(|p| p.as_str()).map(String::from).ok_or_else(|| "YouTube did not create the playlist".into())
+}

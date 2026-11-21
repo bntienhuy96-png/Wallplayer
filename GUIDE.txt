@@ -32,7 +32,11 @@ In the search field: ✕ clears what you typed · ◎ music video wallpaper · t
 whole interface (H, or a double-click on the wallpaper, brings it back).
 
 SEARCH
-- Click the search field (or press Ctrl + Alt + Space): with nothing typed you see "Recently played".
+- Click the search field (or press Ctrl + Alt + Space): with nothing typed you see "Recently played" and
+  "Recent playlists" (playlists and albums you played lately).
+- Playlist cards from YouTube Music have a heart: it saves the playlist / album to your YouTube Music
+  library (sign in to YouTube first: Settings → Accounts). The + button above Continue Playing saves
+  the songs on the left as a new private playlist in YouTube Music.
 - Typing shows suggestions (click one to search it) and results in four tabs: All / Songs / Singers /
   Playlists (playlists and albums from every platform). ↑ ↓ to choose, Enter to play, Esc to close.
 - Click a singer to play their best songs; click a playlist or album to play all of it.
@@ -163,7 +167,7 @@ ON THE DESKTOP (tray icon, right-click)
   point, click, drag, scroll. Clicking the search field brings Wallplayer forward so you can type; a click
   outside sends it back. Single-key shortcuts work only while it is in front (Ctrl + Alt + Space).
 - Untick "Behind desktop icons" to make it a normal window at the bottom: it covers the desktop icons and
-  every button takes clicks directly; after Win + D it tries to come forward (less reliable).
+- "Start with Windows": starts Wallplayer when you sign in (also in Settings → General).
 - "Hide desktop icons" (on by default) hides every desktop icon, Recycle Bin included, while Wallplayer
   runs and gives them back when you quit. (If Wallplayer was ended from Task Manager and the icons are
   still hidden: start Wallplayer and untick it, or right-click the desktop → View → Show desktop icons.)

@@ -27,6 +27,7 @@ pub(crate) struct AppState {
     peek: Mutex<bool>,
     hwnd: Mutex<isize>,
     wall_item: Mutex<Option<CheckMenuItem<tauri::Wry>>>,
+    auto_item: Mutex<Option<CheckMenuItem<tauri::Wry>>>,
     pub(crate) update_item: Mutex<Option<MenuItem<tauri::Wry>>>,
     /// tray menu items whose text follows the interface language: (id, set_text)
     tray_texts: Mutex<Vec<(&'static str, Box<dyn Fn(&str) + Send + Sync>)>>,
@@ -119,6 +120,17 @@ pub(crate) fn open_search(app: &AppHandle) {
 
 #[tauri::command]
 fn get_state(app: AppHandle) -> UiState {
+    ui_state(&app)
+}
+
+/// Settings → General → "Start with Windows" (the tray menu has the same switch).
+#[tauri::command]
+fn set_autostart(app: AppHandle, on: bool) -> UiState {
+    let _ = settings::set_autostart(on);
+    let item = app.state::<AppState>().auto_item.lock().unwrap().clone();
+    if let Some(item) = item {
+        let _ = item.set_checked(settings::autostart_enabled());
+    }
     ui_state(&app)
 }
 
@@ -343,6 +355,20 @@ async fn collection_tracks(source: String, id: String) -> Result<Vec<net::Track>
 struct Suggest {
     tracks: Vec<net::Track>,
     personal: bool,
+}
+
+/// Save a YouTube Music playlist / album to the signed-in library.
+#[tauri::command]
+async fn save_playlist(app: AppHandle, id: String) -> Result<(), String> {
+    net::set_yt_auth(accounts::yt_auth(&app));
+    net::ytm_save_playlist(&id).await
+}
+
+/// Save the playing list (YouTube songs) as a new private playlist in the signed-in library.
+#[tauri::command]
+async fn create_playlist(app: AppHandle, title: String, ids: Vec<String>) -> Result<String, String> {
+    net::set_yt_auth(accounts::yt_auth(&app));
+    net::ytm_create_playlist(&title, &ids).await
 }
 
 /// Radio + the user's YouTube Music picks for one song.
@@ -651,6 +677,7 @@ fn main() {
             peek: Mutex::new(false),
             hwnd: Mutex::new(0),
             wall_item: Mutex::new(None),
+            auto_item: Mutex::new(None),
             update_item: Mutex::new(None),
             tray_texts: Mutex::new(Vec::new()),
             mirrors_installed: Mutex::new(Vec::new()),
@@ -658,6 +685,9 @@ fn main() {
         .invoke_handler(tauri::generate_handler![
             get_state,
             set_wallpaper_mode,
+            set_autostart,
+            save_playlist,
+            create_playlist,
             peek,
             open_external,
             reveal_taskbar,
@@ -768,6 +798,7 @@ fn main() {
             let menu = Menu::with_items(app, &[&search_i, &wall_i, &icons_i, &display_i, &mirror_i, &auto_i, &sep, &update_i, &reload_i, &quit_i])?;
             let mirror_c = mirror_i.clone();
             *app.state::<AppState>().wall_item.lock().unwrap() = Some(wall_i.clone());
+            *app.state::<AppState>().auto_item.lock().unwrap() = Some(auto_i.clone());
             *app.state::<AppState>().update_item.lock().unwrap() = Some(update_i.clone());
             {
                 let st = app.state::<AppState>();
@@ -811,6 +842,7 @@ fn main() {
                         let on = !settings::autostart_enabled();
                         let _ = settings::set_autostart(on);
                         let _ = auto_c.set_checked(settings::autostart_enabled());
+                        let _ = app.emit("mode-changed", ui_state(app));
                     }
                     "display" => {
                         let list = desktop::monitors();
