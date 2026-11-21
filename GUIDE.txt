@@ -60,10 +60,12 @@ ACCOUNTS (platform icon → Accounts…, or Settings → Accounts)
   http://127.0.0.1:43821/callback, paste its Client ID and click Connect.
 
 THE PLAYLIST (left)
-- Click ONE song in the search results: it plays right away and the playlist becomes "Picked for you":
-  YouTube Music's suggestions for that song, mixed with picks from your account (general picks when you
-  are not signed in).
-- ↻ refreshes the suggestions. The clock button next to it switches to "History Playing": your last 100
+- Click ONE YouTube song (in the search results or in History Playing): it plays right away and the
+  playlist becomes "YouTube Mix" — the Mix YouTube makes for that song (personal when you are signed in to
+  YouTube). It replaces Continue Playing and keeps going: near the end Wallplayer loads the next part.
+- Prefer the old way? Settings → Now Playing → When you pick a song → "Mix + your picks": YouTube's
+  suggestions for that song, mixed with picks from your account.
+- ↻ makes a fresh Mix (or fresh suggestions) for the song playing. The clock button next to it switches to "History Playing": your last 100
   songs; click one to play it again, click the button again to go back.
 - Point at a song: ▶≡ plays it next, ✕ removes it. Drag the ⋮⋮ handle to change the order.
 - Scroll with the mouse wheel or drag up and down.
@@ -149,9 +151,30 @@ UPDATES (no installer)
 - The new Wallplayer.exe replaces the old one in the same folder (the old file is kept as
   Wallplayer.exe.old until the next start).
 
+TIKTOK
+- Choose TikTok with the platform button (left of the player bar). The middle of the screen becomes one
+  vertical video at a time, like the TikTok app: no playlist, the clock moves to the left, and the
+  video, blurred, lights the whole screen behind it (a still picture on battery saver).
+- Next / previous video: scroll the mouse wheel over the video, press ↓ / ↑, or use the ▲ ▼ buttons
+  (and ⏮ ⏭ on the player bar). Click the video to pause or play it.
+- Auto scroll (the button under ▼): on, the next video starts when one ends; off, each video loops.
+- Beside the video, like TikTok: ♥ Like, comments, Save (your TikTok Favorites) and Share (copies the
+  link). Like and Save use your TikTok account, so sign in to TikTok first; comments open on the right
+  (writing one opens the video on TikTok).
+- "For You" is your TikTok feed when you are signed in to TikTok (Settings → Accounts → TikTok),
+  TikTok's general feed when you are not. Type in the search field and press Enter to watch a search;
+  the For You button brings the feed back. "Up next" on the right shows the next three videos.
+- How it works: TikTok has no public feed for apps, so Wallplayer opens TikTok's own page out of sight
+  (with your TikTok session) to read the list of videos, and plays each video in TikTok's official embed
+  player. If TikTok asks for a check, press "Open TikTok", answer it, then "Done".
+- Pick another platform to leave TikTok. Wallplayer starts again on TikTok if that is where you left it
+  (paused until you press play).
+
 MUSIC IN TWO PLACES
-If Wallplayer and another app (Spotify, a browser…) play at the same time, a question at the top asks
-which one to keep; the other one is paused.
+Wallplayer never pauses other apps, and music in another app (Spotify, a browser…) never stops or replaces
+the song playing in Wallplayer: both keep playing. When Wallplayer's song has stayed paused for a minute
+while another app plays, the player shows that app's song (cover, lyrics, controls); play from the
+playlist to come back.
 
 SHORTCUT
 One global shortcut: "Search from anywhere" (Ctrl + Alt + Space by default) opens the search from any app.
@@ -167,11 +190,16 @@ ON THE DESKTOP (tray icon, right-click)
   point, click, drag, scroll. Clicking the search field brings Wallplayer forward so you can type; a click
   outside sends it back. Single-key shortcuts work only while it is in front (Ctrl + Alt + Space).
 - Untick "Behind desktop icons" to make it a normal window at the bottom: it covers the desktop icons and
-- "Start with Windows": starts Wallplayer when you sign in (also in Settings → General).
+  every button takes clicks directly; after Win + D it tries to come forward (less reliable).
 - "Hide desktop icons" (on by default) hides every desktop icon, Recycle Bin included, while Wallplayer
   runs and gives them back when you quit. (If Wallplayer was ended from Task Manager and the icons are
   still hidden: start Wallplayer and untick it, or right-click the desktop → View → Show desktop icons.)
-- "Start with Windows": starts Wallplayer when you sign in.
+- "Start with Windows": starts Wallplayer when you sign in (also in Settings → General).
+
+IF THE SKIN DISAPPEARS
+Wallplayer runs its interface in Microsoft Edge WebView2. If that engine stops, Wallplayer starts itself
+again within a few seconds (at most 3 times in 10 minutes; after that, quit it from the tray and open it
+again). What happened is written to %LOCALAPPDATA%\com.tan.wallplayer\wallplayer.log.
 
 SELF-TEST
 Press Ctrl + Shift + D (or Settings → General → Self-test) to check the Windows and YouTube features one by one

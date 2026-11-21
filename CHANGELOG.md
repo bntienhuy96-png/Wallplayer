@@ -3,9 +3,48 @@
 Each section is the release notes of one version. The release workflow publishes
 the section that matches the version in `src-tauri/Cargo.toml`.
 
-## 1.0.4
+## 1.0.8
+
+### Changed
+- TikTok: the video is a moderate size again, centred in the space above the player, and the search field and player bar sit just above the Windows taskbar instead of under it.
+- TikTok: the background is the video itself — a muted, blurred, enlarged copy fills the whole screen and glows out from the frame, like YouTube's ambient mode (a still blurred cover on battery saver).
 
 ### Fixed
+- TikTok: Like, Save and Comments did nothing. Wallplayer opened the video's TikTok page in a narrow hidden window, where TikTok pushes those buttons off the edge and never opens the comments. The page now opens at desktop width, on the right video, and the comments are loaded from their own tab. If TikTok asks for a "slide the puzzle" check, its window comes up so you can answer it.
+- Buttons beside the TikTok video could miss a click while the list of videos was growing.
+
+## 1.0.7
+
+### New
+- **YouTube Mix**: click one YouTube song (in the search results or in *History Playing*) and the playlist on the left becomes the Mix YouTube makes for that song — personal when you are signed in to YouTube. It takes the place of *Continue Playing* and keeps going: near the end, the next part of the same Mix is added.
+- Settings → Now Playing → **When you pick a song**: *YouTube Mix* (default) or *Mix + your picks* (the previous behaviour).
+- **TikTok channel** (platform button → TikTok): one vertical video at a time in the middle of the screen, like the app — no playlist, the clock moves to the left. Scroll over the video, press ↑ / ↓ or use the ▲ ▼ buttons for the previous / next video; click it to pause. **Auto scroll** (under ▼) plays the next video when one ends, or loops each video when off. *For You* is your own feed when you are signed in to TikTok (Settings → Accounts → TikTok); press Enter in the search field to watch a search instead. *Up next* and the video's author, caption and sound sit on the right. Beside the video, like TikTok: **Like**, **Comments** (they open on the right), **Save** to your TikTok Favorites and **Share** (copies the link); Like and Save use your TikTok account (sign in first). Videos play in TikTok's official embed player; the list comes from TikTok's own page, opened out of sight with your session.
+
+### Fixed
+- A music video in a YouTube list no longer shows its view count as the album.
+- In a long playlist, the rows around the playing song are shown (the list used to stop at the first 100).
+
+## 1.0.6
+
+### Fixed
+- Wallplayer seemed to quit by itself after a while: when the Microsoft Edge WebView2 engine behind the skin stopped, the screen went back to the plain wallpaper while Wallplayer stayed in the tray with nothing to show. Wallplayer now starts itself again when that happens (at most 3 times in 10 minutes), and reloads a page whose process stops or hangs. What happened is written to `wallplayer.log` in `%LOCALAPPDATA%\com.tan.wallplayer`.
+- The cause on one PC: signing in to YouTube. When the sign-in finished, Wallplayer closed the sign-in window while its page was still busy, and the WebView2 engine (shared by every Wallplayer window) crashed. Sign-in windows (YouTube, SoundCloud, Spotify) and the windows of other displays are now hidden and reused instead of closed, and Alt+F4 no longer closes the skin.
+
+## 1.0.5
+
+### Changed
+- Music keeps playing: Wallplayer no longer pauses other apps when it starts a song, no longer asks which one to keep when music plays in two places, and music in another app never stops or replaces the song playing in Wallplayer. When Wallplayer's song has stayed paused for a minute while another app plays, the player shows that app's song.
+
+## 1.0.4
+
+### New
+- **Recent playlists:** with nothing typed, the search shows the playlists and albums you played lately under *Recently played*.
+- **Save to YouTube Music** (signed in): the heart on a YouTube Music playlist or album card saves it to your library; the + button above *Continue Playing* saves the songs on the left as a new private playlist.
+- **Start with Windows** in Settings → General (the same switch as in the tray menu).
+
+### Fixed
+- Settings: buttons and switches inside a page did nothing.
+- When the playlist moves on to the next song by itself, it no longer pauses a video or song you started elsewhere in the meantime, and a song that is still loading is no longer replaced by another app's media.
 - Playlist: the left edge of the highlighted song (and of the song you point at) was cut off; the rounded highlight now shows whole.
 
 ## 1.0.3

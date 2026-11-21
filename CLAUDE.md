@@ -1,6 +1,6 @@
 # Wallplayer — ghi chú cho Claude Code
 
-Chủ dự án: Tấn (Senior UX/UI Product Designer, không biết code). **Luôn trả lời bằng tiếng Việt**, giải thích đơn giản, tự làm hết các bước (build, commit, push, release), chỉ hỏi lại khi thật sự cần.
+Chủ dự án: Tấn (Senior UX/UI Product Designer, không biết code). **Luôn trả lời bằng tiếng Việt**, giải thích đơn giản, tự làm hết các bước (build, commit, push), chỉ hỏi lại khi thật sự cần. **Không tự ý phát hành (publish release): chỉ publish khi Tấn ra lệnh.**
 
 ## Dự án
 App Windows (Tauri v2 + Rust) biến hình nền desktop thành trình phát nhạc kiểu "aesthetic desktop skin" (đồng hồ cao, cover flow kính, search nhiều nền tảng, playlist 3D, lyrics đồng bộ + phụ đề 2 ngôn ngữ, ambient light viền neon nhảy theo nhạc, chỉnh đồng hồ/lyrics kiểu lock screen iPhone với chữ kính).

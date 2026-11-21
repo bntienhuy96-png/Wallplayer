@@ -1,6 +1,6 @@
 [package]
 name = "wallplayer"
-version = "1.0.4"
+version = "1.0.8"
 description = "Desktop wallpaper music player skin"
 edition = "2021"
 
@@ -22,12 +22,14 @@ rustfft = "6"
 sha2 = "0.10"
 sha1 = "0.10"
 rand = "0.8"
-tokio = { version = "1", features = ["time"] }
+tokio = { version = "1", features = ["time", "sync"] }
 winreg = "0.52"
 lofty = "0.22"
 zip = { version = "2", default-features = false, features = ["deflate"] }
 
 [target.'cfg(windows)'.dependencies]
+webview2-com = "0.39"   # same version as Tauri's: watch the web engine (guard.rs)
+windows-core = "0.62"
 windows = { version = "0.58", features = [
   "Foundation",
   "Foundation_Collections",

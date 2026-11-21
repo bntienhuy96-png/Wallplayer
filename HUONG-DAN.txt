@@ -147,7 +147,9 @@ VIỀN SÁNG, ICON KHAY, MV
   các góc, và "Light on each display" bật tắt viền sáng riêng từng màn hình.
 - Icon khay đổi thành ảnh bìa bài đang phát với vòng tròn đập theo nhạc (Cài đặt → Bố cục → "Album cover as the tray icon").
 - Khi MV đang làm hình nền: các chấm nhỏ phía trên ô tìm kiếm = MV của bài và MV khác của cùng ca sĩ, bấm để đổi.
-- Nhạc phát ở 2 nơi cùng lúc (Wallplayer và Spotify / trình duyệt): góc trên hiện câu hỏi giữ bên nào, bên kia sẽ dừng.
+- Nhạc phát ở 2 nơi cùng lúc (Wallplayer và Spotify / trình duyệt): cả hai cứ phát, Wallplayer không tự dừng bên nào.
+  Khi bài trong Wallplayer đã tạm dừng quá 1 phút mà app khác đang phát, trình phát chuyển sang hiện bài của app đó;
+  bấm một bài trong playlist để quay lại.
 
 CẬP NHẬT (không cần file cài)
 - Mỗi lần mở, Wallplayer kiểm tra ngầm một lần, không hiện gì lên màn hình. Có bản mới thì mục trong menu
@@ -157,6 +159,30 @@ CẬP NHẬT (không cần file cài)
 - Tắt việc kiểm tra lúc mở app: Cài đặt → Chung → "Kiểm tra khi mở Wallplayer".
 - Bản mới thay Wallplayer.exe ngay trong thư mục hiện tại (file cũ thành Wallplayer.exe.old, tự xóa lần sau).
   Nếu để thư mục trong Program Files thì app không ghi được: hãy để thư mục ở chỗ khác (ví dụ Documents).
+
+TIKTOK
+- Chọn TikTok ở nút nền tảng (bên trái thanh phát nhạc). Giữa màn hình thành một video dọc, từng video một như
+  app TikTok: không có playlist, đồng hồ dời sang bên trái, nền là chính video đó làm mờ, lan ra toàn màn hình
+  (khi tiết kiệm pin thì là ảnh tĩnh).
+- Qua video sau / trước: lăn chuột trên video, phím ↓ / ↑, hoặc nút ▲ ▼ (và ⏮ ⏭ trên thanh phát).
+  Bấm vào video để dừng / phát.
+- Tự cuộn (nút dưới ▼): bật thì hết video tự sang video tiếp theo; tắt thì mỗi video phát lặp lại.
+- Bên cạnh video giống TikTok: ♥ Thích, Bình luận, Lưu (mục Yêu thích trên TikTok) và Chia sẻ (sao chép liên kết).
+  Thích và Lưu dùng tài khoản TikTok của bạn nên cần đăng nhập TikTok trước; bình luận hiện ở cột bên phải
+  (muốn viết bình luận thì app mở video trên TikTok).
+- "Dành cho bạn" là bảng tin TikTok của bạn khi đã đăng nhập TikTok (Cài đặt → Tài khoản → TikTok), chưa
+  đăng nhập thì là bảng tin chung. Gõ vào ô search rồi Enter để xem video theo từ khóa; nút "Dành cho bạn"
+  quay lại bảng tin. "Tiếp theo" bên phải hiện 3 video kế tiếp.
+- Cách hoạt động: TikTok không mở bảng tin cho app khác, nên Wallplayer mở chính trang TikTok ở chỗ khuất (với
+  phiên đăng nhập TikTok của bạn) để đọc danh sách video, và phát từng video bằng trình phát nhúng chính thức
+  của TikTok. Nếu TikTok đòi xác minh, bấm "Mở TikTok", làm theo, rồi bấm "Xong".
+- Chọn nền tảng khác để thoát TikTok. Lần mở sau Wallplayer vẫn ở TikTok nếu bạn thoát khi đang ở đó (đứng yên
+  cho tới khi bạn bấm phát).
+
+NẾU GIAO DIỆN BIẾN MẤT
+Giao diện Wallplayer chạy bằng Microsoft Edge WebView2. Nếu bộ máy này dừng, Wallplayer tự mở lại sau vài giây
+(tối đa 3 lần trong 10 phút; quá số đó thì thoát ở khay hệ thống rồi mở lại). Nhật ký ghi ở
+%LOCALAPPDATA%\com.tan.wallplayer\wallplayer.log.
 
 GỠ BỎ
 - Chuột phải biểu tượng khay: bỏ tick "Start with Windows", rồi "Quit Wallplayer". Xóa thư mục Wallplayer.
@@ -168,9 +194,12 @@ QUYỀN RIÊNG TƯ
   tính năng đó. Tắt tìm lời bài hát: Cài đặt → Lời bài hát → "Tìm lời bài hát trên mạng". Chi tiết: PRIVACY.md trên GitHub.
 
 CONTINUE PLAYING (danh sách bên trái)
-- Bấm vào MỘT bài lẻ trong kết quả search → bài phát ngay, danh sách bên trái tự thành "Picked for you": gợi ý của YouTube Music
-  cho bài đó, trộn thêm bài từ trang chủ YouTube Music (theo tài khoản bạn đã đăng nhập; chưa đăng nhập thì là gợi ý chung).
-- Nút ↻ : làm mới danh sách gợi ý.  Nút đồng hồ ⟲ bên cạnh: chuyển sang "History Playing" - xem lại tối đa 100 bài đã phát,
+- Bấm vào MỘT bài YouTube (trong kết quả search hoặc trong History Playing) → bài phát ngay, danh sách bên trái thành
+  "Danh sách kết hợp" (YouTube Mix): danh sách YouTube tự tạo cho bài đó (riêng theo tài khoản khi đã đăng nhập YouTube).
+  Nó thay chỗ Continue Playing và phát không dứt: gần hết danh sách, Wallplayer tự tải thêm phần tiếp theo.
+- Muốn kiểu cũ: Cài đặt → Đang phát → Khi bạn chọn một bài → "Kết hợp + gợi ý cho bạn": gợi ý của YouTube cho bài đó
+  trộn với bài chọn từ tài khoản của bạn.
+- Nút ↻ : tạo lại Danh sách kết hợp (hoặc gợi ý) mới cho bài đang phát.  Nút đồng hồ ⟲ bên cạnh: chuyển sang "History Playing" - xem lại tối đa 100 bài đã phát,
   bấm một bài để phát lại, bấm nút lần nữa để quay về Continue Playing.
 
 PHÍM TẮT

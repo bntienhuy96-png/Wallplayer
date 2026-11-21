@@ -4,6 +4,7 @@ mod accounts;
 mod audio;
 mod deskmouse;
 mod desktop;
+mod guard;
 mod island;
 mod library;
 mod media;
@@ -11,6 +12,7 @@ mod mirror;
 mod net;
 mod power;
 mod settings;
+mod tiktok;
 mod update;
 mod volume;
 
@@ -379,6 +381,60 @@ async fn suggest(app: AppHandle, id: String) -> Result<Suggest, String> {
     Ok(Suggest { tracks, personal })
 }
 
+/// TikTok channel: open For You ("foryou") or a search ("search") in the off-screen TikTok page.
+#[tauri::command]
+async fn tiktok_feed(app: AppHandle, mode: String, query: String) -> Result<(), String> {
+    tiktok::feed(&app, &mode, &query)
+}
+
+/// The TikTok videos collected since the last call.
+#[tauri::command]
+async fn tiktok_take(app: AppHandle) -> Result<tiktok::Take, String> {
+    tiktok::take(&app).await
+}
+
+#[tauri::command]
+async fn tiktok_more(app: AppHandle) {
+    tiktok::more(&app)
+}
+
+#[tauri::command]
+async fn tiktok_stop(app: AppHandle) {
+    tiktok::stop(&app)
+}
+
+/// Like / save a TikTok video with your TikTok account (flips it).
+#[tauri::command]
+async fn tiktok_act(app: AppHandle, author: String, id: String, kind: String) -> Result<bool, String> {
+    tiktok::act(&app, &author, &id, &kind).await
+}
+
+/// The first comments under a TikTok video.
+#[tauri::command]
+async fn tiktok_comments(app: AppHandle, author: String, id: String) -> Result<Vec<tiktok::Comment>, String> {
+    tiktok::comments(&app, &author, &id).await
+}
+
+/// Show the TikTok page (to answer TikTok's check), or put it away.
+#[tauri::command]
+async fn tiktok_show(app: AppHandle, on: bool, video: Option<bool>) {
+    tiktok::show(&app, on, video.unwrap_or(false))
+}
+
+/// YouTube's Mix for one song ("Danh sách kết hợp"), or its next part when `cont` is given.
+#[derive(serde::Serialize)]
+struct Mix {
+    tracks: Vec<net::Track>,
+    cont: Option<String>,
+}
+
+#[tauri::command]
+async fn mix(app: AppHandle, id: String, cont: Option<String>) -> Result<Mix, String> {
+    net::set_yt_auth(accounts::yt_auth(&app));
+    let (tracks, cont) = net::ytm_mix(&id, cont.as_deref()).await?;
+    Ok(Mix { tracks, cont })
+}
+
 #[tauri::command]
 async fn radio(app: AppHandle, source: String, id: String) -> Result<Vec<net::Track>, String> {
     net::set_yt_auth(accounts::yt_auth(&app));
@@ -709,6 +765,14 @@ fn main() {
             search_collections,
             collection_tracks,
             radio,
+            mix,
+            tiktok_feed,
+            tiktok_take,
+            tiktok_more,
+            tiktok_stop,
+            tiktok_show,
+            tiktok_act,
+            tiktok_comments,
             account_status,
             account_login,
             account_logout,
@@ -764,10 +828,18 @@ fn main() {
             }
             apply_mode(&handle);
             desktop::set_icons_hidden(hide_on);
+            // the web engine dies → start again instead of sitting empty in the tray
+            guard::log(&handle, "started");
+            guard::watch(&win, true);
 
             // leave peek when focus goes elsewhere
             let h2 = handle.clone();
             win.on_window_event(move |e| {
+                // Alt+F4 while the skin is in front must not tear it down (quit from the tray)
+                if let WindowEvent::CloseRequested { api, .. } = e {
+                    api.prevent_close();
+                    return;
+                }
                 if let WindowEvent::Focused(false) = e {
                     if *h2.state::<AppState>().peek.lock().unwrap() {
                         set_peek(&h2, false);
