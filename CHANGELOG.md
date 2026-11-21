@@ -5,7 +5,14 @@ the section that matches the version in `src-tauri/Cargo.toml`.
 
 ## 1.0.4
 
+### New
+- **Recent playlists:** with nothing typed, the search shows the playlists and albums you played lately under *Recently played*.
+- **Save to YouTube Music** (signed in): the heart on a YouTube Music playlist or album card saves it to your library; the + button above *Continue Playing* saves the songs on the left as a new private playlist.
+- **Start with Windows** in Settings → General (the same switch as in the tray menu).
+
 ### Fixed
+- Settings: buttons and switches inside a page did nothing.
+- When the playlist moves on to the next song by itself, it no longer pauses a video or song you started elsewhere in the meantime, and a song that is still loading is no longer replaced by another app's media.
 - Playlist: the left edge of the highlighted song (and of the song you point at) was cut off; the rounded highlight now shows whole.
 
 ## 1.0.3

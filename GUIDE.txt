@@ -167,11 +167,11 @@ ON THE DESKTOP (tray icon, right-click)
   point, click, drag, scroll. Clicking the search field brings Wallplayer forward so you can type; a click
   outside sends it back. Single-key shortcuts work only while it is in front (Ctrl + Alt + Space).
 - Untick "Behind desktop icons" to make it a normal window at the bottom: it covers the desktop icons and
-- "Start with Windows": starts Wallplayer when you sign in (also in Settings → General).
+  every button takes clicks directly; after Win + D it tries to come forward (less reliable).
 - "Hide desktop icons" (on by default) hides every desktop icon, Recycle Bin included, while Wallplayer
   runs and gives them back when you quit. (If Wallplayer was ended from Task Manager and the icons are
   still hidden: start Wallplayer and untick it, or right-click the desktop → View → Show desktop icons.)
-- "Start with Windows": starts Wallplayer when you sign in.
+- "Start with Windows": starts Wallplayer when you sign in (also in Settings → General).
 
 SELF-TEST
 Press Ctrl + Shift + D (or Settings → General → Self-test) to check the Windows and YouTube features one by one
